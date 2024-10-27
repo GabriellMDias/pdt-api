@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Store {
+  id           Int     @id
+  description  String
+  storeName    String
+  activeStatus Boolean
+
+  expenses                Expense[]
+  MonthlyResult           MonthlyResult[]
+  ExpenseApportionment    ExpenseApportionment[]
+  PreExpense              PreExpense[]
+  PreExpenseApportionment PreExpenseApportionment[]
+}
+
+model CostCenter {
+  id          Int    @id
+  description String
+
+  Department              Department[]
+  MonthlyResult           MonthlyResult[]
+  ExpenseApportionment    ExpenseApportionment[]
+  PreExpenseApportionment PreExpenseApportionment[]
+}
+
+model Department {
+  id              Int    @id @default(autoincrement())
+  costCenterId    Int
+  description     String
+  departmentVrId1 Int
+  departmentVrId2 Int
+  level           Int
+
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+}
+
+model MonthlyResult {
+  id                 Int      @id @default(autoincrement())
+  storeId            Int
+  costCenterId       Int
+  date               DateTime @default(now())
+  recBruta           Float
+  devolucao          Float
+  imposto            Float
+  custo              Float
+  embalagem          Float
+  quebra             Float
+  recCom             Float
+  despesaPessoal     Float
+  despesaOperacional Float
+
+  store      Store      @relation(fields: [storeId], references: [id])
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  storeId     Int
+  date        DateTime
+  description String
+  value       Float
+
+  store                Store                  @relation(fields: [storeId], references: [id])
+  ExpenseApportionment ExpenseApportionment[]
+}
+
+model ExpenseApportionment {
+  id               Int      @id @default(autoincrement())
+  expenseId        Int
+  costCenterId     Int
+  storeId          Int
+  percentage       Float?
+  useParticipation Boolean?
+
+  expense    Expense    @relation(fields: [expenseId], references: [id])
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+  store      Store      @relation(fields: [storeId], references: [id])
+}
+
+model PreExpenseApportionment {
+  id               Int      @id @default(autoincrement())
+  preExpenseId     Int
+  costCenterId     Int
+  storeId          Int
+  percentage       Float?
+  useParticipation Boolean?
+
+  preExpense PreExpense @relation(fields: [preExpenseId], references: [id])
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+  store      Store      @relation(fields: [storeId], references: [id])
+}
+
+model PreExpense {
+  id          Int    @id @default(autoincrement())
+  storeId     Int
+  description String
+
+  store                   Store                     @relation(fields: [storeId], references: [id])
+  PreExpenseApportionment PreExpenseApportionment[]
+}

@@ -22,7 +22,8 @@ async function main() {
       update: {},
       create: {
         id: 0,
-        description: "Sem Centro Custo"
+        description: "Sem Centro Custo",
+        activeStatus: true
       }
     })
 

@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PgService } from 'src/pg/pg.service';
+import { StoreVr } from './entities/store-vr.entity';
 
 @Injectable()
 export class StoresService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private pg: PgService) {}
 
   create(createStoreDto: CreateStoreDto) {
     return this.prisma.store.create({data: createStoreDto});
@@ -28,5 +30,34 @@ export class StoresService {
 
   remove(id: number) {
     return this.prisma.store.delete({where: {id}});
+  }
+
+  async getStoresFromVR() {
+    try {
+      const storesFromVrQuery = 'SELECT id, descricao AS description FROM loja;'
+
+      const storesFromVrResult = await this.pg.query<StoreVr>(storesFromVrQuery)
+
+      for (const storeFromVr of storesFromVrResult.rows) {
+        await this.prisma.store.upsert({
+          where: {id: storeFromVr.id},
+          update: {
+            description: storeFromVr.description
+          },
+          create: {
+            id: storeFromVr.id,
+            description: storeFromVr.description,
+            storeName: storeFromVr.description,
+            activeStatus: false
+          }
+        })
+      }
+
+      return storesFromVrResult.rows
+    } catch (error) {
+      console.error('An error ocurred when updating stores: ', error)
+
+      throw new InternalServerErrorException('Failed to update stores')
+    }
   }
 }

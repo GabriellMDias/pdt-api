@@ -5,6 +5,7 @@ import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { DepartmentEntity } from './entities/department.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { DepartmentVrEntity } from './entities/department-vr.entity';
 
 @Controller('departments')
 @ApiTags('departments')
@@ -55,5 +56,11 @@ export class DepartmentsController {
   @ApiOkResponse({type: DepartmentEntity})
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.departmentsService.remove(id);
+  }
+
+  @Post('get-departments-vr')
+  @ApiOkResponse({type: DepartmentVrEntity})
+  getDepartmentsFromVr() {
+    return this.departmentsService.getDepartmentsFromVr()
   }
 }

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, NotFou
 import { MonthlyResultsService } from './monthly-results.service';
 import { CreateMonthlyResultDto } from './dto/create-monthly-result.dto';
 import { UpdateMonthlyResultDto } from './dto/update-monthly-result.dto';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { MonthlyResultEntity } from './entities/monthly-result.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
@@ -15,6 +15,7 @@ export class MonthlyResultsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiCreatedResponse({type: MonthlyResultEntity, isArray: true})
+  @ApiBody({ type: [CreateMonthlyResultDto] })
   create(@Body() createMonthlyResultDto: CreateMonthlyResultDto[]) {
     return this.monthlyResultsService.create(createMonthlyResultDto);
   }

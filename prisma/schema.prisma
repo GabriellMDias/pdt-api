@@ -18,9 +18,9 @@ model User {
 
 model Store {
   id           Int     @id
-  description  String
-  storeName    String
-  activeStatus Boolean
+  description  String? @default("")
+  storeName    String? @default("")
+  activeStatus Boolean? @default(false)
 
   expenses                Expense[]
   MonthlyResult           MonthlyResult[]
@@ -32,6 +32,7 @@ model Store {
 model CostCenter {
   id          Int    @id
   description String
+  activeStatus Boolean? @default(false)
 
   Department              Department[]
   MonthlyResult           MonthlyResult[]

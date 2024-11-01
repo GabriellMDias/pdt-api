@@ -5,6 +5,7 @@ import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CostCenterEntity } from './entities/cost-center.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CostCenterVrEntity } from './entities/cost-center-vr.entity';
 
 @Controller('cost-centers')
 @ApiTags('cost-centers')
@@ -55,5 +56,11 @@ export class CostCentersController {
   @ApiOkResponse({type: CostCenterEntity})
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.costCentersService.remove(id);
+  }
+
+  @Post('get-cost-center-vr')
+  @ApiOkResponse({type: CostCenterVrEntity})
+  getCostCenterFromVR() {
+    return this.costCentersService.getCostCenterFromVR()
   }
 }

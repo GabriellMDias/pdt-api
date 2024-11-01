@@ -1,11 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { CostCenter } from "@prisma/client";
 
+export interface CostCenterVr {
+    id: number,
+    description: string,
+    activeStatus: boolean
+}
 
-export class CostCenterEntity implements CostCenter {
+export class CostCenterVrEntity implements CostCenterVr  {
     @ApiProperty()
     id: number;
-    
+
     @ApiProperty()
     description: string;
 

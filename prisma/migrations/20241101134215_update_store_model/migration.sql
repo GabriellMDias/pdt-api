@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Store" ALTER COLUMN "description" DROP NOT NULL,
+ALTER COLUMN "description" SET DEFAULT '',
+ALTER COLUMN "storeName" DROP NOT NULL,
+ALTER COLUMN "storeName" SET DEFAULT '',
+ALTER COLUMN "activeStatus" DROP NOT NULL,
+ALTER COLUMN "activeStatus" SET DEFAULT false;

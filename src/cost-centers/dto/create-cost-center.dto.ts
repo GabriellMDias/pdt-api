@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
+    IsBoolean,
     IsNumber,
     IsPositive,
     IsString
@@ -7,11 +8,14 @@ import {
 
 export class CreateCostCenterDto {
     @IsNumber()
-    @IsPositive()
     @ApiProperty()
     id: number
 
     @IsString()
     @ApiProperty()
     description: string
+
+    @IsBoolean()
+    @ApiProperty()
+    activeStatus: boolean
 }

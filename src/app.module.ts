@@ -12,9 +12,11 @@ import { MonthlyResultsModule } from './monthly-results/monthly-results.module';
 import { ExpenseApportionmentsModule } from './expense-apportionments/expense-apportionments.module';
 import { PreExpenseApportionmentsModule } from './pre-expense-apportionments/pre-expense-apportionments.module';
 import { PreExpensesModule } from './pre-expenses/pre-expenses.module';
+import { PgModule } from './pg/pg.module';
+import { DreModule } from './dre/dre.module';
 
 @Module({
-  imports: [PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule],
+  imports: [PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule],
   controllers: [AppController],
   providers: [AppService],
 })

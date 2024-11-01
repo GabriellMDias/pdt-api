@@ -5,6 +5,7 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { StoreEntity } from './entities/store.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { StoreVrEntity } from './entities/store-vr.entity';
 
 @Controller('stores')
 @ApiTags('stores')
@@ -54,5 +55,11 @@ export class StoresController {
   @ApiOkResponse({type: StoreEntity})
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.storesService.remove(id);
+  }
+
+  @Post('get-stores-vr')
+  @ApiOkResponse({type: StoreVrEntity})
+  getStoresFromVR() {
+    return this.storesService.getStoresFromVR();
   }
 }

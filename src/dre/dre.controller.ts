@@ -8,7 +8,7 @@ import { GetCostCenterSalesDto } from './dto/get-cost-center-sales.dto';
 import { GetCouponReturnDto } from './dto/get-coupon-return.dto';
 import { GetPackagingCostDto } from './dto/get-packaging-cost.dto';
 import { GetLossAndConsumptionDto } from './dto/get-loss-and-consumption.dto';
-import { GetConsolidatedDreDto } from './dto/get-consolidated-Dre';
+import { GetConsolidatedDreDto } from './dto/get-consolidated-dre';
 import { GetCommercialRevenueDto } from './dto/get-commercial-revenue.dto';
 
 @Controller('dre')

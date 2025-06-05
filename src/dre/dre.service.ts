@@ -13,7 +13,7 @@ import { LossAndComsumption } from './entities/get-loss-and-comsumption.entity';
 import { GetCommercialRevenueDto } from './dto/get-commercial-revenue.dto';
 import { CommercialRevenue } from './entities/get-commercial-revenue.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GetConsolidatedDreDto } from './dto/get-consolidated-Dre';
+import { GetConsolidatedDreDto } from './dto/get-consolidated-dre';
 
 @Injectable()
 export class DreService {

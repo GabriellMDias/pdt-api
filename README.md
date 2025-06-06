@@ -1,99 +1,124 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 📦 PdT API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API desenvolvida com NestJS e PostgreSQL, containerizada via Docker. Inclui autenticação JWT, documentação Swagger protegida por login e conexão direta com PostgreSQL via Prisma e `pg`.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Como rodar o projeto
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 1. ✅ Pré-requisitos
 
-## Project setup
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
-```bash
-$ npm install
+---
+
+### 2. ⚙️ Variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+
+```env
+# PostgreSQL
+POSTGRES_USER=pdt
+POSTGRES_PASSWORD=pdt2020
+POSTGRES_PORT=5432
+
+# API
+PORT=4495
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/pdt
+
+# Swagger
+SWAGGER_USER=admin
+SWAGGER_PASSWORD=123456
+
+# PGService (VR Database)
+PG_DATABASE_USER=postgres
+PG_DATABASE_PASSWORD=VrPost@Server
+PG_DATABASE_HOST=172.30.5.5
+PG_DATABASE_PORT=8745
+PG_DATABASE_DATABASE=vr
+PG_APPLICATION_NAME=pdt-api
+
+#JWT
+JWT_SECRET=superSecretaChaveJWT_98327asduyh1*&YHuhkjh!@2923
 ```
 
-## Compile and run the project
+---
+
+### 3. 🐳 Subindo a aplicação com Docker
+
+Para subir a aplicação e o banco:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker-compose up --build
 ```
 
-## Run tests
+Esse comando irá:
+
+- Criar os containers da API e do PostgreSQL
+- Rodar as migrações com `npx prisma migrate deploy`
+- Executar os seeds, se houver
+- Iniciar a aplicação em modo de produção
+
+---
+
+### 4. 📄 Documentação da API
+
+Acesse a documentação Swagger em:
+
+```
+http://localhost:4495/api
+```
+
+> Será solicitado login:
+> - **Usuário:** `admin`
+> - **Senha:** `admin123`
+
+---
+
+### 5. 📦 Comandos úteis
+
+#### Derrubar os containers:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker-compose down
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+#### Derrubar e apagar volumes (⚠️ remove os dados do banco):
 
 ```bash
-$ npm install -g mau
-$ mau deploy
+docker-compose down -v
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+#### Ver status dos containers:
 
-## Resources
+```bash
+docker ps
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 6. 🧪 Testar conexão com banco
 
-## Support
+Se quiser testar manualmente o banco de dados, execute:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+docker exec -it pdt-api_postgres_1 psql -U postgres -d pdt
+```
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 🧠 Observações
 
-## License
+- A aplicação usa Prisma como ORM, com migrações executadas automaticamente.
+- O serviço de banco está com `healthcheck`, garantindo que a API só inicie após o PostgreSQL estar pronto.
+- JWT é usado para autenticação das rotas protegidas.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+
+## 👨‍💻 Autor
+
+Gabriel Dias  
+Engenharia de Computação | Desenvolvedor Backend
+
+---

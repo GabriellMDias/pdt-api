@@ -4,7 +4,7 @@ import { CreateExpenseApportionmentDto } from './dto/create-expense-apportionmen
 import { UpdateExpenseApportionmentDto } from './dto/update-expense-apportionment.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ExpenseApportionmentEntity } from './entities/expense-apportionment.entity';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('expense-apportionments')
 @ApiTags('expense-apportionments')

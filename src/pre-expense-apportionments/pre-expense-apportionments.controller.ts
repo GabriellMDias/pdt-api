@@ -4,7 +4,7 @@ import { CreatePreExpenseApportionmentDto } from './dto/create-pre-expense-appor
 import { UpdatePreExpenseApportionmentDto } from './dto/update-pre-expense-apportionment.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { PreExpenseApportionmentEntity } from './entities/pre-expense-apportionment.entity'
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('pre-expense-apportionments')
 @ApiTags('pre-expense-apportionments')

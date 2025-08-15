@@ -31,6 +31,19 @@ export class UsersService {
     return this.prisma.user.findUnique({where: {id}});
   }
 
+  async findUserWithPermissions(id: number) {
+    const user = await this.prisma.user.findUnique({
+        where: { id },
+        include: {
+          UserPermission: {
+            include: { permission: true }
+          }
+        },
+      });
+    
+    return user
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(

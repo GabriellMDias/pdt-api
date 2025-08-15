@@ -21,6 +21,10 @@ export class CreateStoreDto {
     @MaxLength(50)
     storeName: string;
 
+    @ApiProperty()
+    @IsString()
+    cnpj: string;
+
     @IsBoolean()
     @ApiProperty()
     activeStatus: boolean;

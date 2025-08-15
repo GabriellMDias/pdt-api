@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -14,24 +14,29 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  UserPermission UserPermission[]
+  ArquivoAnalise ArquivoAnalise[]
 }
 
 model Store {
-  id           Int     @id
-  description  String? @default("")
-  storeName    String? @default("")
+  id           Int      @id
+  description  String?  @default("")
+  storeName    String?  @default("")
   activeStatus Boolean? @default(false)
+  cnpj         String   @unique
 
   expenses                Expense[]
   MonthlyResult           MonthlyResult[]
   ExpenseApportionment    ExpenseApportionment[]
   PreExpense              PreExpense[]
   PreExpenseApportionment PreExpenseApportionment[]
+  ArquivoAnalise          ArquivoAnalise[]
 }
 
 model CostCenter {
-  id          Int    @id
-  description String
+  id           Int      @id
+  description  String
   activeStatus Boolean? @default(false)
 
   Department              Department[]
@@ -114,4 +119,63 @@ model PreExpense {
 
   store                   Store                     @relation(fields: [storeId], references: [id])
   PreExpenseApportionment PreExpenseApportionment[]
+}
+
+model Permission {
+  id    Int              @id @default(autoincrement())
+  code  String           @unique // Ex: "users:consultar"
+  label String // Ex: "Consultar usuários"
+  users UserPermission[]
+}
+
+model UserPermission {
+  userId       Int
+  permissionId Int
+
+  user       User       @relation(fields: [userId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([userId, permissionId])
+}
+
+model AnalysisType {
+  id          Int           @id @default(autoincrement())
+  code        String        @unique // Ex: "PIS_C100_C170"
+  description String // Ex: "Validação de PIS entre C100 e C170"
+  active      Boolean       @default(true)
+  groupName        String @default("")
+
+  
+  analyses    SpedAnalise[]
+}
+
+model SpedAnalise {
+  id               Int  @id @default(autoincrement())
+  resultadoJson    Json
+  analysisTypeId   Int
+  arquivoAnaliseId Int
+
+  analysisType   AnalysisType   @relation(fields: [analysisTypeId], references: [id])
+  arquivoAnalise ArquivoAnalise @relation(fields: [arquivoAnaliseId], references: [id])
+}
+
+model StatusAnalise {
+  id             Int              @id @default(autoincrement())
+  descricao      String
+  ArquivoAnalise ArquivoAnalise[]
+}
+
+model ArquivoAnalise {
+  id              Int      @id @default(autoincrement())
+  dataImportacao  DateTime @default(now())
+  mesRef          DateTime
+  arquivoNome     String
+  userId          Int
+  statusAnaliseId Int
+  storeId       Int
+
+  store         Store         @relation(fields: [storeId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  statusAnalise StatusAnalise @relation(fields: [statusAnaliseId], references: [id])
+  SpedAnalise   SpedAnalise[]
 }

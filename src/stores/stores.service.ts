@@ -34,7 +34,7 @@ export class StoresService {
 
   async getStoresFromVR() {
     try {
-      const storesFromVrQuery = 'SELECT id, descricao AS description FROM loja;'
+      const storesFromVrQuery = 'SELECT l.id, l.descricao AS description, f.cnpj FROM loja l JOIN fornecedor f ON f.id = l.id_fornecedor;'
 
       const storesFromVrResult = await this.pg.query<StoreVr>(storesFromVrQuery)
 
@@ -48,7 +48,8 @@ export class StoresService {
             id: storeFromVr.id,
             description: storeFromVr.description,
             storeName: storeFromVr.description,
-            activeStatus: false
+            activeStatus: false,
+            cnpj: storeFromVr.cnpj.toString()
           }
         })
       }

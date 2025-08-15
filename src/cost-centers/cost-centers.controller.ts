@@ -4,7 +4,7 @@ import { CreateCostCenterDto } from './dto/create-cost-center.dto';
 import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CostCenterEntity } from './entities/cost-center.entity';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CostCenterVrEntity } from './entities/cost-center-vr.entity';
 
 @Controller('cost-centers')
@@ -13,24 +13,24 @@ export class CostCentersController {
   constructor(private readonly costCentersService: CostCentersService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiCreatedResponse({type: CostCenterEntity})
   create(@Body() createCostCenterDto: CreateCostCenterDto) {
     return this.costCentersService.create(createCostCenterDto);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({type: CostCenterEntity, isArray: true})
   findAll() {
     return this.costCentersService.findAll();
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({type: CostCenterEntity})
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const costCenter = await this.costCentersService.findOne(id);
@@ -43,16 +43,16 @@ export class CostCentersController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiCreatedResponse({type: CostCenterEntity})
   update(@Param('id', ParseIntPipe) id: number, @Body() updateCostCenterDto: UpdateCostCenterDto) {
     return this.costCentersService.update(id, updateCostCenterDto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({type: CostCenterEntity})
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.costCentersService.remove(id);

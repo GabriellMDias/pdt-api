@@ -2,7 +2,8 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export interface StoreVr {
     id: number,
-    description: string
+    description: string,
+    cnpj: number
 }
 
 export class StoreVrEntity implements StoreVr  {
@@ -11,4 +12,7 @@ export class StoreVrEntity implements StoreVr  {
 
     @ApiProperty()
     description: string;
+
+    @ApiProperty()
+    cnpj: number;
 }

@@ -12,5 +12,8 @@ export class StoreEntity implements Store  {
     storeName: string;
 
     @ApiProperty()
+    cnpj: string;
+
+    @ApiProperty()
     activeStatus: boolean;
 }

@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-pilar-green: #00553B;
+  --color-pilar-orange: #B54828;
+  --color-pilar-default-bg-dark: #282825;
+  --color-pilar-default-bg-light: #D3FFF1;
+  --color-pilar-default-bg2-dark: #33332F;
+}

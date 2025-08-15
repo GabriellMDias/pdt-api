@@ -4,7 +4,7 @@ import { CreateMonthlyResultDto } from './dto/create-monthly-result.dto';
 import { UpdateMonthlyResultDto } from './dto/update-monthly-result.dto';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { MonthlyResultEntity } from './entities/monthly-result.entity';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('monthly-results')
 @ApiTags('monthly-results')

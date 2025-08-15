@@ -1,26 +1,31 @@
-# Base image
 FROM node:20
 
-# Create app directory
+# Diretório raiz
 WORKDIR /usr/src/app
 
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
+# Copiar configs primeiro (melhora cache)
 COPY package*.json ./
+COPY prisma ./prisma
+COPY tsconfig*.json ./
 
-# Install app dependencies
+# Instalar dependências
 RUN npm install
 
-# Bundle app source
+# Gerar Prisma Client
+RUN npx prisma generate
+
+# Copiar o resto do código
 COPY . .
 
-# Copy the .env and .env.development files
-COPY .env ./
-
-# Creates a "dist" folder with the production build
+# Build backend (NestJS)
 RUN npm run build
 
-# Expose the port on which the app will run
-EXPOSE 4495
+# Build frontend (Vite)
+WORKDIR /usr/src/app/front
+RUN npm install && npm run build
 
-# Start the server using the production build
-CMD ["npm", "run", "start:prod"]
+# Voltar pro backend
+WORKDIR /usr/src/app
+
+EXPOSE 4495
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"]

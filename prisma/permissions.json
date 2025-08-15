@@ -1,0 +1,10 @@
+[
+  { "code": "users:consultar", "label": "Consultar usuários" },
+  { "code": "users:incluir", "label": "Incluir usuários" },
+  { "code": "users:editar", "label": "Editar usuários" },
+  { "code": "users:excluir", "label": "Excluir usuários" },
+  { "code": "permissions:consultar", "label": "Consultar permissões" },
+  { "code": "permissions:editar", "label": "Editar permissões" },
+  { "code": "sped:upload", "label": "Upload arquivo SPED" },
+  { "code": "sped:consultarRelatorioSPED", "label": "Consultar Relatório SPED" }
+]

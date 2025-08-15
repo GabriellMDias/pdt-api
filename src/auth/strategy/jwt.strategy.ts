@@ -14,12 +14,23 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: { userId: number }) {
-    const user = await this.usersService.findOne(payload.userId);
+    const userWithPermissions = await this.usersService.findUserWithPermissions(payload.userId)
 
-    if (!user) {
+     // ✅ Se for o super admin, libera tudo
+    const isSuperAdmin = userWithPermissions.id === 0;
+
+    const permissions = isSuperAdmin
+      ? ['*'] // o guard pode interpretar isso como "acesso total"
+      : userWithPermissions.UserPermission.map((p) => p.permission.code);
+
+    if (!userWithPermissions) {
       throw new UnauthorizedException();
     }
 
-    return user;
+    return {
+      id: userWithPermissions.id,
+      email: userWithPermissions.email,
+      permissions, // ['users:consultar', 'users:incluir', ...]
+    };
   }
 }

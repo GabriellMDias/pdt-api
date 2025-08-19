@@ -36,7 +36,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const data = await response.json();
 
-        setPermissions(data.permissions);
+        if( decoded.userId === 0 ) {
+          const response = await fetch(`/api/permissions`, {
+            headers: { Authorization: `Bearer ${savedToken}` },
+          });
+
+          const allPermissions = (await response.json()).map((permission: { code: string; }) => permission.code)
+
+          setPermissions(allPermissions);
+        } else {
+          setPermissions(data.permissions);
+        }
+        
         setIsAuthenticated(true);
       } catch {
         localStorage.removeItem("accessToken");

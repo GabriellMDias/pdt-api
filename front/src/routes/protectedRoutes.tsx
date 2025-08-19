@@ -3,7 +3,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import HomeIcon from '@mui/icons-material/Home';
 import HomePage from '../pages/HomePage';
-import UserRegisterPage from '../pages/UsersPage';
+import UsersPage from '../pages/configuracoes/cadastro/UsersPage';
 import type { JSX } from 'react';
 import RelatorioICMS from '../pages/fiscal/obrigacoes/RelatorioSPEDUpload';
 import RelatorioSPEDAnalises from '../pages/fiscal/obrigacoes/RelatorioSPEDAnalises';
@@ -63,10 +63,10 @@ export const protectedRoutes: ProtectedRoute[] = [
         showInSidebar: true,
         children: [
           {
-            path: '/usuarios',
+            path: '/configuracoes/cadastro/usuarios',
             label: 'Usuários',
             icon: <GroupIcon />,
-            element: <UserRegisterPage />,
+            element: <UsersPage />,
             requiredPermissions: ['users:consultar', 'users:incluir', 'users:editar', 'users:excluir'],
             showInSidebar: true,
           },

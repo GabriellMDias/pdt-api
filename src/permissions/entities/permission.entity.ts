@@ -10,4 +10,7 @@ export class PermissionEntity implements Permission {
 
     @ApiProperty()
     label: string;
+
+    @ApiProperty()
+    useStorePermission: boolean;
 }

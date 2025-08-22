@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
-import DefaultButton from '../components/DefaultButton'
-import DefaultInput from '../components/DefaultInput'
+import DefaultButton from '../components/inputs/DefaultButton'
+import DefaultInput from '../components/inputs/DefaultInput'
 import ThemeSwitch from '../components/ThemeSwitch'
 import { toast } from 'react-toastify'
 

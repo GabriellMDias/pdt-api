@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -59,6 +59,10 @@ export class UsersService {
   }
 
   remove(id: number) {
+    if (id === 0) {
+      throw new ForbiddenException('Não é permitido excluir o usuário administrador (id = 0).');
+    }
+    
     return this.prisma.user.delete({where: {id}});
   }
 }

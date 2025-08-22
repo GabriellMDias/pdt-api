@@ -1,3 +1,4 @@
+// src/auth/guards/permissions.guard.ts
 import {
   Injectable,
   CanActivate,
@@ -5,35 +6,47 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
-import { UserPayload } from '../types/user-payload.interface';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private prisma: PrismaService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.get<string[]>(
-      'permissions',
-      context.getHandler(),
-    );
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const handler = context.getHandler();
 
-    if (!requiredPermissions || requiredPermissions.length === 0) return true;
+    // ALL (E) e ANY (OU)
+    const requiredAll = this.reflector.get<string[]>('permissions', handler) ?? [];
+    const requiredAny = this.reflector.get<string[]>('permissions:any', handler) ?? [];
 
-    const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as UserPayload;
+    // Se não exigiu nada, libera
+    if (requiredAll.length === 0 && requiredAny.length === 0) return true;
 
-    const userPermissions: string[] = user?.permissions || [];
+    const req = context.switchToHttp().getRequest();
+    const uid = Number(req.user?.id ?? req.user?.userId);
 
-    const hasPermission = 
-    userPermissions.includes('*') || // super admin 
-    requiredPermissions.every(p =>
-      userPermissions.includes(p),
-    );
+    // bypass admin ou token com '*'
+    if (uid === 0 || req.user?.permissions?.includes?.('*')) return true;
 
-    if (!hasPermission) {
-      throw new ForbiddenException('Você não tem permissão.');
-    }
+    // Busca no banco somente os códigos que interessam (ALL ∪ ANY)
+    const toCheck = Array.from(new Set([...requiredAll, ...requiredAny]));
+    if (toCheck.length === 0) return true;
+
+    const rows = await this.prisma.userPermission.findMany({
+      where: { userId: uid, permission: { code: { in: toCheck } } },
+      select: { permission: { select: { code: true } } },
+    });
+
+    const got = new Set(rows.map(r => r.permission.code));
+
+    const hasAll = requiredAll.every(code => got.has(code));
+    const hasAny = requiredAny.length === 0 || requiredAny.some(code => got.has(code));
+
+    const ok = hasAll && hasAny;
+    if (!ok) throw new ForbiddenException('Você não tem permissão.');
 
     return true;
   }

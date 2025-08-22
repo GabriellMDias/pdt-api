@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Layout from "../../../components/Layout";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import PermissionGate from "../../../components/PermissionGate";
 
 interface Arquivo {
   id: number;
@@ -110,16 +111,18 @@ export default function RelatorioSPEDUpload() {
           <div className="flex justify-between items-center mb-4 ">
             <h2 className="text-xl font-semibold">Arquivos</h2>
             <div className="flex gap-2">
-              <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700">
-                Enviar Arquivo
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".txt"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </label>
+              <PermissionGate required="sped:upload">
+                <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700">
+                  Enviar Arquivo
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </PermissionGate>
               {file && (
                 <button
                   onClick={handleUpload}

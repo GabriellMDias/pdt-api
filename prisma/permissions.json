@@ -7,8 +7,9 @@
   { "code": "permissions:editar", "label": "Editar permissões" },
   { "code": "sped:upload", "label": "Upload arquivo SPED" },
   { "code": "sped:consultarRelatorioSPED", "label": "Consultar Relatório SPED" },
-  { "code": "expense:consultar", "label": "Consultar Despesas" },
-  { "code": "expense:incluir", "label": "Incluir Despesas" },
-  { "code": "expense:editar", "label": "Editar Despesas" },
-  { "code": "expense:excluir", "label": "Excluir Despesas" }
+  { "code": "expense:consultar", "label": "Consultar Despesas", "useStorePermission": true },
+  { "code": "expense:incluir", "label": "Incluir Despesas", "useStorePermission": true },
+  { "code": "expense:editar", "label": "Editar Despesas", "useStorePermission": true },
+  { "code": "expense:excluir", "label": "Excluir Despesas", "useStorePermission": true },
+  {"code": "stock-analysis:consultar", "label": "Consultar Análise de Estoque", "useStorePermission": true}
 ]

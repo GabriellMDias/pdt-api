@@ -14,7 +14,7 @@ export class StoresService {
   }
 
   findAll() {
-    return this.prisma.store.findMany();
+    return this.prisma.store.findMany({orderBy: { id: 'asc' }});
   }
 
   findOne(id: number) {

@@ -32,6 +32,7 @@ model Store {
   PreExpense              PreExpense[]
   PreExpenseApportionment PreExpenseApportionment[]
   ArquivoAnalise          ArquivoAnalise[]
+  UserPermission          UserPermission[]
 }
 
 model CostCenter {
@@ -125,28 +126,33 @@ model Permission {
   id    Int              @id @default(autoincrement())
   code  String           @unique // Ex: "users:consultar"
   label String // Ex: "Consultar usuários"
+  useStorePermission Boolean @default(false)
+
   users UserPermission[]
 }
 
 model UserPermission {
+  id           Int  @id @default(autoincrement())
   userId       Int
   permissionId Int
+  storeId      Int? // null = global
 
   user       User       @relation(fields: [userId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
+  store      Store?     @relation(fields: [storeId], references: [id])
 
-  @@id([userId, permissionId])
+  // Garante que não existam duplicatas do mesmo (user, perm, store)
+  @@unique([userId, permissionId, storeId])
 }
 
 model AnalysisType {
-  id          Int           @id @default(autoincrement())
-  code        String        @unique // Ex: "PIS_C100_C170"
+  id          Int     @id @default(autoincrement())
+  code        String  @unique // Ex: "PIS_C100_C170"
   description String // Ex: "Validação de PIS entre C100 e C170"
-  active      Boolean       @default(true)
-  groupName        String @default("")
+  active      Boolean @default(true)
+  groupName   String  @default("")
 
-  
-  analyses    SpedAnalise[]
+  analyses SpedAnalise[]
 }
 
 model SpedAnalise {
@@ -172,7 +178,7 @@ model ArquivoAnalise {
   arquivoNome     String
   userId          Int
   statusAnaliseId Int
-  storeId       Int
+  storeId         Int
 
   store         Store         @relation(fields: [storeId], references: [id])
   user          User          @relation(fields: [userId], references: [id])

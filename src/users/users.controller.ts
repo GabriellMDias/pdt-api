@@ -5,17 +5,17 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { UserEntity } from './entities/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Permissions } from 'src/auth/decorators/permissions.decorator';
+import { Permissions, PermissionsAny } from 'src/auth/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
+@ApiBearerAuth()
 @Controller('users')
 @ApiTags('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiBearerAuth()
   @Permissions('users:incluir')
   @ApiCreatedResponse({type: UserEntity})
   async create(@Body() createUserDto: CreateUserDto) {
@@ -23,8 +23,7 @@ export class UsersController {
   }
 
   @Get()
-  @ApiBearerAuth()
-  @Permissions('users:consultar')
+  @PermissionsAny('users:consultar', 'permissions:consultar')
   @ApiOkResponse({type: UserEntity, isArray: true})
   async findAll() {
     const users = await this.usersService.findAll();
@@ -32,8 +31,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  @ApiBearerAuth()
-  @Permissions('users:consultar')
+  @PermissionsAny('users:consultar', 'permissions:consultar')
   @ApiOkResponse({type: UserEntity})
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.findOne(id);
@@ -44,7 +42,6 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @ApiBearerAuth()
   @Permissions('users:editar')
   @ApiCreatedResponse({type: UserEntity})
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
@@ -52,7 +49,6 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @ApiBearerAuth()
   @Permissions('users:excluir')
   @ApiOkResponse({type: UserEntity})
   async remove(@Param('id', ParseIntPipe) id: number) {

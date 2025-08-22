@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { login } from "../services/auth";
-import { AuthContext } from "./AuthContext";
+import { AuthContext, type PermissionGrant } from "./AuthContext";
 
 interface JwtPayload {
   userId: number;
@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
-  const [permissions, setPermissions] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<(string | PermissionGrant)[]>([]);
   const [token, setToken] = useState<string | null>(null);
 
   const navigate = useNavigate();
@@ -30,24 +30,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserId(decoded.userId);
         setToken(savedToken);
 
-        const response = await fetch(`/api/permissions/${decoded.userId}`, {
-          headers: { Authorization: `Bearer ${savedToken}` },
-        });
-
-        const data = await response.json();
-
-        if( decoded.userId === 0 ) {
-          const response = await fetch(`/api/permissions`, {
+        if (decoded.userId === 0) {
+          // Admin: pode ver tudo; o filtro também usa userId===0,
+          // mas manter '*' ajuda caso exista outra verificação isolada.
+          setPermissions(['*']);
+        } else {
+          const response = await fetch(`/api/permissions/${decoded.userId}`, {
             headers: { Authorization: `Bearer ${savedToken}` },
           });
-
-          const allPermissions = (await response.json()).map((permission: { code: string; }) => permission.code)
-
-          setPermissions(allPermissions);
-        } else {
-          setPermissions(data.permissions);
+          const data = await response.json();
+          // Mantém estruturado: { userId, permissions: PermissionGrant[] }
+          const arr: PermissionGrant[] = Array.isArray(data?.permissions) ? data.permissions : [];
+          setPermissions(arr);
         }
-        
+
         setIsAuthenticated(true);
       } catch {
         localStorage.removeItem("accessToken");
@@ -73,12 +69,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const decoded = jwtDecode<JwtPayload>(response.accessToken);
     setUserId(decoded.userId);
 
-    const res = await fetch(`/api/permissions/${decoded.userId}`, {
-      headers: { Authorization: `Bearer ${response.accessToken}` },
-    });
-
-    const data = await res.json();
-    setPermissions(data.permissions);
+    if (decoded.userId === 0) {
+      setPermissions(['*']);
+    } else {
+      const res = await fetch(`/api/permissions/${decoded.userId}`, {
+        headers: { Authorization: `Bearer ${response.accessToken}` },
+      });
+      const data = await res.json();
+      const arr: PermissionGrant[] = Array.isArray(data?.permissions) ? data.permissions : [];
+      setPermissions(arr);
+    }
 
     setIsAuthenticated(true);
   };

@@ -193,7 +193,7 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   const mayToggleButton = _canCreate || (selected ? _canEdit(selected) : false);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{title}</h1>
       </header>

@@ -24,7 +24,7 @@ export default function Layout({ children, title = 'Página' }: LayoutProps) {
         </div>
 
         {/* Conteúdo principal */}
-        <div className="flex-1 border-t border-t-pilar-green bg-pilar-default-bg-light dark:bg-pilar-default-bg-dark overflow-auto">
+        <div className="flex-1 border-t border-t-pilar-green bg-pilar-default-bg-light dark:bg-pilar-default-bg-dark overflow-auto p-2">
           {children}
         </div>
       </div>

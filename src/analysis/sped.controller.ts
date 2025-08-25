@@ -78,7 +78,7 @@ export class SpedController {
 
   @Get('sped-analise/:arquivoAnaliseId')
   @Permissions('sped:consultarRelatorioSPED')
-  @ApiOkResponse({type: SpedAnaliseEntity})
+  @ApiOkResponse({type: Object})
   async getSpedAnalise (@Param('arquivoAnaliseId', ParseIntPipe) arquivoAnaliseId: number) {
     return await this.spedService.getSpedAnalise(arquivoAnaliseId)
   }

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ResumoDiaEntity {
+export class DiferencaNoDiaEntity {
   @ApiProperty({ type: String, description: 'Timestamp agregado ao segundo' })
   data!: string; // ISO datetime
 

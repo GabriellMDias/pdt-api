@@ -14,17 +14,37 @@ import { parseRegistroC190 } from './parsers/registro-c190.parser';
 export class SpedService {
   constructor(private prisma: PrismaService) {}
 
+  
+  // --- Helpers para integração com AnalysisResult ---
+  private async ensureAnalysisFields(analysisTypeId: number) {
+    const upsertField = async (key: string, label: string, dataType: any, order: number) => {
+      await this.prisma.analysisField.upsert({
+        where: { analysisTypeId_key: { analysisTypeId, key } },
+        create: { analysisTypeId, key, label, dataType, order },
+        update: { label, dataType, order },
+      });
+    };
+    try {
+      await upsertField('totalNotas', 'Total de notas', 'int', 0);
+      await upsertField('notasComErro', 'Notas com erro', 'int', 1);
+    } catch {}
+  }
+
+  private firstDayOfMonthUTC(d: Date) {
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+  }
+
   /**
    * Verifica se o tipo de análise existe no banco.
    * Caso não exista, cria com base no código e descrição fornecidos.
    */
-  private async getOrCreateAnalysisType(code: string, description: string, groupName: string) {
-    return await this.prisma.analysisType.upsert({
-      where: { code },
-      update: {}, // Nenhuma atualização é feita se já existir
-      create: { code, description, groupName }, // Cria se não existir
-    });
-  }
+  async getOrCreateAnalysisType(code: string, description: string, groupName: string) {
+      return await this.prisma.analysisType.upsert({
+        where: { code },
+        update: {}, // Nenhuma atualização é feita se já existir
+        create: { code, description, groupName }, // Cria se não existir
+      });
+    }
 
   /**
    * Processa um arquivo SPED linha por linha,
@@ -128,19 +148,47 @@ export class SpedService {
         const erros = analise.execute(notas, itens0200);
 
         // Salva o resultado da análise no banco
-        await this.prisma.spedAnalise.create({
-          data: {
-            resultadoJson: {
-              totalNotas: notas.size,
-              notasComErro: erros.length,
-              erros,
-            },
-            analysisTypeId: tipo.id,
-            arquivoAnaliseId: arquivo.id, // 🔹 vincula ao ArquivoAnalise
-          },
-        });
+        // 🔸 Cache unificado: grava em AnalysisResult (granularity: 'month')
+        try {
+          const arq = await this.prisma.arquivoAnalise.findUnique({ where: { id: arquivo.id }, select: { storeId: true, mesRef: true } });
+          const storeId = arq?.storeId ?? null;
+          const bucket = arq?.mesRef ? this.firstDayOfMonthUTC(new Date(arq.mesRef)) : new Date();
 
-        // Adiciona ao resumo de resultados
+          await this.ensureAnalysisFields(tipo.id);
+
+          await this.prisma.analysisResult.upsert({
+            where: {
+              analysisTypeId_storeId_bucket_granularity: {
+                analysisTypeId: tipo.id,
+                storeId: storeId,
+                bucket,
+                granularity: 'month',
+              },
+            },
+            create: {
+              analysisTypeId: tipo.id,
+              storeId,
+              bucket,
+              granularity: 'month',
+              data: {
+                totalNotas: notas.size,
+                notasComErro: erros.length,
+                erros,
+              },
+              sourceStart: arq?.mesRef ? this.firstDayOfMonthUTC(new Date(arq.mesRef)) : null,
+              sourceEnd:   arq?.mesRef ? new Date(Date.UTC(new Date(arq.mesRef).getUTCFullYear(), new Date(arq.mesRef).getUTCMonth()+1, 0, 23,59,59)) : null,
+            },
+            update: {
+              data: {
+                totalNotas: notas.size,
+                notasComErro: erros.length,
+                erros,
+              },
+              computedAt: new Date(),
+            },
+          });
+        } catch {}
+// Adiciona ao resumo de resultados
         resultados.push({
           tipo: analise.code,
           descricao: analise.description,
@@ -188,11 +236,9 @@ export class SpedService {
   }
 
   getSpedAnalise(arquivoAnaliseId: number) {
-    return this.prisma.spedAnalise.findMany(
-      {
-        where: {arquivoAnaliseId}, 
-        include: {analysisType: {select: {code: true, description: true, groupName: true}}}
-      }
-    )
+    return this.prisma.analysisResult.findMany({
+      where: { arquivoAnaliseId, granularity: 'month' },
+      include: { analysisType: { select: { code: true, description: true, groupName: true } } }
+    });
   }
 }

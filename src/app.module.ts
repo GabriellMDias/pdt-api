@@ -17,14 +17,13 @@ import { PreExpensesModule } from './pre-expenses/pre-expenses.module';
 import { PgModule } from './pg/pg.module';
 import { DreModule } from './dre/dre.module';
 import { PermissionsModule } from './permissions/permissions.module';
-import { SpedModule } from './sped/sped.module';
-import { StockAnalysisModule } from './stock-analysis/stock-analysis.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, SpedModule, StockAnalysisModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule],
   controllers: [AppController],
   providers: [AppService],
 })

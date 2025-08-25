@@ -33,6 +33,8 @@ model Store {
   PreExpenseApportionment PreExpenseApportionment[]
   ArquivoAnalise          ArquivoAnalise[]
   UserPermission          UserPermission[]
+
+  AnalysisResult AnalysisResult[]
 }
 
 model CostCenter {
@@ -152,17 +154,8 @@ model AnalysisType {
   active      Boolean @default(true)
   groupName   String  @default("")
 
-  analyses SpedAnalise[]
-}
-
-model SpedAnalise {
-  id               Int  @id @default(autoincrement())
-  resultadoJson    Json
-  analysisTypeId   Int
-  arquivoAnaliseId Int
-
-  analysisType   AnalysisType   @relation(fields: [analysisTypeId], references: [id])
-  arquivoAnalise ArquivoAnalise @relation(fields: [arquivoAnaliseId], references: [id])
+  fields   AnalysisField[]
+  results  AnalysisResult[]
 }
 
 model StatusAnalise {
@@ -183,5 +176,64 @@ model ArquivoAnalise {
   store         Store         @relation(fields: [storeId], references: [id])
   user          User          @relation(fields: [userId], references: [id])
   statusAnalise StatusAnalise @relation(fields: [statusAnaliseId], references: [id])
-  SpedAnalise   SpedAnalise[]
+
+  AnalysisResult AnalysisResult[]
+}
+
+
+enum AnalysisDataType {
+  string
+  int
+  decimal
+  boolean
+  date
+  datetime
+}
+
+
+enum AnalysisGranularity {
+  timestamp
+  day
+  month
+}
+
+
+model AnalysisField {
+  id             Int               @id @default(autoincrement())
+  analysisTypeId Int
+  key            String
+  label          String
+  dataType       AnalysisDataType
+  nullable       Boolean           @default(false)
+  order          Int               @default(0)
+
+  analysisType   AnalysisType      @relation(fields: [analysisTypeId], references: [id])
+
+  @@unique([analysisTypeId, key], name: "analysisTypeId_key")
+}
+
+
+model AnalysisResult {
+  id             BigInt   @id @default(autoincrement())
+  analysisTypeId Int
+  storeId        Int?
+  bucket         DateTime
+  granularity    AnalysisGranularity
+  data           Json
+  sourceStart    DateTime?
+  sourceEnd      DateTime?
+  computedAt     DateTime @default(now())
+  checksum       String?
+
+  // 🔽 novo (link direto com o arquivo SPED)
+  arquivoAnaliseId Int?
+  arquivoAnalise   ArquivoAnalise? @relation(fields: [arquivoAnaliseId], references: [id])
+
+  analysisType   AnalysisType @relation(fields: [analysisTypeId], references: [id])
+  store          Store?       @relation(fields: [storeId], references: [id])
+
+  @@unique([analysisTypeId, storeId, bucket, granularity], name: "analysisTypeId_storeId_bucket_granularity")
+  @@index([storeId, bucket, granularity])
+  @@index([analysisTypeId, bucket, granularity])
+  @@index([arquivoAnaliseId]) // 🔽 para consultas por arquivo
 }

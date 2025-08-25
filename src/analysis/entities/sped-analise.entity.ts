@@ -1,5 +1,4 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { SpedAnalise } from "@prisma/client";
 import { JsonValue } from "@prisma/client/runtime/library";
 
 class AnalysisTypeResponse {
@@ -13,7 +12,7 @@ class AnalysisTypeResponse {
     groupName: string
 }
 
-export class SpedAnaliseEntity implements SpedAnalise {
+export class SpedAnaliseEntity {
     @ApiProperty()
     id: number;
 

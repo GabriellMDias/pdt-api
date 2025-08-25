@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ResumoMesEntity {
+export class DiferencaDiarioEntity {
   @ApiProperty({ type: String, description: 'Dia (date) agregado' })
   data!: string; // ISO date (YYYY-MM-DD)
 

@@ -2,7 +2,7 @@ import { Transform } from 'class-transformer';
 import { ArrayNotEmpty, IsArray, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ResumoMesQueryDto {
+export class DiferencaNoDiaQueryDto {
   @ApiProperty({ type: [Number], example: [5, 7], description: 'Lista de IDs de loja' })
   @IsArray()
   @ArrayNotEmpty()
@@ -13,11 +13,7 @@ export class ResumoMesQueryDto {
   })
   lojas!: number[];
 
-  @ApiProperty({ example: '2025-07-29', description: 'Data inicial (YYYY-MM-DD)' })
+  @ApiProperty({ example: '2025-07-29', description: 'Data (YYYY-MM-DD)' })
   @IsDateString()
-  dataInicial!: string;
-
-  @ApiProperty({ example: '2025-07-31', description: 'Data final (YYYY-MM-DD)' })
-  @IsDateString()
-  dataFinal!: string;
+  data!: string;
 }

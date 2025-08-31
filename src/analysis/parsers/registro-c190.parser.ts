@@ -3,10 +3,6 @@ import { RegistroC190 } from './types';
 
 export function parseRegistroC190(linha: string, chave: string): RegistroC190 {
   const c = linha.split('|');
-
-  if(chave === '35250760037058000301550010036678971665799538'){
-    console.log(`${chave} - ${parseDecimal(c[7])}`)
-  }
   
 
   return {

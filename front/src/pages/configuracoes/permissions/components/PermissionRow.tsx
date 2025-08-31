@@ -1,4 +1,3 @@
-import React from "react";
 import { rowStyle } from "../styles";
 import Chip from "./Chip";
 import Badge from "./Badge";
@@ -19,7 +18,7 @@ type Props = {
 };
 
 export default function PermissionRow({
-  catalogItem: p, value: state, original, stores,
+  catalogItem: p, value: state, stores,
   onToggleGlobal, onToggleStore, onSetAllStores, changed
 }: Props) {
   return (

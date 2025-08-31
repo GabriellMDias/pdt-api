@@ -44,8 +44,8 @@ export type GridFormProps<T, TCreate, TUpdate> = {
   initialMode?: "grid" | "form";
   // ====== GATES DE PERMISSÃO (opcionais) ======
   canCreate?: boolean;                         // padrão true
-  canEdit?: (row: T | undefined) => boolean;   // padrão () => true
-  canDelete?: (row: T | undefined) => boolean; // padrão () => true
+  canEdit?: boolean | ((row: T | undefined) => boolean);   // padrão () => true
+  canDelete?: boolean | ((row: T | undefined) => boolean); // padrão () => true
 };
 
 export function GridForm<T, TCreate = any, TUpdate = any>({
@@ -75,9 +75,11 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   const [confirmYes, setConfirmYes] = useState<() => void>(() => () => {});
 
   // ====== RESOLUÇÃO DOS GATES ======
-  const _canCreate = typeof canCreate === "boolean" ? canCreate : true;
-  const _canEdit   = (row?: T) => (canEdit ? canEdit(row) : true);
-  const _canDelete = (row?: T) => (canDelete ? canDelete(row) : true);
+  const _canCreate = canCreate ?? true;
+  const _canEdit   = (row?: T) =>
+    typeof canEdit === "function" ? canEdit(row) : (canEdit ?? true);
+  const _canDelete = (row?: T) =>
+    typeof canDelete === "function" ? canDelete(row) : (canDelete ?? true);
 
   // Evita race condition em buscas rápidas
   const abortRef = useRef<AbortController | null>(null);

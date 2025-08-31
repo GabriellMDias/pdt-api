@@ -29,6 +29,14 @@ export function createC100C170Comparison({
     code,
     description,
     groupName,
+    fields: [
+      { name: 'chave',  description: 'Chave',     order: 0, dataType: 'string' },
+      { name: 'numDoc', description: 'Num Doc',   order: 1, dataType: 'string' },
+      { name: 'codPart',description: 'Cod Part', order: 2, dataType: 'string' },
+      { name: `${label}_C100`,       description: `${label} C100`,       order: 3, dataType: 'decimal' },
+      { name: `soma_${label}_C170`, description: `Soma ${label} C170`, order: 4, dataType: 'decimal' },
+      { name: 'diferenca',            description: 'Diferença',          order: 5, dataType: 'decimal' },
+    ],
 
     /**
      * Executa a análise sobre as notas fornecidas.

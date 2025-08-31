@@ -4,6 +4,14 @@ export const CfopMPTipoItem0102 = {
   code: 'CfopMPTipoItem0102',
   description: 'Materia-Prima - CFOP 1.101, 1.401, 2.101, 2.401 x Tipo Item Diferente 01/ 02',
   groupName: 'C170',
+  fields: [
+    { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
+    { name: 'numDoc', description: 'Num Doc', order: 1, dataType: 'string' },
+    { name: 'codItem', description: 'Cod. Item', order: 2, dataType: 'string' },
+    { name: 'cfop', description: 'CFOP', order: 3, dataType: 'string' },
+    { name: 'tipoItem', description: 'Tipo Item', order: 4, dataType: 'string' },
+    { name: 'erro', description: 'Erro', order: 5, dataType: 'string' }
+  ],
 
   execute(
     notas: Map<string, { c100: any; itens: RegistroC170[] }>,

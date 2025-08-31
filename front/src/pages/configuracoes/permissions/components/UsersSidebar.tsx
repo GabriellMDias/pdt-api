@@ -1,4 +1,3 @@
-import React from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Badge from "./Badge";

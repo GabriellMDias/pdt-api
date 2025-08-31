@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { StoresModule } from './stores/stores.module';
@@ -18,12 +19,14 @@ import { PgModule } from './pg/pg.module';
 import { DreModule } from './dre/dre.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { AnalysisModule } from './analysis/analysis.module';
+import { DbScriptsModule } from './db-scripts/db-scripts.module'; 
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule],
+    ScheduleModule.forRoot(),
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule],
   controllers: [AppController],
   providers: [AppService],
 })

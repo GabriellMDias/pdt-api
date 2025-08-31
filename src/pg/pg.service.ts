@@ -1,67 +1,111 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Client, types } from 'pg'
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Pool,
+  PoolClient,
+  QueryResult,
+  QueryArrayResult,
+  QueryResultRow,
+  QueryConfig,
+  QueryArrayConfig,
+  QueryConfigValues,
+  Submittable,
+  types,
+} from 'pg';
 
-// pg parser config
-types.setTypeParser(1700, (val: string) => parseFloat(val)) // NUMERIC
-types.setTypeParser(23, (val: string) => parseInt(val, 10)); //INTEGER
-types.setTypeParser(20, (val: string) => parseInt(val, 10)); //INTEGER
+// Parsers (mantidos iguais)
+types.setTypeParser(1700, (val: string) => parseFloat(val)); // NUMERIC
+types.setTypeParser(23, (val: string) => parseInt(val, 10)); // INTEGER
+types.setTypeParser(20, (val: string) => parseInt(val, 10)); // BIGINT
 
 @Injectable()
-export class PgService extends Client implements OnModuleInit, OnModuleDestroy {
-    constructor(){
-        super({
-            user: process.env.PG_DATABASE_USER,
-            host: process.env.PG_DATABASE_HOST,
-            database: process.env.PG_DATABASE_DATABASE,
-            password: process.env.PG_DATABASE_PASSWORD,
-            port: parseInt(process.env.PG_DATABASE_PORT || "3333"),
-            application_name: process.env.PG_APPLICATION_NAME,
-        })
-    }
+export class PgService implements OnModuleDestroy, OnModuleInit {
+  readonly pool: Pool;
 
-    /**
-     * Executes a transaction, ensuring that all operations are committed or rolled back as a single atomic action.
-     *
-     * @template T - The expected return type from the transaction callback.
-     * @param callback - A function containing the database operations to be performed in the transaction.
-     *                   It receives a `PgService` client for query execution.
-     * @returns {Promise<T>} - The result of the transaction if successful.
-     * 
-     * @example
-     * async processTransactionExample() {
-     *   return this.pg.transaction(async (client) => {
-     *     // First operation in the transaction
-     *     await client.query('INSERT INTO sales (store_id, amount) VALUES ($1, $2)', [1, 100]);
-     *     
-     *     // Second operation in the transaction
-     *     const result = await client.query('SELECT * FROM sales WHERE store_id = $1', [1]);
-     *     
-     *     return result.rows;
-     *   });
-     * }
-     */
-    async transaction<T>(callback: (client: PgService) => Promise<T>): Promise<T> {
-      // Iniciar a transação
-      await this.query('BEGIN');
+  constructor() {
+    this.pool = new Pool({
+      user: process.env.PG_DATABASE_USER,
+      host: process.env.PG_DATABASE_HOST,
+      database: process.env.PG_DATABASE_DATABASE,
+      password: process.env.PG_DATABASE_PASSWORD,
+      port: parseInt(process.env.PG_DATABASE_PORT || '3333', 10),
+      application_name: process.env.PG_APPLICATION_NAME,
+    });
+  }
+
+  async onModuleInit() {
+    const c = await this.pool.connect();
+    c.release();
+  }
+
+  async onModuleDestroy() {
+    await this.pool.end();
+  }
+
+  // ================= Back-compat: overloads iguais ao Client =================
+  query<T extends Submittable>(queryStream: T): T;
+  // Array mode
+  query<R extends any[] = any[], I = any[]>(
+    queryConfig: QueryArrayConfig<I>,
+    values?: QueryConfigValues<I>,
+  ): Promise<QueryArrayResult<R>>;
+  // Config object
+  query<R extends QueryResultRow = any, I = any>(
+    queryConfig: QueryConfig<I>,
+  ): Promise<QueryResult<R>>;
+  // Text or config + values (Promise)
+  query<R extends QueryResultRow = any, I = any[]>(
+    queryTextOrConfig: string | QueryConfig<I>,
+    values?: QueryConfigValues<I>,
+  ): Promise<QueryResult<R>>;
+  // Callbacks (se houver algum call-site assim no seu projeto)
+  query<R extends any[] = any[], I = any[]>(
+    queryConfig: QueryArrayConfig<I>,
+    callback: (err: Error, result: QueryArrayResult<R>) => void,
+  ): void;
+  query<R extends QueryResultRow = any, I = any[]>(
+    queryTextOrConfig: string | QueryConfig<I>,
+    callback: (err: Error, result: QueryResult<R>) => void,
+  ): void;
+  query<R extends QueryResultRow = any, I = any[]>(
+    queryText: string,
+    values: QueryConfigValues<I>,
+    callback: (err: Error, result: QueryResult<R>) => void,
+  ): void;
+
+  // Implementação única que delega para o pool
+  query(queryTextOrConfig: any, valuesOrCallback?: any, maybeCallback?: any): any {
+    return (this.pool as any).query(queryTextOrConfig, valuesOrCallback, maybeCallback);
+  }
+  // =========================================================================
+
+  /**
+   * Usa um client dedicado do pool durante o callback.
+   * Útil para ajustes de sessão (SET, search_path) ou múltiplas queries.
+   */
+  async withClient<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+    const c = await this.pool.connect();
+    try {
+      return await fn(c);
+    } finally {
+      c.release();
+    }
+  }
+
+  /**
+   * Executa um bloco transacional com BEGIN/COMMIT/ROLLBACK.
+   * O callback recebe o PoolClient da transação.
+   */
+  async transaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+    return this.withClient(async (c) => {
+      await c.query('BEGIN');
       try {
-        // Executar o callback passando o próprio PgService
-        const result = await callback(this);
-  
-        // Confirmar a transação
-        await this.query('COMMIT');
+        const result = await fn(c);
+        await c.query('COMMIT');
         return result;
-      } catch (error) {
-        // Reverter a transação em caso de erro
-        await this.query('ROLLBACK');
-        throw error;
+      } catch (e) {
+        try { await c.query('ROLLBACK'); } catch {}
+        throw e;
       }
-    }
-
-    async onModuleInit() {
-        await this.connect();
-      }
-    
-    async onModuleDestroy() {
-      await this.end();
-    }
+    });
+  }
 }

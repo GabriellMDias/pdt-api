@@ -4,6 +4,14 @@ export const CfopBonifComCredICMSCST0220 = {
   code: 'CFOPBonif_comCredICMSCST0220',
   description: 'Entrada de Bonificacao com Credito de ICMS - CST Diferente de x00 ou x20',
   groupName: 'C170',
+  fields: [
+    { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
+    { name: 'numDoc', description: 'Num Doc', order: 1, dataType: 'string' },
+    { name: 'codItem', description: 'Cod. Item', order: 2, dataType: 'string' },
+    { name: 'cfop', description: 'CFOP', order: 3, dataType: 'string' },
+    { name: 'cstICMS', description: 'CST ICMS', order: 4, dataType: 'string' },
+    { name: 'erro', description: 'Erro', order: 5, dataType: 'string' }
+  ],
 
   execute(
     notas: Map<string, { c100: any; itens: RegistroC170[] }>,

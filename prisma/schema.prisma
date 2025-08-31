@@ -125,9 +125,9 @@ model PreExpense {
 }
 
 model Permission {
-  id    Int              @id @default(autoincrement())
-  code  String           @unique // Ex: "users:consultar"
-  label String // Ex: "Consultar usuários"
+  id                 Int     @id @default(autoincrement())
+  code               String  @unique // Ex: "users:consultar"
+  label              String // Ex: "Consultar usuários"
   useStorePermission Boolean @default(false)
 
   users UserPermission[]
@@ -154,8 +154,8 @@ model AnalysisType {
   active      Boolean @default(true)
   groupName   String  @default("")
 
-  fields   AnalysisField[]
-  results  AnalysisResult[]
+  fields  AnalysisField[]
+  results AnalysisResult[]
 }
 
 model StatusAnalise {
@@ -180,7 +180,6 @@ model ArquivoAnalise {
   AnalysisResult AnalysisResult[]
 }
 
-
 enum AnalysisDataType {
   string
   int
@@ -190,31 +189,29 @@ enum AnalysisDataType {
   datetime
 }
 
-
 enum AnalysisGranularity {
   timestamp
   day
   month
 }
 
-
 model AnalysisField {
-  id             Int               @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   analysisTypeId Int
   key            String
   label          String
   dataType       AnalysisDataType
-  nullable       Boolean           @default(false)
-  order          Int               @default(0)
+  isArray        Boolean          @default(false)
+  nullable       Boolean          @default(false)
+  order          Int              @default(0)
 
-  analysisType   AnalysisType      @relation(fields: [analysisTypeId], references: [id])
+  analysisType AnalysisType @relation(fields: [analysisTypeId], references: [id])
 
   @@unique([analysisTypeId, key], name: "analysisTypeId_key")
 }
 
-
 model AnalysisResult {
-  id             BigInt   @id @default(autoincrement())
+  id             BigInt              @id @default(autoincrement())
   analysisTypeId Int
   storeId        Int?
   bucket         DateTime
@@ -222,18 +219,66 @@ model AnalysisResult {
   data           Json
   sourceStart    DateTime?
   sourceEnd      DateTime?
-  computedAt     DateTime @default(now())
+  computedAt     DateTime            @default(now())
   checksum       String?
 
   // 🔽 novo (link direto com o arquivo SPED)
   arquivoAnaliseId Int?
   arquivoAnalise   ArquivoAnalise? @relation(fields: [arquivoAnaliseId], references: [id])
 
-  analysisType   AnalysisType @relation(fields: [analysisTypeId], references: [id])
-  store          Store?       @relation(fields: [storeId], references: [id])
+  analysisType AnalysisType @relation(fields: [analysisTypeId], references: [id])
+  store        Store?       @relation(fields: [storeId], references: [id])
 
-  @@unique([analysisTypeId, storeId, bucket, granularity], name: "analysisTypeId_storeId_bucket_granularity")
   @@index([storeId, bucket, granularity])
   @@index([analysisTypeId, bucket, granularity])
   @@index([arquivoAnaliseId]) // 🔽 para consultas por arquivo
+}
+
+model DbScript {
+  id                Int                @id @default(autoincrement())
+  name              String
+  description       String?
+  sqlText           String
+  enabled           Boolean            @default(true)
+  scheduleType      ScriptScheduleType @default(CRON)
+  cronExpression    String?
+  intervalSeconds   Int?
+  timezone          String             @default("America/Sao_Paulo")
+  timeoutSec        Int                @default(600)
+  wrapInTransaction Boolean            @default(false)
+  searchPath        String?
+  lastStatus        ScriptRunStatus?
+  latestRunAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  runs              DbScriptRun[]
+}
+
+model DbScriptRun {
+  id            Int             @id @default(autoincrement())
+  scriptId      Int
+  script        DbScript        @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  startedAt     DateTime        @default(now())
+  finishedAt    DateTime?
+  status        ScriptRunStatus
+  rowsAffected  Int?
+  error         String?
+  durationMs    Int?
+  triggeredBy   String? // 'SCHEDULE' | 'MANUAL' | 'RETRY'
+  appInstanceId String?
+
+  @@index([scriptId])
+}
+
+enum ScriptScheduleType {
+  CRON
+  INTERVAL
+  DAILY_AT
+  WEEKLY_AT
+}
+
+enum ScriptRunStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
 }

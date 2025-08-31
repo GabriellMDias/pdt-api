@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import MultiSelect, { type Option } from './MultiSelect';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -31,6 +32,16 @@ type Props = {
   /** Filtrar somente lojas ativas */
   onlyActive?: boolean;
   className?: string;
+
+  /** ---- URL Sync (opcional) ---- */
+  /** Habilita/desabilita sincronização com a URL */
+  syncUrl?: boolean;
+  /** Nome do parâmetro para escrever (ex.: "storeIds") */
+  urlParamKey?: string;
+  /** Chaves legadas aceitas para leitura inicial (ex.: ["lojas"]) */
+  legacyUrlKeys?: string[];
+  /** Usa replace ao atualizar a URL (true = não polui histórico) */
+  replaceHistory?: boolean;
 };
 
 const API_BASE = '';
@@ -44,6 +55,8 @@ function authHeaders(token?: string | null): Record<string, string> {
 
 /**
  * Input reutilizável para seleção de lojas com respeito às permissões por loja.
+ * Admin (userId === 0) tem acesso a todas as lojas, independentemente de permissão.
+ * Opcionalmente, sincroniza seleção com URL (storeIds por padrão; lê "lojas" como legado).
  */
 export default function StoreMultiSelect({
   permissionCode,
@@ -53,13 +66,60 @@ export default function StoreMultiSelect({
   autoSelectIfSingle = true,
   onlyActive = false,
   className,
+
+  // URL sync (opcional)
+  syncUrl = true,
+  urlParamKey = 'storeIds',
+  legacyUrlKeys = ['lojas'],
+  replaceHistory = true,
 }: Props) {
-  const { token, permissions } = useAuth();
+  const { token, permissions, userId } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Busca lojas
+  const [sp, setSearchParams] = useSearchParams();
+  const isAdmin = userId === 0 || String(userId) === '0';
+  const perms = permissions as Permission[] | undefined;
+  const permsReady = perms !== undefined && perms !== null;
+
+  // flags/refs para URL sync
+  const didInitFromUrl = useRef(false);
+  const lastUrlValueRef = useRef<string | null>(null);
+
+  // ===== 1) Hidrata imediatamente a partir da URL (sem depender de lojas/permissões) =====
+  useEffect(() => {
+    if (!syncUrl) return;
+    if (didInitFromUrl.current) return;
+
+    const raw =
+      sp.get(urlParamKey) ||
+      legacyUrlKeys.map((k) => sp.get(k) || '').find(Boolean) ||
+      '';
+
+    const ids = raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (ids.length && value.length === 0) {
+      onChange(ids); // entrega ao pai já no mount
+    }
+
+    // Normaliza a URL para a chave nova (se necessário)
+    if (raw) {
+      const qs = new URLSearchParams(sp);
+      qs.set(urlParamKey, ids.join(','));
+      for (const legacy of legacyUrlKeys) qs.delete(legacy);
+      setSearchParams(qs, { replace: true });
+      lastUrlValueRef.current = ids.join(',');
+    }
+
+    didInitFromUrl.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncUrl, sp, urlParamKey, legacyUrlKeys, onChange, value.length]);
+
+  // ===== 2) Carrega lojas =====
   useEffect(() => {
     const ac = new AbortController();
     setLoading(true);
@@ -77,38 +137,83 @@ export default function StoreMultiSelect({
     return () => ac.abort();
   }, [token]);
 
-  // Calcula lojas permitidas conforme permissão
+  // ===== 3) Calcula lojas permitidas conforme permissão (admin ignora restrições) =====
   const allowedIds: number[] | null = useMemo(() => {
-    const perm = (permissions as Permission[] | undefined)?.find((p) => p.code === permissionCode);
-    if (!perm) return [];                        // não possui a permissão -> nenhuma loja
-    if (!perm.useStorePermission) return null;   // sem restrição por loja
-    if (perm.global) return null;                // acesso global -> todas as lojas
+    if (isAdmin) return null;
+    if (!permsReady) return null; // ainda não sabemos, não restringe
+    const perm = perms?.find((p) => p.code === permissionCode);
+    if (!perm) return [];                      // não possui a permissão -> nenhuma loja
+    if (!perm.useStorePermission) return null; // sem restrição por loja
+    if (perm.global) return null;              // acesso global -> todas as lojas
     return Array.isArray(perm.stores) ? perm.stores : [];
-  }, [permissions, permissionCode]);
+  }, [perms, permsReady, permissionCode, isAdmin]);
 
-  // Aplica filtros (status e permissão)
+  // ===== 4) Aplica filtros (status e permissão) =====
   const filteredStores = useMemo(() => {
     const base = onlyActive ? stores.filter((s) => s.activeStatus) : stores;
-    if (allowedIds === null) return base; // sem restrição
+    if (allowedIds === null) return base; // sem restrição (admin/global/sem-perm)
     const set = new Set(allowedIds.map(String));
     return base.filter((s) => set.has(String(s.id)));
   }, [stores, onlyActive, allowedIds]);
 
-  // Normaliza seleção para não conter IDs não permitidos
+  // ===== 5) Normaliza seleção após dados prontos (mantém apenas válidos) =====
   useEffect(() => {
-    const allowedSet = new Set(filteredStores.map((s) => String(s.id)));
-    const normalized = value.filter((v) => allowedSet.has(String(v)));
-    if (normalized.length !== value.length) onChange(normalized);
-    // Auto-seleção quando só há 1 loja disponível
-    if (autoSelectIfSingle && normalized.length === 0 && filteredStores.length === 1) {
-      onChange([filteredStores[0].id]);
-    }
-  }, [filteredStores, value, onChange, autoSelectIfSingle]);
+    if (loading || !permsReady) return;
 
+    const allowedSet = new Set(filteredStores.map((s) => String(s.id)));
+    const normalized = value
+      .filter((v) => allowedSet.has(String(v)))
+      .map((v) => String(v));
+
+    const valueStr = value.map((v) => String(v));
+    const changed =
+      normalized.length !== valueStr.length ||
+      normalized.some((id, i) => id !== valueStr[i]);
+
+    if (changed) {
+      onChange(normalized);
+      return; // evita auto-select nesta passada
+    }
+
+    // Auto-seleção quando só há 1 loja disponível (e nada selecionado)
+    if (autoSelectIfSingle && normalized.length === 0 && filteredStores.length === 1) {
+      onChange([String(filteredStores[0].id)]);
+    }
+  }, [filteredStores, value, onChange, autoSelectIfSingle, loading, permsReady]);
+
+  // ===== 6) Escreve na URL quando a seleção muda (evita loops) =====
+  useEffect(() => {
+    if (!syncUrl) return;
+    if (!didInitFromUrl.current) return; // espera leitura inicial
+
+    const current = value.map(String).filter(Boolean).join(',');
+    const currentInUrl = sp.get(urlParamKey) || '';
+
+    // se já está igual, não mexe
+    if (current === currentInUrl) {
+      lastUrlValueRef.current = current;
+      return;
+    }
+    // se já escrevemos esse mesmo valor antes, evita ping-pong
+    if (lastUrlValueRef.current === current) return;
+
+    const qs = new URLSearchParams(sp);
+    if (current) qs.set(urlParamKey, current);
+    else qs.delete(urlParamKey);
+
+    // remove legadas
+    for (const legacy of legacyUrlKeys) qs.delete(legacy);
+
+    setSearchParams(qs, { replace: replaceHistory });
+    lastUrlValueRef.current = current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, sp, syncUrl, urlParamKey, legacyUrlKeys, replaceHistory]);
+
+  // ===== 7) Options para o MultiSelect =====
   const options: Option[] = useMemo(
     () =>
       filteredStores.map((s) => ({
-        value: s.id,
+        value: String(s.id), // padroniza como string
         label: `${s.description || s.storeName} (#${s.id})`,
       })),
     [filteredStores]
@@ -120,7 +225,7 @@ export default function StoreMultiSelect({
     <div className={className}>
       <MultiSelect
         options={options}
-        value={value}
+        value={value.map((v) => String(v))}
         onChange={onChange}
         placeholder={
           loading
@@ -137,9 +242,7 @@ export default function StoreMultiSelect({
         showSelectAll={options.length > 1}
         clearable
       />
-      {fetchError && (
-        <p className="mt-1 text-xs text-red-600">Erro: {fetchError}</p>
-      )}
+      {fetchError && <p className="mt-1 text-xs text-red-600">Erro: {fetchError}</p>}
     </div>
   );
 }

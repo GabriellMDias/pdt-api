@@ -19,6 +19,14 @@ export function createC100C190Comparison({
     code,
     description,
     groupName,
+    fields: [
+      { name: 'chave',  description: 'Chave',     order: 0, dataType: 'string' },
+      { name: 'numDoc', description: 'Num Doc',   order: 1, dataType: 'string' },
+      { name: 'codPart',description: 'Cod Part', order: 2, dataType: 'string' },
+      { name: `${label}_C100`,       description: `${label} C100`,       order: 3, dataType: 'decimal' },
+      { name: `soma_${label}_C190`, description: `Soma ${label} C190`, order: 4, dataType: 'decimal' },
+      { name: 'diferenca',            description: 'Diferença',          order: 5, dataType: 'decimal' },
+    ],
     execute(notas: Map<string, {c100: RegistroC100; itens: RegistroC170[]; resumosC190: RegistroC190[];}>) {
       const erros: any[] = [];
 

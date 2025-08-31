@@ -28,9 +28,6 @@ export class PermissionsGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const uid = Number(req.user?.id ?? req.user?.userId);
 
-    console.log(uid)
-
-
     // bypass admin ou token com '*'
     if (uid === 0 || req.user?.permissions?.includes?.('*')) return true;
 

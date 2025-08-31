@@ -11,9 +11,9 @@ export class DiferencaNoDiaQueryDto {
     if (typeof value === 'string') return value.split(',').map((v) => Number(v.trim())).filter((v) => !Number.isNaN(v));
     return [];
   })
-  lojas!: number[];
+  storeIds!: number[];
 
   @ApiProperty({ example: '2025-07-29', description: 'Data (YYYY-MM-DD)' })
   @IsDateString()
-  data!: string;
+  date!: string;
 }

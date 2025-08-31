@@ -10,24 +10,55 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AnalisesDisponiveis } from './analises-disponiveis';
 import { parseRegistroC190 } from './parsers/registro-c190.parser';
 
+type ListSpedArquivosArgs = {
+  lojas?: number[];
+  dataInicial?: string; // YYYY-MM-DD
+  dataFinal?: string;   // YYYY-MM-DD
+  page?: number;
+  pageSize?: number;
+};
+
 @Injectable()
 export class SpedService {
   constructor(private prisma: PrismaService) {}
 
   
-  // --- Helpers para integração com AnalysisResult ---
-  private async ensureAnalysisFields(analysisTypeId: number) {
-    const upsertField = async (key: string, label: string, dataType: any, order: number) => {
-      await this.prisma.analysisField.upsert({
-        where: { analysisTypeId_key: { analysisTypeId, key } },
-        create: { analysisTypeId, key, label, dataType, order },
-        update: { label, dataType, order },
-      });
+  
+
+  // Detecta AnalysisDataType com base no valor
+  private detectDataType(v: any): 'string' | 'int' | 'decimal' | 'boolean' | 'date' | 'datetime' {
+    if (v === null || v === undefined) return 'string';
+    if (typeof v === 'boolean') return 'boolean';
+    if (typeof v === 'number') return Number.isInteger(v) ? 'int' : 'decimal';
+    if (v instanceof Date) return (v.getUTCHours() || v.getUTCMinutes() || v.getUTCSeconds()) ? 'datetime' : 'date';
+    if (typeof v === 'string') {
+      const asNum = Number(v);
+      if (!Number.isNaN(asNum)) return Number.isInteger(asNum) ? 'int' : 'decimal';
+      const asDate = new Date(v);
+      if (!isNaN(asDate.getTime())) return (asDate.getUTCHours() || asDate.getUTCMinutes() || asDate.getUTCSeconds()) ? 'datetime' : 'date';
+    }
+    return 'string';
+  }
+
+  // Constrói definições de campos a partir dos erros (fallback se a análise não declarar fields)
+  private buildFieldDefsFromErrors(erros: any[]): Array<{ name: string; description: string; order: number; dataType: any }> {
+    const preferred = ['cfop','erro','chave','numDoc','codItem','tipoItem','cstICMS','codPart'];
+    const keys = new Set<string>();
+    for (const e of erros || []) for (const k of Object.keys(e || {})) keys.add(k);
+    const ordered = [
+      ...preferred.filter(k => keys.has(k)),
+      ...Array.from(keys).filter(k => !preferred.includes(k)).sort()
+    ];
+    const pickSample = (name: string) => {
+      for (const e of erros || []) if (e && name in e) return (e as any)[name];
+      return null;
     };
-    try {
-      await upsertField('totalNotas', 'Total de notas', 'int', 0);
-      await upsertField('notasComErro', 'Notas com erro', 'int', 1);
-    } catch {}
+    return ordered.map((name, i) => ({
+      name,
+      description: name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\s+/g, ' ').trim(),
+      order: i,
+      dataType: this.detectDataType(pickSample(name)),
+    }));
   }
 
   private firstDayOfMonthUTC(d: Date) {
@@ -154,41 +185,23 @@ export class SpedService {
           const storeId = arq?.storeId ?? null;
           const bucket = arq?.mesRef ? this.firstDayOfMonthUTC(new Date(arq.mesRef)) : new Date();
 
-          await this.ensureAnalysisFields(tipo.id);
-
-          await this.prisma.analysisResult.upsert({
-            where: {
-              analysisTypeId_storeId_bucket_granularity: {
-                analysisTypeId: tipo.id,
-                storeId: storeId,
-                bucket,
-                granularity: 'month',
-              },
-            },
-            create: {
+          const fieldDefs = (analise as any)?.fields && (analise as any).fields.length ? (analise as any).fields : this.buildFieldDefsFromErrors(erros);
+          
+          await this.prisma.analysisResult.create({
+            data: {
               analysisTypeId: tipo.id,
-              storeId,
-              bucket,
+              storeId,              // se aplicável
+              bucket, // 1º dia do mês 00:00Z
               granularity: 'month',
-              data: {
-                totalNotas: notas.size,
-                notasComErro: erros.length,
-                erros,
-              },
+              data: { fields: fieldDefs, errors: erros, summary: { totalNotas: notas.size, notasComErro: erros.length } },  // seu payload { fields, errors, summary }
               sourceStart: arq?.mesRef ? this.firstDayOfMonthUTC(new Date(arq.mesRef)) : null,
-              sourceEnd:   arq?.mesRef ? new Date(Date.UTC(new Date(arq.mesRef).getUTCFullYear(), new Date(arq.mesRef).getUTCMonth()+1, 0, 23,59,59)) : null,
-            },
-            update: {
-              data: {
-                totalNotas: notas.size,
-                notasComErro: erros.length,
-                erros,
-              },
-              computedAt: new Date(),
+              sourceEnd: arq?.mesRef ? new Date(Date.UTC(new Date(arq.mesRef).getUTCFullYear(), new Date(arq.mesRef).getUTCMonth()+1, 0, 23,59,59)) : null,
+              arquivoAnaliseId: arquivo.id,
             },
           });
         } catch {}
-// Adiciona ao resumo de resultados
+      
+        // Adiciona ao resumo de resultados
         resultados.push({
           tipo: analise.code,
           descricao: analise.description,
@@ -222,17 +235,46 @@ export class SpedService {
     }
   }
 
-  getAllArquivoAnalise() {
-    return this.prisma.arquivoAnalise.findMany(
-      {
+  async getArquivoAnalise(args: ListSpedArquivosArgs) {
+    const { lojas, dataInicial, dataFinal } = args;
+    const page = Math.max(1, args.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, args.pageSize ?? 20));
+
+    // monta filtro
+    const where = {
+      ...(lojas && lojas.length ? { storeId: { in: lojas } } : {}),
+      ...(dataInicial || dataFinal
+        ? {
+            mesRef: {
+              gte: dataInicial ? new Date(`${dataInicial}T00:00:00.000Z`) : undefined,
+              lte: dataFinal ? new Date(`${dataFinal}T23:59:59.999Z`) : undefined,
+            },
+          }
+        : {}),
+    };
+
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.arquivoAnalise.count({ where }),
+      this.prisma.arquivoAnalise.findMany({
+        where,
+        orderBy: { dataImportacao: 'desc' },
         include: {
-                    user: {select: {name: true}}, 
-                    store: {select: {storeName: true}}, 
-                    statusAnalise: {select: {descricao: true}}
-                  },
-        orderBy: {dataImportacao: 'desc'}
-      }
-    )
+          user: { select: { name: true } },
+          store: { select: { storeName: true } },
+          statusAnalise: { select: { descricao: true } },
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
   }
 
   getSpedAnalise(arquivoAnaliseId: number) {

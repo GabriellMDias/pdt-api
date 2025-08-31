@@ -4,6 +4,14 @@ export const Cfop1551ComCredICMS = {
   code: 'CFOP1551_comCredICMS',
   description: 'Ativo Imobilizado - CFOP 1.551 - com Credito ICMS',
   groupName: 'C170',
+  fields: [
+    { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
+    { name: 'numDoc', description: 'Num Doc', order: 1, dataType: 'string' },
+    { name: 'codItem', description: 'Cod. Item', order: 2, dataType: 'string' },
+    { name: 'cfop', description: 'CFOP', order: 3, dataType: 'string' },
+    { name: 'valorICMS', description: 'Vlr ICMS', order: 4, dataType: 'int' },
+    { name: 'erro', description: 'Erro', order: 5, dataType: 'string' }
+  ],
 
   execute(
     notas: Map<string, { c100: any; itens: RegistroC170[] }>,

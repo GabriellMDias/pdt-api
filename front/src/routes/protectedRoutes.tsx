@@ -5,6 +5,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import KeyIcon from '@mui/icons-material/Key';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import SsidChartIcon from '@mui/icons-material/SsidChart';
+import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
 import HomePage from '../pages/HomePage';
 import UsersPage from '../pages/configuracoes/cadastro/users/UsersPage';
 import PermissionsPage from '../pages/configuracoes/permissions/PermissionsPage';
@@ -13,6 +14,8 @@ import RelatorioICMS from '../pages/fiscal/obrigacoes/RelatorioSPEDUpload';
 import RelatorioSPEDAnalises from '../pages/fiscal/obrigacoes/RelatorioSPEDAnalises';
 import AnaliseEstoquePage from '../pages/estoque/analise/AnaliseEstoquePage';
 import AnaliseEstoqueDiaPage from '../pages/estoque/analise/AnaliseEstoqueDiaPage';
+import DbScriptsPage from '../pages/configuracoes/db-scripts/DbScriptsPage';
+import DbScriptRunsPage from '../pages/configuracoes/db-scripts/DbScriptRunsPage';
 
 
 export interface ProtectedRoute {
@@ -100,6 +103,21 @@ export const protectedRoutes: ProtectedRoute[] = [
             requiredPermissions: ['users:consultar', 'users:incluir', 'users:editar', 'users:excluir'],
             showInSidebar: true,
           },
+          {
+            path: '/configuracoes/cadastro/db-scripts',
+            label: 'Açoes Agendadas',
+            showInSidebar: true,
+            icon: <ManageHistoryIcon />,
+            element: <DbScriptsPage />,
+            requiredPermissions: ['dbScripts:consultar']
+          },
+          {
+            path: '/configuracoes/db-scripts/:id/runs',
+            label: 'Log de Execuções',
+            showInSidebar: false,
+            element: <DbScriptRunsPage />,
+            requiredPermissions: ['dbScripts:consultar']
+          }
         ],
       },
       {

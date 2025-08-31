@@ -13,6 +13,7 @@ import { DiferencaNoDiaEntity } from './entities/diferenca-no-dia.entity';
 import { ArquivoAnaliseEntity } from './entities/arquivo-analise.entity';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { Permissions } from 'src/auth/decorators/permissions.decorator';
+import { ArquivoAnaliseQueryDto } from './dto/arquivo-analise.query.dto';
 
 @ApiTags('Analysis')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -24,20 +25,20 @@ export class AnalysisController {
     private readonly spedService: SpedService,
   ) {}
 
-  @Get('stock/diario')
+  @Get('stock/diferenca-producao-transformado/diario')
   @Permissions('stock-analysis:consultar')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOkResponse({ type: [DiferencaDiarioEntity] })
   async stockDiario(@Query() q: DiferencaDiarioQueryDto): Promise<DiferencaDiarioEntity[]> {
-    return this.stockService.diferencaProducaoTransformadoDiario(q.lojas, q.dataInicial, q.dataFinal);
+    return this.stockService.diferencaProducaoTransformadoDiario(q.storeIds, q.initialDate, q.finalDate);
   }
 
-  @Get('stock/no-dia')
+  @Get('stock/diferenca-producao-transformado/no-dia')
   @Permissions('stock-analysis:consultar')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOkResponse({ type: [DiferencaNoDiaEntity] })
   async stockNoDia(@Query() q: DiferencaNoDiaQueryDto): Promise<DiferencaNoDiaEntity[]> {
-    return this.stockService.diferencaProducaoTransformadoNoDia(q.lojas, q.data);
+    return this.stockService.diferencaProducaoTransformadoNoDia(q.storeIds, q.date);
   }
 
   @Post('sped/upload')
@@ -51,6 +52,7 @@ export class AnalysisController {
       }
     }),
   }))
+  
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -59,6 +61,7 @@ export class AnalysisController {
       required: ['file'],
     },
   })
+
   async uploadSped(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user?.id ?? 0;
     return this.spedService.processarArquivo(file.path, file.filename, userId);
@@ -67,8 +70,18 @@ export class AnalysisController {
   @Get('sped/arquivo')
   @Permissions('sped:consultarRelatorioSPED')
   @ApiOkResponse({ type: ArquivoAnaliseEntity, isArray: true })
-  async listArquivos() {
-    return this.spedService.getAllArquivoAnalise();
+  async listArquivos(@Query() q: ArquivoAnaliseQueryDto) {
+    const lojas = q.storeIds
+      ? q.storeIds.split(',').map((s) => parseInt(s, 10)).filter((n) => !Number.isNaN(n))
+      : undefined;
+
+    return this.spedService.getArquivoAnalise({
+      lojas,
+      dataInicial: q.initialDate,
+      dataFinal: q.finalDate,
+      page: q.page,
+      pageSize: q.pageSize,
+    });
   }
 
   @Get('sped/by-file/:arquivoAnaliseId')

@@ -11,6 +11,12 @@ export class StockAnalysisService {
     return new Date(dateISO + 'T00:00:00.000Z');
   }
 
+  private fmtDate(d: Date | string | null | undefined): string {
+    if (!d) return '';
+    if (d instanceof Date) return d.toISOString().slice(0, 10); // YYYY-MM-DD
+    return String(d).slice(0, 10);
+  }
+
   private isPastDay(dateISO: string) {
     const now = new Date();
     const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -89,8 +95,9 @@ export class StockAnalysisService {
     // compute and cache missing (one store/day)
     for (const item of missing) {
       const rows: any[] = await this.computeDailyFromPg([item.storeId], item.day, item.day);
-      console.log(rows)
-      const dataRow = rows.find((r) => r?.data?.startsWith(item.day)) ?? rows[0] ?? { custo_total_anterior: 0, custo_total_final: 0, dif_custo_total: 0 };
+      const dataRow = rows.find((r: any) => this.fmtDate(r?.data) === item.day)
+              ?? rows[0]
+              ?? { custo_total_anterior: 0, custo_total_final: 0, dif_custo_total: 0 };
       await this.prisma.analysisResult.create({
         data: {
           analysisTypeId: typeId,

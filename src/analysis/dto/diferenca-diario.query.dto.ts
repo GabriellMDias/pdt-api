@@ -11,13 +11,13 @@ export class DiferencaDiarioQueryDto {
     if (typeof value === 'string') return value.split(',').map((v) => Number(v.trim())).filter((v) => !Number.isNaN(v));
     return [];
   })
-  lojas!: number[];
+  storeIds!: number[];
 
   @ApiProperty({ example: '2025-07-29', description: 'Data inicial (YYYY-MM-DD)' })
   @IsDateString()
-  dataInicial!: string;
+  initialDate!: string;
 
   @ApiProperty({ example: '2025-07-31', description: 'Data final (YYYY-MM-DD)' })
   @IsDateString()
-  dataFinal!: string;
+  finalDate!: string;
 }

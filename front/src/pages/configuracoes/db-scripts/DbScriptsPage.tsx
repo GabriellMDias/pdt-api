@@ -9,8 +9,12 @@ import { useDbScriptsCrud } from "./hooks/useDbScriptsCrud";
 import type { CreateDbScriptDto, DbScript, UpdateDbScriptDto } from "./types";
 import DbScriptForm from "./components/DbScriptForm";
 import { scheduleToText } from "./helpers";
+import { hasPermission } from "../cadastro/users/utils/permission";
+import type { PermissionBag } from "../cadastro/users/types";
+
 export default function DbScriptsPage() {
   const { token, permissions, userId } = useAuth();
+  const perms = useMemo(() => (permissions ?? []) as PermissionBag, [permissions]);
   const isAdmin = userId === 0;
 
   const { fetchAll, createItem, updateItem, deleteItem } = useDbScriptsCrud(token);
@@ -23,7 +27,10 @@ export default function DbScriptsPage() {
   ], []);
 
   // Permissions helpers
-  const can = (code: string) => isAdmin || !!permissions?.some(p => p.code === code);
+  const canCreate = isAdmin || hasPermission(perms, "dbScripts:incluir");
+  const canEdit   = isAdmin ? (() => true) : (() => hasPermission(perms, "dbScripts:editar"));
+  // Admin NÃO pode excluir (regra mantida)
+  const canDelete = isAdmin ? (() => false) : (() => hasPermission(perms, "dbScripts:excluir"));
 
   const Grid = (
     <GridForm<DbScript, CreateDbScriptDto, UpdateDbScriptDto>
@@ -35,9 +42,9 @@ export default function DbScriptsPage() {
       updateItem={updateItem}
       deleteItem={deleteItem}
       renderForm={(props) => <DbScriptForm {...props} />}
-      canCreate={can("dbScripts:incluir")}
-      canEdit={can("dbScripts:editar")}
-      canDelete={can("dbScripts:excluir")}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
     />
   );
 

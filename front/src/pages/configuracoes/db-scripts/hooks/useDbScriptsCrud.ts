@@ -1,7 +1,7 @@
 // src/pages/configuracoes/db-scripts/hooks/useDbScriptsCrud.ts
 import { useCallback } from "react";
 import { dbScriptsApi } from "../api";
-import type { CreateDbScriptDto, DbScript, UpdateDbScriptDto } from "../types";
+import type { CreateDbScriptDto, UpdateDbScriptDto } from "../types";
 import type { Id } from "../../../../components/crud/GridForm";
 
 export function useDbScriptsCrud(token?: string | null) {

@@ -266,6 +266,7 @@ model DbScriptRun {
   durationMs    Int?
   triggeredBy   String? // 'SCHEDULE' | 'MANUAL' | 'RETRY'
   appInstanceId String?
+  log           String?          @db.Text
 
   @@index([scriptId])
 }

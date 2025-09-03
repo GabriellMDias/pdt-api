@@ -36,8 +36,12 @@ export default function DbScriptForm({ initial, onCancel, onSubmit, submitting, 
     e.preventDefault();
     if (!canSubmitLocal() || !maySubmit) return;
 
-    let payload: any = {
-      name, description, sqlText, enabled, wrapInTransaction,
+    const payload: any = {
+      name, 
+      description, 
+      sqlText, 
+      enabled, 
+      wrapInTransaction,
       searchPath: searchPath || undefined,
       timeoutSec,
       scheduleType,

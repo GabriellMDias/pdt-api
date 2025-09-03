@@ -17,6 +17,7 @@ import { DbScriptEntity } from './entities/db-script.entity';
 import { DbScriptRunEntity } from './entities/db-script-run.entity';
 import { DbScriptRunPaginatedEntity } from './entities/paginated-runs.entity';
 import { OkResponseDto } from './dto/ok-response.dto';
+import { ScriptRunStatus } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
@@ -50,8 +51,16 @@ export class DbScriptsController {
   @Permissions('dbScripts:consultar')
   @ApiOperation({ summary: 'Listar execuções (runs) de um script' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (1-based)' })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number, description: 'Itens por página' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  @ApiQuery({ name: 'initialDate', required: false, type: String, description: 'YYYY-MM-DD (>= startedAt)' })
+  @ApiQuery({ name: 'finalDate', required: false, type: String, description: 'YYYY-MM-DD (<= startedAt)' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: Object.values(ScriptRunStatus), // usa o enum real do Prisma no Swagger
+    description: 'Status (case-insensitive)',
+  })
   @ApiOkResponse({
     schema: {
       oneOf: [
@@ -64,10 +73,18 @@ export class DbScriptsController {
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('initialDate') initialDate?: string,
+    @Query('finalDate') finalDate?: string,
+    @Query('status') status?: string,
   ) {
     const p = page ? parseInt(page, 10) : undefined;
     const ps = pageSize ? parseInt(pageSize, 10) : undefined;
-    return this.service.listRuns(id, p, ps);
+
+    return this.service.listRuns(id, p, ps, {
+      initialDate,
+      finalDate,
+      status,
+    });
   }
 
   @Post()
@@ -124,14 +141,44 @@ export class DbScriptsController {
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ type: DbScriptEntity })
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDbScriptDto) {
-    const data: any = { ...dto };
-    if (dto.scheduleType) {
+    // Comece só com campos realmente persistidos
+    const data: any = {};
+
+    // Campos comuns (persistidos)
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.sqlText !== undefined) data.sqlText = dto.sqlText;
+    if (dto.enabled !== undefined) data.enabled = dto.enabled;
+    if (dto.wrapInTransaction !== undefined) data.wrapInTransaction = dto.wrapInTransaction;
+    if (dto.searchPath !== undefined) data.searchPath = dto.searchPath;
+    if (dto.timeoutSec !== undefined) data.timeoutSec = dto.timeoutSec;
+
+    // Se veio qualquer forma "amigável" de agendamento, converta para persistência
+    const hasFriendlySchedule =
+      dto.scheduleType !== undefined || dto.cron !== undefined || dto.interval !== undefined ||
+      dto.dailyAt !== undefined || dto.weeklyAt !== undefined;
+
+    if (hasFriendlySchedule) {
       const p = toPersistence(mapDtoToSchedule(dto as any));
-      data.scheduleType = p.scheduleType;
-      data.cronExpression = p.cronExpression ?? null;
+      data.scheduleType    = p.scheduleType;
+      data.cronExpression  = p.cronExpression ?? null;
       data.intervalSeconds = p.intervalSeconds ?? null;
-      data.timezone = p.timezone ?? 'America/Sao_Paulo';
+      data.timezone        = p.timezone ?? 'America/Sao_Paulo';
+    } else {
+      // Caso o front envie direto os campos persistidos, aceite também
+      if ((dto as any).scheduleType !== undefined) data.scheduleType = (dto as any).scheduleType;
+      if ((dto as any).cronExpression !== undefined) data.cronExpression = (dto as any).cronExpression;
+      if ((dto as any).intervalSeconds !== undefined) data.intervalSeconds = (dto as any).intervalSeconds;
+      if ((dto as any).timezone !== undefined) data.timezone = (dto as any).timezone;
     }
+
+    // IMPORTANTE: nunca envie os helpers pro Prisma
+    // (só por segurança, caso mude algo acima no futuro)
+    delete (data as any).cron;
+    delete (data as any).interval;
+    delete (data as any).dailyAt;
+    delete (data as any).weeklyAt;
+
     return this.service.update(id, data);
   }
 

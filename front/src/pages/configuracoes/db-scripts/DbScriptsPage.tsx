@@ -1,7 +1,7 @@
 // src/pages/configuracoes/db-scripts/DbScriptsPage.tsx
 import { useMemo } from "react";
 import Layout from "../../../components/Layout";
-import { GridForm, type Column, type Id } from "../../../components/crud/GridForm";
+import { GridForm, type Column } from "../../../components/crud/GridForm";
 import PermissionGate from "../../../components/PermissionGate";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -27,7 +27,7 @@ export default function DbScriptsPage() {
 
   const Grid = (
     <GridForm<DbScript, CreateDbScriptDto, UpdateDbScriptDto>
-      title="DB Scripts"
+      title=""
       idOf={(row) => row.id}
       columns={columns}
       fetchAll={async () => fetchAll()}
@@ -38,12 +38,11 @@ export default function DbScriptsPage() {
       canCreate={can("dbScripts:incluir")}
       canEdit={can("dbScripts:editar")}
       canDelete={can("dbScripts:excluir")}
-      mayToggleButton
     />
   );
 
   return (
-    <Layout title="DB Scripts">
+    <Layout title="Ações agendadas">
       {isAdmin ? (
         Grid
       ) : (

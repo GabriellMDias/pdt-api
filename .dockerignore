@@ -1,0 +1,22 @@
+# Node / build
+node_modules
+front/node_modules
+dist
+front/dist
+
+# VCS
+.git
+.gitignore
+.github
+
+# Logs / testes / cache
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage
+.cache
+
+# Outros
+*.swp
+.DS_Store
+.env

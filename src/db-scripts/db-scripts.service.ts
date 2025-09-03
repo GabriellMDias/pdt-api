@@ -5,6 +5,12 @@ import { Prisma, DbScript, ScriptRunStatus, ScriptScheduleType } from '@prisma/c
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PgService } from 'src/pg/pg.service';
 
+type RunFilters = {
+  initialDate?: string; // "YYYY-MM-DD"
+  finalDate?: string;   // "YYYY-MM-DD"
+  status?: 'SUCCESS' | 'ERROR' | 'RUNNING' | 'ALL' | string | undefined;
+};
+
 const LOCK_NS = 763_812; // namespace inteiro para o pg_advisory_lock
 
 @Injectable()
@@ -49,6 +55,51 @@ export class DbScriptsService implements OnApplicationBootstrap {
 
   private jobName(id: number) {
     return `dbscript:${id}`;
+  }
+
+  private parseYmdStart(s?: string): Date | undefined {
+    if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return undefined;
+    const d = new Date(`${s}T00:00:00.000Z`);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+
+  private nextDayUTC(d: Date): Date {
+    return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  private normalizeStatus(input?: string): ScriptRunStatus | undefined {
+    if (!input) return undefined;
+    const wanted = input.toString().trim();
+    if (!wanted) return undefined;
+
+    // match case-insensitive contra os valores reais do enum
+    const allowed = Object.values(ScriptRunStatus); // ex.: ["SUCCESS","ERROR","RUNNING",...]
+    const match = allowed.find(v => v.toUpperCase() === wanted.toUpperCase());
+    return match as ScriptRunStatus | undefined;
+  }
+
+  private buildWhere(scriptId: number, filters?: RunFilters): Prisma.DbScriptRunWhereInput {
+    const where: Prisma.DbScriptRunWhereInput = { scriptId };
+
+    if (filters) {
+      const start = this.parseYmdStart(filters.initialDate);
+      const endStart = this.parseYmdStart(filters.finalDate);
+
+      if (start && endStart) {
+        where.startedAt = { gte: start, lt: this.nextDayUTC(endStart) };
+      } else if (start) {
+        where.startedAt = { gte: start };
+      } else if (endStart) {
+        where.startedAt = { lt: this.nextDayUTC(endStart) };
+      }
+
+      const st = this.normalizeStatus(filters.status);
+      if (st) {
+        where.status = st; // agora é ScriptRunStatus de verdade
+      }
+    }
+
+    return where;
   }
 
   async registerScriptJob(script: DbScript) {
@@ -104,16 +155,14 @@ export class DbScriptsService implements OnApplicationBootstrap {
 
   /**
    * Lista execuções (runs) de um script.
-   * @param scriptId
-   * @param page página 1-based (opcional)
-   * @param pageSize itens por página (opcional)
-   * Se page/pageSize não forem passados, usa take=200 (compatível com o que você tinha).
+   * Se page/pageSize não forem passados, retorna até 200 itens (modo simples).
    */
-  async listRuns(scriptId: number, page?: number, pageSize?: number) {
+  async listRuns(scriptId: number, page?: number, pageSize?: number, filters?: RunFilters) {
+    const where = this.buildWhere(scriptId, filters);
+
     if (!page || !pageSize) {
-      // modo simples (compatível com o código atual)
       return this.prisma.dbScriptRun.findMany({
-        where: { scriptId },
+        where,
         orderBy: { id: 'desc' },
         take: 200,
       });
@@ -122,13 +171,14 @@ export class DbScriptsService implements OnApplicationBootstrap {
     const skip = Math.max(0, (page - 1) * pageSize);
     const [items, total] = await this.prisma.$transaction([
       this.prisma.dbScriptRun.findMany({
-        where: { scriptId },
+        where,
         orderBy: { id: 'desc' },
         skip,
         take: pageSize,
       }),
-      this.prisma.dbScriptRun.count({ where: { scriptId } }),
+      this.prisma.dbScriptRun.count({ where }),
     ]);
+
     return {
       items,
       total,
@@ -216,63 +266,87 @@ export class DbScriptsService implements OnApplicationBootstrap {
 
     try {
       await this.pg.withClient(async (client) => {
-        // Tenta adquirir o advisory lock para evitar concorrência entre instâncias
-        const lockRes = await client.query('SELECT pg_try_advisory_lock($1, $2) AS locked', [LOCK_NS, script.id]);
-        const locked = !!lockRes.rows?.[0]?.locked;
-        if (!locked) {
-          status = 'SKIPPED' as ScriptRunStatus;
-          error = 'Another instance is running this script.';
-          wasSkipped = true;
-          return;
-        }
-
-        // search_path (opcional)
-        if (script.searchPath) {
-          await client.query(`SET search_path TO ${quoteIdentList(script.searchPath)}`);
-        }
+        // NEW: buffer de notices
+        const notices: string[] = [];
+        const onNotice = (msg: any) => {
+          // msg: NoticeMessage (tem message, severity, detail, hint, position, etc.)
+          const parts = [`[${msg.severity}] ${msg.message}`];
+          if (msg.detail) parts.push(`detail: ${msg.detail}`);
+          if (msg.hint) parts.push(`hint: ${msg.hint}`);
+          notices.push(parts.join(' | '));
+        };
+        (client as any).on?.('notice', onNotice);
 
         const timeoutMs = Math.max(1000, (script.timeoutSec ?? 600) * 1000);
-        const t0 = Date.now();
 
-        if (script.wrapInTransaction) {
-          // Transação + SET LOCAL (timeout vale só dentro da tx)
-          await client.query('BEGIN');
-          await client.query(`SET LOCAL statement_timeout = ${timeoutMs}`);
+        try {
+          // advisory lock (como já está)
+          const lockRes = await client.query('SELECT pg_try_advisory_lock($1, $2) AS locked', [LOCK_NS, script.id]);
+          const locked = !!lockRes.rows?.[0]?.locked;
+          if (!locked) {
+            status = 'SKIPPED' as ScriptRunStatus;
+            error = 'Another instance is running this script.';
+            wasSkipped = true;
+            return;
+          }
+
+          // NEW: garantir que INFO/NOTICE chegue ao cliente
+          // (INFO captura também RAISE INFO; com NOTICE já seria suficiente pro seu exemplo)
+          if (script.wrapInTransaction) {
+            await client.query('BEGIN');
+            await client.query(`SET LOCAL client_min_messages = 'INFO'`);
+            await client.query(`SET LOCAL statement_timeout = ${timeoutMs}`);
+          } else {
+            await client.query(`SET client_min_messages = 'INFO'`);
+            await client.query(`SET statement_timeout = ${timeoutMs}`);
+          }
+
+          // search_path (como já está)
+          if (script.searchPath) {
+            await client.query(`SET search_path TO ${quoteIdentList(script.searchPath)}`);
+          }
+
+          const t0 = Date.now();
 
           try {
             const res = await client.query(script.sqlText);
             rowsAffected = (res as any)?.rowCount ?? null;
-            await client.query('COMMIT');
             status = 'SUCCESS';
+            if (script.wrapInTransaction) await client.query('COMMIT');
           } catch (e) {
-            try { await client.query('ROLLBACK'); } catch {}
+            if (script.wrapInTransaction) { try { await client.query('ROLLBACK'); } catch {} }
             throw e;
-          }
-        } else {
-          // Sem transação: SET/RESET para este client dedicado
-          await client.query(`SET statement_timeout = ${timeoutMs}`);
-          try {
-            const res = await client.query(script.sqlText);
-            rowsAffected = (res as any)?.rowCount ?? null;
-            status = 'SUCCESS';
           } finally {
-            try { await client.query('RESET statement_timeout'); } catch {}
+            // RESET quando não está em transação
+            if (!script.wrapInTransaction) {
+              try { await client.query('RESET statement_timeout'); } catch {}
+              try { await client.query('RESET client_min_messages'); } catch {}
+            }
           }
+
+          const durationMs = Date.now() - t0;
+
+          // NEW: salva o log de notices (truncado para evitar payloads gigantes)
+          const MAX = 15000;
+          const logTxt = notices.join('\n');
+          const log = logTxt.length > MAX ? (logTxt.slice(0, MAX) + '\n... (truncated)') : logTxt;
+
+          await this.prisma.dbScriptRun.update({
+            where: { id: run.id },
+            data: { status, finishedAt: new Date(), durationMs, rowsAffected, log },
+          });
+
+          await this.prisma.dbScript.update({
+            where: { id: script.id },
+            data: { lastStatus: status, latestRunAt: new Date() },
+          });
+
+          // unlock
+          try { await client.query('SELECT pg_advisory_unlock($1, $2)', [LOCK_NS, script.id]); } catch {}
+        } finally {
+          // NEW: remover listener para não vazar
+          try { (client as any).off?.('notice', onNotice); } catch {}
         }
-
-        const durationMs = Date.now() - t0;
-        await this.prisma.dbScriptRun.update({
-          where: { id: run.id },
-          data: { status, finishedAt: new Date(), durationMs, rowsAffected },
-        });
-
-        await this.prisma.dbScript.update({
-          where: { id: script.id },
-          data: { lastStatus: status, latestRunAt: new Date() },
-        });
-
-        // Sempre liberar o advisory lock
-        try { await client.query('SELECT pg_advisory_unlock($1, $2)', [LOCK_NS, script.id]); } catch {}
       });
 
       if (wasSkipped && error) {

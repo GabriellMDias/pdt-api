@@ -1,8 +1,13 @@
-// src/pages/configuracoes/db-scripts/api.ts
 import { API_BASE, authHeaders, api } from "../cadastro/users/api";
 import type { CreateDbScriptDto, DbScript, DbScriptRun, UpdateDbScriptDto } from "./types";
 
 const BASE = `${API_BASE}/api/db-scripts`;
+
+type RunFilters = {
+  initialDate?: string; // "YYYY-MM-DD"
+  finalDate?: string;   // "YYYY-MM-DD"
+  status?: "SUCCESS" | "ERROR" | "RUNNING" | "ALL";
+};
 
 export const dbScriptsApi = {
   list: (token?: string | null) =>
@@ -38,12 +43,27 @@ export const dbScriptsApi = {
       body: JSON.stringify({ reason: "manual" }),
     }),
 
-  runs: (id: number, token?: string | null, page?: number, pageSize?: number) => {
-    const qs =
-      page && pageSize ? `?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}` : "";
-    return api<DbScriptRun[] | { items: DbScriptRun[]; total: number; page: number; pageSize: number; totalPages: number }>(
-      `${BASE}/${id}/runs${qs}`,
-      { headers: authHeaders(token) }
-    );
+  runs: (
+    id: number,
+    token?: string | null,
+    page?: number,
+    pageSize?: number,
+    filters?: RunFilters
+  ) => {
+    const qs = new URLSearchParams();
+    if (page && pageSize) {
+      qs.set("page", String(page));
+      qs.set("pageSize", String(pageSize));
+    }
+    if (filters?.initialDate) qs.set("initialDate", filters.initialDate);
+    if (filters?.finalDate) qs.set("finalDate", filters.finalDate);
+    if (filters?.status && filters.status !== "ALL") qs.set("status", filters.status);
+
+    const url = `${BASE}/${id}/runs${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return api<
+      DbScriptRun[] |
+      { items: DbScriptRun[]; total: number; page: number; pageSize: number; totalPages: number }
+    >(url, { headers: authHeaders(token) });
   },
 };

@@ -37,6 +37,7 @@ export type DbScriptRun = {
   durationMs?: number | null;
   triggeredBy?: 'SCHEDULE' | 'MANUAL' | 'RETRY' | null;
   appInstanceId?: string | null;
+  log?: string | null
 };
 
 // ==== DTOs for create/update ====

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 
 export type Align = "left" | "center" | "right";
 export type SortDirection = "asc" | "desc";
@@ -15,9 +15,9 @@ export type Column<T> = {
   width?: string | number;
 
   /** ---- Ordenação ---- */
-  sortable?: boolean; // habilita click-to-sort
-  sortAccessor?: (row: T) => unknown; // como extrair o valor p/ ordenar (prioridade sobre field)
-  sortCompare?: (a: unknown, b: unknown, dir: SortDirection) => number; // comparador custom
+  sortable?: boolean;
+  sortAccessor?: (row: T) => unknown;
+  sortCompare?: (a: unknown, b: unknown, dir: SortDirection) => number;
 
   /** ---- Redimensionamento ---- */
   resizable?: boolean; // habilita arrastar a borda direita
@@ -31,34 +31,28 @@ type Props<T> = {
   loading?: boolean;
   emptyMessage?: React.ReactNode;
 
-  /** Classe extra pro <div> wrapper (scroll) */
   wrapperClassName?: string;
-  /** Classe pro <table> */
   tableClassName?: string;
 
-  /** Estilização do cabeçalho/linhas/células */
   headerWrapperClassName?: string;
   headerRowClassName?: string;
   headerCellClassName?: string;
+
   bodyClassName?: string;
   rowBaseClassName?: string;
   cellBaseClassName?: string;
 
-  /** Cabeçalho “gruda” no topo dentro do scroll */
   stickyHeader?: boolean;
 
-  /** Eventos/estilo por linha */
   getRowKey?: (row: T, idx: number) => React.Key;
   onRowDoubleClick?: (row: T, idx: number) => void;
   rowClassName?: (row: T, idx: number) => string;
 
-  /** ---- Ordenação (controlada / não controlada) ---- */
-  defaultSort?: SortState;                        // estado inicial
-  sortState?: SortState | null;                   // controlada
+  defaultSort?: SortState;
+  sortState?: SortState | null;
   onSortChange?: (next: SortState | null) => void;
-  disableLocalSort?: boolean;                     // se true, não reordena os dados localmente (você ordena fora)
+  disableLocalSort?: boolean;
 
-  /** ---- Resize callback ---- */
   onColumnResize?: (key: string, widthPx: number) => void;
 };
 
@@ -117,8 +111,7 @@ export default function SimpleTable<T>({
       }
 
       onSortChange?.(next);
-      // se for controlada, não mexe no estado interno
-      return sortState === undefined ? next : prev;
+      return sortState === undefined ? next : prev; // se controlada, mantém interno
     });
   }
 
@@ -134,33 +127,31 @@ export default function SimpleTable<T>({
     };
 
     const dir = effectiveSort.direction === "asc" ? 1 : -1;
-
-    // cópia estável
-    const arr = data.map((v, i) => ({ v, i }));
+    const arr = data.map((v, i) => ({ v, i })); // cópia estável
 
     arr.sort((a, b) => {
       const av = accessor(a.v);
       const bv = accessor(b.v);
-
       if (col.sortCompare) return col.sortCompare(av, bv, effectiveSort.direction);
-
-      return defaultCompare(av, bv) * dir || (a.i - b.i); // estável
+      return defaultCompare(av, bv) * dir || (a.i - b.i);
     });
 
     return arr.map((x) => x.v);
   }, [data, columns, effectiveSort, disableLocalSort]);
 
   /** ====== Redimensionamento ====== */
-  // Guardamos larguras em px para colunas resizables.
   const [colWidths, setColWidths] = useState<Record<string, number | undefined>>(() => {
     const init: Record<string, number | undefined> = {};
     columns.forEach((c) => {
-      if (typeof c.width === "number") init[c.key] = c.width;
+      const w =
+        typeof c.width === "number"
+          ? c.width
+          : pxFromAny(c.width); // agora aceita "200px"
+      if (w) init[c.key] = w;
     });
     return init;
   });
 
-  // refs e handlers globais
   const dragRef = useRef<{
     key: string;
     startX: number;
@@ -169,43 +160,12 @@ export default function SimpleTable<T>({
     maxWidth: number;
   } | null>(null);
 
-  useEffect(() => {
-    function onMove(e: MouseEvent) {
-      if (!dragRef.current) return;
-      const { key, startX, startWidth, minWidth, maxWidth } = dragRef.current;
-      const dx = e.clientX - startX;
-      const next = clamp(startWidth + dx, minWidth, maxWidth);
-      setColWidths((prev) => {
-        const n = { ...prev, [key]: next };
-        return n;
-      });
-      onColumnResize?.(key, next);
-      document.body.style.cursor = "col-resize";
-      e.preventDefault();
-    }
-    function onUp() {
-      dragRef.current = null;
-      document.body.style.cursor = "";
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    }
-
-    if (dragRef.current) {
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    }
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [onColumnResize]);
-
   function startResize(e: React.MouseEvent, col: Column<T>, thEl: HTMLTableCellElement | null) {
     if (!col.resizable) return;
 
-    const rectW = thEl?.getBoundingClientRect().width ?? (
-      typeof col.width === "number" ? col.width : 0
-    );
+    const rectW =
+      thEl?.getBoundingClientRect().width ??
+      (typeof col.width === "number" ? col.width : 0);
 
     const minW = col.minWidth ?? 60;
     const maxW = col.maxWidth ?? 1200;
@@ -217,18 +177,40 @@ export default function SimpleTable<T>({
       minWidth: minW,
       maxWidth: maxW,
     };
+
+    // listeners globais enquanto arrasta
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const { key, startX, startWidth, minWidth, maxWidth } = dragRef.current;
+      const dx = ev.clientX - startX;
+      const next = clamp(startWidth + dx, minWidth, maxWidth);
+      setColWidths((prev) => ({ ...prev, [key]: next }));
+      onColumnResize?.(key, next);
+      document.body.style.cursor = "col-resize";
+      ev.preventDefault();
+    };
+
+    const onUp = () => {
+      dragRef.current = null;
+      document.body.style.cursor = "";
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }
 
   /** ====== Render ====== */
   return (
     <div className={`overflow-x-auto ${wrapperClassName || ""}`}>
-      {/* Colgroup para refletir width nas células também */}
       <table className={tableClassName} style={{ tableLayout: "fixed" }}>
+        {/* colgroup espelha as larguras nas células */}
         <colgroup>
           {columns.map((c) => {
             const w =
               colWidths[c.key] ??
-              (typeof c.width === "number" ? c.width : undefined);
+              (typeof c.width === "number" ? c.width : pxFromAny(c.width));
             return <col key={c.key} style={w ? { width: `${w}px` } : undefined} />;
           })}
         </colgroup>
@@ -270,36 +252,42 @@ export default function SimpleTable<T>({
           {!loading &&
             hasData &&
             sortedData.map((row, i) => {
-              const cls =
-                `${rowBaseClassName} ` + (rowClassName ? rowClassName(row, i) : "");
+              const cls = `${rowBaseClassName} ` + (rowClassName ? rowClassName(row, i) : "");
               return (
                 <tr
                   key={getRowKey(row, i)}
                   className={cls}
                   onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row, i) : undefined}
                 >
-                  {columns.map((c) => (
-                    <td
-                      key={c.key}
-                      className={`px-4 py-2 ${cellBaseClassName || ""} ${c.tdClassName || ""} ${alignToClass(c.align)}`}
-                    >
-                      {c.cell ? c.cell(row, i) : (row as any)[c.field as string]}
-                    </td>
-                  ))}
+                  {columns.map((c) => {
+                    const content = c.cell ? c.cell(row, i) : (row as any)[c.field as string];
+                    return (
+                      <td
+                        key={c.key}
+                        className={`px-4 py-2 ${cellBaseClassName || ""} ${c.tdClassName || ""} ${alignToClass(c.align)}`}
+                      >
+                        {/* Wrapper com ellipsis */}
+                        <div
+                          className="block max-w-full truncate"
+                          title={titleForContent(content)}
+                        >
+                          {content}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}
         </tbody>
       </table>
 
-      {stickyHeader && (
-        <style>{`thead { position: sticky; top: 0; z-index: 10; }`}</style>
-      )}
+      {stickyHeader && <style>{`thead { position: sticky; top: 0; z-index: 10; }`}</style>}
     </div>
   );
 }
 
-/** ========= Cabeçalho com ícone de sort e "grip" de resize ========= */
+/** ========= Cabeçalho com sort + "grip" de resize ========= */
 function HeaderCell<T>({
   col,
   sort,
@@ -350,21 +338,15 @@ function HeaderCell<T>({
         <span
           data-resize-handle="1"
           onMouseDown={(e) => onStartResize(e, col, thRef.current)}
-          className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize"
+          className="absolute right-0 top-0 h-full w-2.5 cursor-col-resize"
           style={{
-            // área de arraste
-            transform: "translateX(50%)",
+            transform: "translateX(50%)", // aumenta a área de arraste para “fora” da coluna
           }}
           title="Arraste para ajustar a largura"
         />
       )}
 
-      {/* borda visual do sticky header não "saltar" ao arrastar */}
-      {stickyHeader && (
-        <style>{`
-          th { background-clip: padding-box; }
-        `}</style>
-      )}
+      {stickyHeader && <style>{`th { background-clip: padding-box; }`}</style>}
     </th>
   );
 }
@@ -382,15 +364,12 @@ function alignToClass(a?: Align) {
 }
 
 function defaultCompare(a: unknown, b: unknown): number {
-  // números
   if (typeof a === "number" && typeof b === "number") return a - b;
 
-  // datas (strings parsáveis)
   const aDate = toTime(a);
   const bDate = toTime(b);
   if (aDate != null && bDate != null) return aDate - bDate;
 
-  // fallback: string com comparação "natural"
   const sa = toStr(a);
   const sb = toStr(b);
   return sa.localeCompare(sb, "pt-BR", { numeric: true, sensitivity: "base" });
@@ -420,5 +399,10 @@ function pxFromAny(w?: string | number): number | undefined {
     const m = w.trim().match(/^(\d+(?:\.\d+)?)px$/i);
     if (m) return Number(m[1]);
   }
+  return undefined;
+}
+
+function titleForContent(x: React.ReactNode): string | undefined {
+  if (typeof x === "string" || typeof x === "number") return String(x);
   return undefined;
 }

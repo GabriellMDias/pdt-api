@@ -176,6 +176,7 @@ export default function RelatorioSPEDAnalises() {
       cell: (row) => formatCell(row[f.name], f),
       tdClassName: "border px-3 py-2",
       thClassName: "border px-3 py-2",
+      resizable: true
     }));
   }
 
@@ -262,7 +263,6 @@ export default function RelatorioSPEDAnalises() {
                 loading={false}
                 emptyMessage="Sem linhas de erro para exibir."
                 tableClassName="w-full text-sm border"
-                stickyHeader
                 getRowKey={(_row, i) => i}
                 rowClassName={(_row) => "hover:bg-gray-50"}
               />

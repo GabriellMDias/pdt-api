@@ -41,7 +41,13 @@ export default function DbScriptsPage() {
       createItem={createItem}
       updateItem={updateItem}
       deleteItem={deleteItem}
-      renderForm={(props) => <DbScriptForm {...props} />}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      renderForm={(props: any) => {
+        const initial = props.initial
+        ? { ...props.initial, description: props.initial.description ?? undefined }
+        : undefined;
+        return <DbScriptForm {...props} initial={initial} />;
+      }}
       canCreate={canCreate}
       canEdit={canEdit}
       canDelete={canDelete}

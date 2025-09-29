@@ -39,7 +39,7 @@ export default function PaginationBar({
           <>
             <label className="text-sm text-gray-500">Itens por página</label>
             <select
-              className="border rounded px-2 py-1 text-sm"
+              className="border rounded px-2 py-1 text-sm cursor-pointer"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
             >
@@ -52,7 +52,7 @@ export default function PaginationBar({
 
         <div className="flex items-center gap-2">
           <button
-            className="px-2 py-1 border rounded text-sm disabled:opacity-60"
+            className="px-2 py-1 border rounded text-sm disabled:opacity-60 cursor-pointer"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1 || loading}
           >
@@ -62,7 +62,7 @@ export default function PaginationBar({
             Página {page} de {totalPages}
           </span>
           <button
-            className="px-2 py-1 border rounded text-sm disabled:opacity-60"
+            className="px-2 py-1 border rounded text-sm disabled:opacity-60 cursor-pointer"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages || loading}
           >

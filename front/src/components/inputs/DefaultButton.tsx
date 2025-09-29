@@ -18,7 +18,7 @@ export default function DefaultButton({
     w-full py-2 px-4 rounded-md font-semibold
     flex items-center justify-center gap-2
     transition-all duration-200 ease-in-out
-    focus:outline-none focus:ring-2 focus:ring-pilar-orange
+    focus:outline-none focus:ring-2 focus:ring-pilar-green
     transform active:scale-95
     hover:shadow-md
     disabled:opacity-50 disabled:cursor-not-allowed
@@ -26,7 +26,7 @@ export default function DefaultButton({
   `
 
   const variants = {
-    primary: 'bg-pilar-orange text-white hover:bg-opacity-90',
+    primary: 'bg-pilar-green text-white hover:bg-opacity-90',
     secondary: 'bg-white text-pilar-green hover:bg-gray-200',
   }
 

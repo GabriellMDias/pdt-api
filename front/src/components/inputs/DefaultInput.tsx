@@ -25,7 +25,7 @@ export default function DefaultInput({
         <input
           className={`
             w-full px-4 py-2 rounded-md bg-white/30 text-inherit
-            focus:outline-none focus:ring-2 focus:ring-pilar-orange
+            focus:outline-none focus:ring-2 focus:ring-pilar-green
             ${iconLeft ? 'pl-10' : ''} ${iconRight ? 'pr-10' : ''} ${className}
           `}
           {...rest}

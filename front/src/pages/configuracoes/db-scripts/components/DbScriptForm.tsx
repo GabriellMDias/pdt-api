@@ -1,10 +1,53 @@
-// src/pages/configuracoes/db-scripts/components/DbScriptForm.tsx
 import React from "react";
 import { IconButton } from "../../../../components/crud/primitives";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function DbScriptForm({ initial, onCancel, onSubmit, submitting, isEdit, maySubmit }: any) {
+import DefaultInput from "../../../../components/inputs/DefaultInput";
+import DefaultSelect from "../../../../components/inputs/DefaultSelect";
+import DefaultTextarea from "../../../../components/inputs/DefaultTextarea";
+import DefaultCheckbox from "../../../../components/inputs/DefaultCheckbox";
+import DefaultButton from "../../../../components/inputs/DefaultButton";
+import TimezoneSelect from "../../../../components/inputs/TimezoneSelect";
+
+type ScheduleType = "CRON" | "INTERVAL" | "DAILY_AT" | "WEEKLY_AT";
+
+type Initial = {
+  id?: number;
+  name?: string;
+  description?: string;
+  sqlText?: string;
+  wrapInTransaction?: boolean;
+  searchPath?: string;
+  timeoutSec?: number;
+  enabled?: boolean;
+
+  scheduleType?: ScheduleType;
+  cronExpression?: string;
+  intervalSeconds?: number;
+  dailyTime?: string;
+  weeklyWeekday?: number;
+  weeklyTime?: string;
+  timezone?: string;
+};
+
+type Props = {
+  initial?: Initial;
+  onCancel: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSubmit: (payload: any, id?: number) => Promise<void> | void;
+  submitting?: boolean;
+  isEdit?: boolean;
+  maySubmit?: boolean;
+};
+
+export default function DbScriptForm({
+  initial,
+  onCancel,
+  onSubmit,
+  submitting = false,
+  isEdit = false,
+  maySubmit = true,
+}: Props) {
   const [name, setName] = React.useState(initial?.name ?? "");
   const [description, setDescription] = React.useState(initial?.description ?? "");
   const [sqlText, setSqlText] = React.useState(initial?.sqlText ?? "");
@@ -13,8 +56,7 @@ export default function DbScriptForm({ initial, onCancel, onSubmit, submitting, 
   const [timeoutSec, setTimeoutSec] = React.useState<number>(initial?.timeoutSec ?? 600);
   const [enabled, setEnabled] = React.useState<boolean>(initial?.enabled ?? true);
 
-  type ScheduleType = 'CRON' | 'INTERVAL' | 'DAILY_AT' | 'WEEKLY_AT';
-  const [scheduleType, setScheduleType] = React.useState<ScheduleType>(initial?.scheduleType ?? 'CRON');
+  const [scheduleType, setScheduleType] = React.useState<ScheduleType>(initial?.scheduleType ?? "CRON");
   const [cron, setCron] = React.useState(initial?.cronExpression ?? "0 0 * * * *");
   const [intervalSec, setIntervalSec] = React.useState<number>(initial?.intervalSeconds ?? 3600);
   const [dailyTime, setDailyTime] = React.useState(initial?.dailyTime ?? "09:00");
@@ -25,10 +67,10 @@ export default function DbScriptForm({ initial, onCancel, onSubmit, submitting, 
   const canSubmitLocal = () => {
     if (!name.trim() || !sqlText.trim()) return false;
     switch (scheduleType) {
-      case 'CRON': return Boolean(cron.trim());
-      case 'INTERVAL': return Number(intervalSec) > 0;
-      case 'DAILY_AT': return Boolean(dailyTime.trim());
-      case 'WEEKLY_AT': return Number(weeklyWeekday) >= 0 && Boolean(weeklyTime.trim());
+      case "CRON": return Boolean(cron.trim());
+      case "INTERVAL": return Number(intervalSec) > 0;
+      case "DAILY_AT": return Boolean(dailyTime.trim());
+      case "WEEKLY_AT": return Number(weeklyWeekday) >= 0 && Boolean(weeklyTime.trim());
     }
   };
 
@@ -36,160 +78,214 @@ export default function DbScriptForm({ initial, onCancel, onSubmit, submitting, 
     e.preventDefault();
     if (!canSubmitLocal() || !maySubmit) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
-      name, 
-      description, 
-      sqlText, 
-      enabled, 
+      name,
+      description,
+      sqlText,
+      enabled,
       wrapInTransaction,
       searchPath: searchPath || undefined,
       timeoutSec,
       scheduleType,
     };
     switch (scheduleType) {
-      case "CRON": payload.cron = { cron, timezone }; break;
-      case "INTERVAL": payload.interval = { everySeconds: Number(intervalSec) || 0 }; break;
-      case "DAILY_AT": payload.dailyAt = { time: dailyTime, timezone }; break;
-      case "WEEKLY_AT": payload.weeklyAt = { weekday: Number(weeklyWeekday)||0, time: weeklyTime, timezone }; break;
+      case "CRON":
+        payload.cron = { cron, timezone };
+        break;
+      case "INTERVAL":
+        payload.interval = { everySeconds: Number(intervalSec) || 0 };
+        break;
+      case "DAILY_AT":
+        payload.dailyAt = { time: dailyTime, timezone };
+        break;
+      case "WEEKLY_AT":
+        payload.weeklyAt = { weekday: Number(weeklyWeekday) || 0, time: weeklyTime, timezone };
+        break;
     }
-    // Quando editando, GridForm chamará updateItem com id do selecionado
     await onSubmit(payload, initial?.id);
   }
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="flex items-center justify-between">
-        <IconButton onClick={onCancel}><ChevronLeftIcon/></IconButton>
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={submitting || !maySubmit || !canSubmitLocal()}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-          >
-            {submitting ? "Salvando..." : isEdit ? "Salvar" : "Criar"}
-          </button>
-        </div>
+      {/* Barra de ações fixa */}
+      <div className="
+        sticky top-2 z-10
+        flex items-center justify-between
+        rounded-xl border border-neutral-800 bg-neutral-900/70 backdrop-blur
+        px-2 py-1
+      ">
+        <IconButton onClick={onCancel}><ChevronLeftIcon /></IconButton>
+        <DefaultButton type="submit" disabled={submitting || !maySubmit || !canSubmitLocal()}>
+          {submitting ? "Salvando..." : isEdit ? "Salvar" : "Criar"}
+        </DefaultButton>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="block">
-          <span className="mb-1 block text-sm text-neutral-300">Nome</span>
-          <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3 outline-none focus:ring-2"
-                 value={name} onChange={(e)=>setName(e.target.value)} placeholder="Nome do script" />
-        </label>
+      {/* GRID principal: esquerda (dados/agenda) | direita (SQL) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Coluna esquerda */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Seção: Dados básicos */}
+          <section className="rounded-2xl border border-neutral-800 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-200">Dados do script</h3>
 
-        <label className="block">
-          <span className="mb-1 block text-sm text-neutral-300">search_path</span>
-          <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                 value={searchPath} onChange={(e)=>setSearchPath(e.target.value)} placeholder="ex.: public,ext" />
-        </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DefaultInput
+                label="Nome"
+                placeholder="Nome do script"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
 
-        <label className="block md:col-span-2">
-          <span className="mb-1 block text-sm text-neutral-300">Descrição (opcional)</span>
-          <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                 value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Opcional" />
-        </label>
+              <DefaultInput
+                label="search_path"
+                placeholder="ex.: public,ext"
+                value={searchPath}
+                onChange={(e) => setSearchPath(e.target.value)}
+              />
+            </div>
 
-        <label className="block md:col-span-2">
-          <span className="mb-1 block text-sm text-neutral-300">SQL</span>
-          <textarea className="w-full h-56 rounded-xl border border-neutral-700 bg-neutral-900 p-3 font-mono text-sm outline-none focus:ring-2"
-                    value={sqlText} onChange={(e)=>setSqlText(e.target.value)} placeholder="Escreva o SQL a ser executado..." />
-        </label>
+            <DefaultInput
+              label="Descrição (opcional)"
+              placeholder="Opcional"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-4"
+            />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:col-span-2">
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={enabled} onChange={e=>setEnabled(e.target.checked)} />
-            <span>Habilitado</span>
-          </label>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <DefaultCheckbox
+                label="Habilitado"
+                checked={enabled}
+                onChange={(e) => setEnabled((e.target as HTMLInputElement).checked)}
+              />
+              <DefaultCheckbox
+                label="Transação"
+                checked={wrapInTransaction}
+                onChange={(e) => setWrapInTransaction((e.target as HTMLInputElement).checked)}
+              />
+              <DefaultInput
+                type="number"
+                min={0}
+                label="Timeout (s)"
+                value={timeoutSec}
+                onChange={(e) => setTimeoutSec(Number(e.target.value))}
+              />
+              <DefaultSelect
+                label="Tipo de Agendamento"
+                value={scheduleType}
+                onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
+                options={[
+                  { value: "CRON", label: "CRON" },
+                  { value: "INTERVAL", label: "Intervalo" },
+                  { value: "DAILY_AT", label: "Diário às" },
+                  { value: "WEEKLY_AT", label: "Semanal às" },
+                ]}
+              />
+            </div>
+          </section>
 
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={wrapInTransaction} onChange={e=>setWrapInTransaction(e.target.checked)} />
-            <span>Transação</span>
-          </label>
+          {/* Seção: Agendamento (dinâmico) */}
+          <section className="rounded-2xl border border-neutral-800 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-200">Agendamento</h3>
 
-          <label className="block">
-            <span className="mb-1 block text-sm text-neutral-300">Timeout (s)</span>
-            <input type="number" min={0} className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-2"
-                   value={timeoutSec} onChange={(e)=>setTimeoutSec(Number(e.target.value))} />
-          </label>
+            {scheduleType === "CRON" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <DefaultInput
+                  label="Expressão CRON (5 ou 6 campos)"
+                  placeholder="0 0 * * * *"
+                  value={cron}
+                  onChange={(e) => setCron(e.target.value)}
+                />
+                <TimezoneSelect
+                  label="Time zone"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  preferred={["America/Sao_Paulo", "UTC"]}
+                  showOffset
+                  includeUTC
+                />
+              </div>
+            )}
 
-          <label className="block">
-            <span className="mb-1 block text-sm text-neutral-300">Tipo de Agendamento</span>
-            <select className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                    value={scheduleType} onChange={(e)=>setScheduleType(e.target.value as ScheduleType)}>
-              <option value="CRON">CRON</option>
-              <option value="INTERVAL">Intervalo</option>
-              <option value="DAILY_AT">Diário às</option>
-              <option value="WEEKLY_AT">Semanal às</option>
-            </select>
-          </label>
+            {scheduleType === "INTERVAL" && (
+              <DefaultInput
+                type="number"
+                min={1}
+                label="A cada (segundos)"
+                value={intervalSec}
+                onChange={(e) => setIntervalSec(Number(e.target.value))}
+              />
+            )}
+
+            {scheduleType === "DAILY_AT" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <DefaultInput
+                  type="time"
+                  label="Horário (HH:mm)"
+                  value={dailyTime}
+                  onChange={(e) => setDailyTime(e.target.value)}
+                />
+                <TimezoneSelect
+                  label="Time zone"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  preferred={["America/Sao_Paulo", "UTC"]}
+                  showOffset
+                  includeUTC
+                />
+              </div>
+            )}
+
+            {scheduleType === "WEEKLY_AT" && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <DefaultSelect
+                  label="Dia da semana"
+                  value={weeklyWeekday}
+                  onChange={(e) => setWeeklyWeekday(Number(e.target.value))}
+                  options={[
+                    { value: 0, label: "Domingo" },
+                    { value: 1, label: "Segunda" },
+                    { value: 2, label: "Terça" },
+                    { value: 3, label: "Quarta" },
+                    { value: 4, label: "Quinta" },
+                    { value: 5, label: "Sexta" },
+                    { value: 6, label: "Sábado" },
+                  ]}
+                />
+                <DefaultInput
+                  type="time"
+                  label="Horário (HH:mm)"
+                  value={weeklyTime}
+                  onChange={(e) => setWeeklyTime(e.target.value)}
+                  className="sm:col-span-2"
+                />
+                <TimezoneSelect
+                  label="Time zone"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  preferred={["America/Sao_Paulo", "UTC"]}
+                  showOffset
+                  includeUTC
+                  className="sm:col-span-3"
+                />
+              </div>
+            )}
+          </section>
         </div>
 
-        {scheduleType === "CRON" && (
-          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="mb-1 block text-sm text-neutral-300">Expressão CRON (5 ou 6 campos)</span>
-              <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                     value={cron} onChange={(e)=>setCron(e.target.value)} placeholder="0 0 * * * *" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm text-neutral-300">Time zone</span>
-              <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                     value={timezone} onChange={(e)=>setTimezone(e.target.value)} placeholder="America/Sao_Paulo" />
-            </label>
-          </div>
-        )}
-
-        {scheduleType === "INTERVAL" && (
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-sm text-neutral-300">A cada (segundos)</span>
-            <input type="number" min={1} className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                   value={intervalSec} onChange={(e)=>setIntervalSec(Number(e.target.value))} />
-          </label>
-        )}
-
-        {scheduleType === "DAILY_AT" && (
-          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="mb-1 block text-sm text-neutral-300">Horário (HH:mm)</span>
-              <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                     value={dailyTime} onChange={(e)=>setDailyTime(e.target.value)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm text-neutral-300">Time zone</span>
-              <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                     value={timezone} onChange={(e)=>setTimezone(e.target.value)} placeholder="America/Sao_Paulo" />
-            </label>
-          </div>
-        )}
-
-        {scheduleType === "WEEKLY_AT" && (
-          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <label className="block">
-              <span className="mb-1 block text-sm text-neutral-300">Dia da semana</span>
-              <select className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                      value={weeklyWeekday} onChange={(e)=>setWeeklyWeekday(Number(e.target.value))}>
-                <option value={0}>Domingo</option>
-                <option value={1}>Segunda</option>
-                <option value={2}>Terça</option>
-                <option value={3}>Quarta</option>
-                <option value={4}>Quinta</option>
-                <option value={5}>Sexta</option>
-                <option value={6}>Sábado</option>
-              </select>
-            </label>
-            <label className="block col-span-2">
-              <span className="mb-1 block text-sm text-neutral-300">Horário (HH:mm)</span>
-              <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                     value={weeklyTime} onChange={(e)=>setWeeklyTime(e.target.value)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm text-neutral-300">Time zone</span>
-              <input className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3"
-                     value={timezone} onChange={(e)=>setTimezone(e.target.value)} placeholder="America/Sao_Paulo" />
-            </label>
-          </div>
-        )}
+        {/* Coluna direita (SQL) */}
+        <div className="lg:col-span-7">
+          <section className="rounded-2xl border border-neutral-800 p-4 lg:sticky lg:top-16">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-200">SQL</h3>
+            <DefaultTextarea
+              placeholder="Escreva o SQL a ser executado..."
+              value={sqlText}
+              onChange={(e) => setSqlText(e.target.value)}
+              className="min-h-[520px] font-mono"
+            />
+          </section>
+        </div>
       </div>
     </form>
   );

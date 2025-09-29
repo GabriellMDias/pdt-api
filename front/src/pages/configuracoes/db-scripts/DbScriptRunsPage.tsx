@@ -5,9 +5,12 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { dbScriptsApi } from "./api";
 import type { DbScriptRun } from "./types";
-import SimpleTable, { type Column } from "../../../components/table/SimpleTable";
-import PaginationBar from "../../../components/table/PaginationBar";
+import TableCard from "../../../components/table/TableCard";
+import { type Column } from "../../../components/table/SimpleTable";
 import DateRange from "../../../components/inputs/DateRange";
+import DefaultButton from "../../../components/inputs/DefaultButton";
+import DefaultSelect from "../../../components/inputs/DefaultSelect";
+import { useFilterDraft } from "../../../hooks/useFilterDraft";
 
 function fmtDate(s?: string | null) {
   if (!s) return "";
@@ -15,6 +18,12 @@ function fmtDate(s?: string | null) {
 }
 
 type StatusOpt = "ALL" | "SUCCESS" | "ERROR" | "RUNNING";
+
+type Filters = {
+  initialDate: string;
+  finalDate: string;
+  status: StatusOpt;
+};
 
 export default function DbScriptRunsPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,15 +39,12 @@ export default function DbScriptRunsPage() {
   const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState<number | null>(null);
 
-  // filtros ATIVOS (aplicados no backend e, se necessário, no client)
-  const [dataInicial, setDataInicial] = useState<string>("");
-  const [dataFinal, setDataFinal] = useState<string>("");
-  const [status, setStatus] = useState<StatusOpt>("ALL");
-
-  // rascunho dos inputs (só vira "ativo" no botão Consultar)
-  const [draftDataInicial, setDraftDataInicial] = useState<string>("");
-  const [draftDataFinal, setDraftDataFinal] = useState<string>("");
-  const [draftStatus, setDraftStatus] = useState<StatusOpt>("ALL");
+  // filtros (aplicado/rascunho)
+  const { applied, draft, setDraft, apply } = useFilterDraft<Filters>({
+    initialDate: "",
+    finalDate: "",
+    status: "ALL",
+  });
 
   async function consultar(nextPage = page, nextPageSize = pageSize) {
     setLoading(true);
@@ -49,20 +55,21 @@ export default function DbScriptRunsPage() {
         token,
         nextPage,
         nextPageSize,
-        { initialDate: dataInicial, finalDate: dataFinal, status }
+        applied // { initialDate, finalDate, status }
       );
 
       if (Array.isArray(resp)) {
         setData(resp);
-        setTotal(resp.length);            // modo não paginado
+        setTotal(null); // modo não paginado
         setPage(1);
         setPageSize(resp.length ? Math.min(25, resp.length) : 25);
       } else {
         setData(resp.items);
-        setTotal(resp.total);             // modo paginado
+        setTotal(resp.total); // modo paginado
         setPage(resp.page);
         setPageSize(resp.pageSize);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       setError(String(e?.message || e));
     } finally {
@@ -90,64 +97,76 @@ export default function DbScriptRunsPage() {
     []
   );
 
-  // filtro client-side só se o backend NÃO estiver paginando (total === null)
+  // filtro client-side apenas quando o backend NÃO pagina (total === null)
   const filtered = useMemo(() => {
-    if (typeof total === "number") return data; // backend já filtrou
-    const startMs = dataInicial ? Date.parse(dataInicial) : null;
-    const endMs = dataFinal ? Date.parse(dataFinal) : null;
+    if (typeof total === "number") return data;
+    const startMs = applied.initialDate ? Date.parse(applied.initialDate) : null;
+    const endMs = applied.finalDate ? Date.parse(applied.finalDate) : null;
 
     return data.filter((r) => {
       const startedMs = r.startedAt ? Date.parse(r.startedAt) : null;
       if (startMs && (startedMs == null || startedMs < startMs)) return false;
       if (endMs && (startedMs == null || startedMs > endMs)) return false;
-      if (status !== "ALL" && (r.status || "").toUpperCase() !== status) return false;
+      if (applied.status !== "ALL" && (r.status || "").toUpperCase() !== applied.status) return false;
       return true;
     });
-  }, [data, dataInicial, dataFinal, status, total]);
+  }, [data, applied, total]);
 
   const dataForTable =
     typeof total === "number"
-      ? data // backend paginado ou filtrado
+      ? data
       : filtered.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize);
 
   const totalForPagination =
     typeof total === "number" ? total : filtered.length;
+    
+    function handleSubmit(e?: React.FormEvent) {
+  e?.preventDefault();
+  apply();
+  setPage(1);
+  consultar(1, pageSize);
+}
 
-  const Table = (
-    <div className="bg-white rounded-lg border border-gray-200 text-black">
-      <PaginationBar
-        total={totalForPagination}
-        page={page}
-        pageSize={pageSize}
-        loading={loading}
-        className="border-b"
-        onPageChange={(next) => {
-          const totalPages = Math.max(1, Math.ceil(totalForPagination / pageSize));
-          const nextClamped = Math.max(1, Math.min(next, totalPages));
-          if (nextClamped === page) return;
-          setPage(nextClamped);
-          if (typeof total === "number") {
-            consultar(nextClamped, pageSize);
-          }
-        }}
-        onPageSizeChange={(newSize) => {
-          if (newSize === pageSize) return;
-          setPageSize(newSize);
-          setPage(1);
-          if (typeof total === "number") {
-            consultar(1, newSize);
-          }
-        }}
-      />
+  const FiltersBar = (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-pilar-default-bg2-dark p-4 mb-4"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-6">
+          <DateRange
+            start={draft.initialDate}
+            end={draft.finalDate}
+            onChange={({ start, end }) => setDraft({ initialDate: start, finalDate: end })}
+            autoOrder={false}
+          />
+        </div>
 
-      <SimpleTable<DbScriptRun>
-        data={dataForTable}
-        columns={columns}
-        loading={loading}
-        emptyMessage={error ?? "Nenhuma execução encontrada."}
-        tableClassName="w-full text-sm text-left"
-      />
-    </div>
+        <div className="md:col-span-3">
+          <DefaultSelect
+            label="Status"
+            value={draft.status}
+            onChange={(e) => setDraft({ status: e.target.value as StatusOpt })}
+            options={[
+              { value: "ALL", label: "Todos" },
+              { value: "SUCCESS", label: "SUCCESS" },
+              { value: "ERROR", label: "ERROR" },
+              { value: "RUNNING", label: "RUNNING" },
+            ]}
+          />
+        </div>
+
+        <div className="md:col-span-3 flex items-end md:justify-end">
+          <DefaultButton
+            type="submit"
+            disabled={loading}
+            className="w-full md:w-auto"
+          >
+            {loading ? "Consultando..." : "Consultar"}
+          </DefaultButton>
+        </div>
+      </div>
+    </form>
   );
 
   const PageInner = (
@@ -157,65 +176,47 @@ export default function DbScriptRunsPage() {
           <h2 className="text-xl font-semibold">Execuções</h2>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-pilar-default-bg2-dark p-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2">
-              <DateRange
-                start={draftDataInicial}
-                end={draftDataFinal}
-                onChange={({ start, end }) => {
-                  setDraftDataInicial(start);
-                  setDraftDataFinal(end);
-                }}
-                autoOrder={false}
-              />
-            </div>
+        {FiltersBar}
 
-            <div className="flex flex-col">
-              <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
-                Status
-              </label>
-              <select
-                value={draftStatus}
-                onChange={(e) => setDraftStatus(e.target.value as StatusOpt)}
-                className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm dark:bg-neutral-900 dark:border-neutral-700"
-              >
-                <option value="ALL">Todos</option>
-                <option value="SUCCESS">SUCCESS</option>
-                <option value="ERROR">ERROR</option>
-                <option value="RUNNING">RUNNING</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-4 flex justify-end">
-              <button
-                onClick={() => {
-                  setDataInicial(draftDataInicial);
-                  setDataFinal(draftDataFinal);
-                  setStatus(draftStatus);
-                  setPage(1);
-                  consultar(1, pageSize);
-                }}
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium text-white bg-pilar-green hover:opacity-95 disabled:opacity-60"
-              >
-                {loading && (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                )}
-                {loading ? "Consultando..." : "Consultar"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {Table}
+        <TableCard<DbScriptRun>
+          data={dataForTable}
+          columns={columns}
+          total={totalForPagination}
+          page={page}
+          pageSize={pageSize}
+          loading={loading}
+          error={error}
+          onPageChange={(next) => {
+            const totalPages = Math.max(1, Math.ceil(totalForPagination / pageSize));
+            const nextClamped = Math.max(1, Math.min(next, totalPages));
+            if (nextClamped === page) return;
+            setPage(nextClamped);
+            if (typeof total === "number") {
+              consultar(nextClamped, pageSize);
+            }
+          }}
+          onPageSizeChange={(newSize) => {
+            if (newSize === pageSize) return;
+            setPageSize(newSize);
+            setPage(1);
+            if (typeof total === "number") {
+              consultar(1, newSize);
+            }
+          }}
+          className="mb-4"
+          tableClassName="w-full text-sm text-left"
+        />
       </div>
     </div>
   );
 
   return (
     <Layout title={`DB Script #${scriptId} • Execuções`}>
-      {isAdmin ? PageInner : <PermissionGate required="dbScripts:consultar">{PageInner}</PermissionGate>}
+      {isAdmin ? (
+        PageInner
+      ) : (
+        <PermissionGate required="dbScripts:consultar">{PageInner}</PermissionGate>
+      )}
     </Layout>
   );
 }

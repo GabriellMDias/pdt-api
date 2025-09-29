@@ -41,6 +41,11 @@ export class AnalysisController {
     return this.stockService.diferencaProducaoTransformadoNoDia(q.storeIds, q.date);
   }
 
+  /*@Get('stock/diferenca-custo-medioxultimo')
+  @Permissions('stock-analysis:consultar')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOkResponse({type: })*/
+
   @Post('sped/upload')
   @Permissions('sped:upload')
   @UseInterceptors(FileInterceptor('file', {

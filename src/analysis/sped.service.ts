@@ -5,10 +5,14 @@ import { parseRegistro0000 } from './parsers/registro-0000.parser';
 import { parseRegistro0200 } from './parsers/registro-0200.parser';
 import { parseRegistroC100 } from './parsers/registro-c100.parser';
 import { parseRegistroC170 } from './parsers/registro-c170.parser';
-import { Registro0200, RegistroC100, RegistroC170, RegistroC190 } from './parsers/types';
+import { Registro0200, Registro0400, RegistroC100, RegistroC170, RegistroC190 } from './parsers/types';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AnalisesDisponiveis } from './analises-disponiveis';
+import { AnalisesDisponiveis } from './analises/analises-disponiveis';
 import { parseRegistroC190 } from './parsers/registro-c190.parser';
+import { getOrCreateAnalysisType } from './utils/getOrCreateAnalysisType';
+import { ensureAnalysisFields } from './utils/ensureAnalysisFields';
+import { AnalysisDataType } from '@prisma/client';
+import { parseRegistro0400 } from './parsers/registro-0400.parser';
 
 type ListSpedArquivosArgs = {
   lojas?: number[];
@@ -21,10 +25,6 @@ type ListSpedArquivosArgs = {
 @Injectable()
 export class SpedService {
   constructor(private prisma: PrismaService) {}
-
-  
-  
-
   // Detecta AnalysisDataType com base no valor
   private detectDataType(v: any): 'string' | 'int' | 'decimal' | 'boolean' | 'date' | 'datetime' {
     if (v === null || v === undefined) return 'string';
@@ -66,18 +66,6 @@ export class SpedService {
   }
 
   /**
-   * Verifica se o tipo de análise existe no banco.
-   * Caso não exista, cria com base no código e descrição fornecidos.
-   */
-  async getOrCreateAnalysisType(code: string, description: string, groupName: string) {
-      return await this.prisma.analysisType.upsert({
-        where: { code },
-        update: {}, // Nenhuma atualização é feita se já existir
-        create: { code, description, groupName }, // Cria se não existir
-      });
-    }
-
-  /**
    * Processa um arquivo SPED linha por linha,
    * executa as análises disponíveis e salva os resultados no banco.
    */
@@ -107,6 +95,7 @@ export class SpedService {
       let dtFin: string | null = null;
 
       const itens0200 = new Map<string, Registro0200>();
+      const R0400 = new Map<string, Registro0400>()
 
       const modelosValidos = ['01', '1B', '04', '55', '65']; // Modelos permitidos para análise
 
@@ -125,6 +114,12 @@ export class SpedService {
         if (tipo === '0200') {
           const r0200 = parseRegistro0200(line);
           itens0200.set(r0200.COD_ITEM, r0200);
+        }
+
+        // Registro 0400:  TABELA DE NATUREZA DA OPERAÇÃO/PRESTAÇÃO
+        if(tipo === '0400') {
+          const r0400 = parseRegistro0400(line);
+          R0400.set(r0400.COD_NAT, r0400)
         }
 
         // Registro C100: inicia uma nova nota
@@ -173,13 +168,14 @@ export class SpedService {
       // Executa todas as análises definidas em AnalisesDisponiveis
       for (const analise of AnalisesDisponiveis) {
         // Garante que o tipo de análise existe no banco
-        const tipo = await this.getOrCreateAnalysisType(analise.code, analise.description, analise.groupName);
-
+        const tipo = await getOrCreateAnalysisType(this.prisma, {code: analise.code, description: analise.description, groupName: analise.groupName});
+        await ensureAnalysisFields(this.prisma, tipo.id, analise.fields.map((field) => {return {key: field.name, label: field.description, dataType: field.dataType as AnalysisDataType, order: field.order}}))
+        
         // Executa a análise passando todas as notas lidas
-        const erros = analise.execute(notas, itens0200);
+        const erros = analise.execute(notas, itens0200, R0400);
 
         // Salva o resultado da análise no banco
-        // 🔸 Cache unificado: grava em AnalysisResult (granularity: 'month')
+        // Cache unificado: grava em AnalysisResult (granularity: 'month')
         try {
           const arq = await this.prisma.arquivoAnalise.findUnique({ where: { id: arquivo.id }, select: { storeId: true, mesRef: true } });
           const storeId = arq?.storeId ?? null;
@@ -193,7 +189,7 @@ export class SpedService {
               storeId,              // se aplicável
               bucket, // 1º dia do mês 00:00Z
               granularity: 'month',
-              data: { fields: fieldDefs, errors: erros, summary: { totalNotas: notas.size, notasComErro: erros.length } },  // seu payload { fields, errors, summary }
+              data: { fields: fieldDefs, errors: erros, summary: { totalNotas: notas.size, notasComErro: tipo.groupName === 'Relatórios SPED' ? 0 : erros.length } },  // seu payload { fields, errors, summary }
               sourceStart: arq?.mesRef ? this.firstDayOfMonthUTC(new Date(arq.mesRef)) : null,
               sourceEnd: arq?.mesRef ? new Date(Date.UTC(new Date(arq.mesRef).getUTCFullYear(), new Date(arq.mesRef).getUTCMonth()+1, 0, 23,59,59)) : null,
               arquivoAnaliseId: arquivo.id,

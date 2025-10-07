@@ -1,4 +1,3 @@
-// src/pages/fiscal/obrigacoes/RelatorioSPEDAnalises.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "../../../components/Layout";
@@ -176,7 +175,8 @@ export default function RelatorioSPEDAnalises() {
       cell: (row) => formatCell(row[f.name], f),
       tdClassName: "border px-3 py-2",
       thClassName: "border px-3 py-2",
-      resizable: true
+      resizable: true,
+      overflow: 'wrap'
     }));
   }
 
@@ -214,13 +214,11 @@ export default function RelatorioSPEDAnalises() {
                 emptyMessage="Sem análises para o grupo."
                 tableClassName="w-full text-sm text-left"
                 getRowKey={(row) => row.id}
-                rowClassName={(row) => {
-                  const erros = row.data?.summary?.notasComErro ?? 0;
-                  return erros > 0 ? "hover:bg-red-50 cursor-pointer" : "cursor-default";
+                rowClassName={() => {
+                  return "hover:bg-red-50 cursor-pointer";
                 }}
                 onRowDoubleClick={(row) => {
-                  const erros = row.data?.summary?.notasComErro ?? 0;
-                  if (erros > 0) setSelectedAnalise(row);
+                  setSelectedAnalise(row);
                 }}
               />
               <p className="text-xs text-gray-500 px-4 pb-3">
@@ -232,7 +230,7 @@ export default function RelatorioSPEDAnalises() {
       </div>
 
       {/* Modal de erros */}
-      {selectedAnalise && selectedAnalise.data?.errors?.length > 0 && (
+      {selectedAnalise && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/75 z-50 text-black">
           <div className="bg-white w-11/12 max-w-5xl rounded-lg shadow-lg p-6 relative">
             <button
@@ -265,6 +263,22 @@ export default function RelatorioSPEDAnalises() {
                 tableClassName="w-full text-sm border"
                 getRowKey={(_row, i) => i}
                 rowClassName={(_row) => "hover:bg-gray-50"}
+                exportOptions={{
+                  enabled: true,            // mostra toolbar
+                  excel: true,
+                  pdf: true,
+                  filename: "erros",
+                  sheetName: "Erros",
+                  // headersOverride: ["Linha", "Campo", "Mensagem", "Valor"],
+                  // mapCell: (v) => (typeof v === "string" || typeof v === "number" ? v : String(v ?? "")),
+                  pdfOptions: { title: selectedAnalise.analysisType?.description, orientation: "landscape" },
+                  // renderControls: ({ onExcel, onPDF }) => (
+                  //   <div className="flex gap-2">
+                  //     <MyIconBtn onClick={onExcel} icon="excel" />
+                  //     <MyIconBtn onClick={onPDF} icon="pdf" />
+                  //   </div>
+                  // ),
+                }}
               />
             </div>
           </div>

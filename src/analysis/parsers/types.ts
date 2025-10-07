@@ -31,6 +31,12 @@ export interface Registro0200 {
   ALIQ_ICMS: number
 }
 
+export interface Registro0400 {
+  REG: string; // "0400"
+  COD_NAT: string;
+  DESCR_NAT: string;
+}
+
 export interface RegistroC100 {
   REG: string; // "C100"
   IND_OPER: string;

@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PgService } from 'src/pg/pg.service';
+import { ensureAnalysisFields } from './utils/ensureAnalysisFields';
+import { getOrCreateAnalysisType } from './utils/getOrCreateAnalysisType';
 
 @Injectable()
 export class StockAnalysisService {
@@ -25,34 +27,11 @@ export class StockAnalysisService {
   }
 
   private async ensureStockAnalysisFields(analysisTypeId: number) {
-  const upsert = async (key: string, label: string, dataType: any, order: number) => {
-    try {
-      // Requer a unique composta nomeada no schema:
-      // @@unique([analysisTypeId, key], name: "analysisTypeId_key")
-      await this.prisma.analysisField.upsert({
-        where: { analysisTypeId_key: { analysisTypeId, key } },
-        create: { analysisTypeId, key, label, dataType, order },
-        update: { label, dataType, order },
-      });
-    } catch {
-      // Fallback caso o client não tenha a unique nomeada (versões antigas geradas)
-      const existing = await this.prisma.analysisField.findFirst({ where: { analysisTypeId, key } });
-      if (existing) {
-        await this.prisma.analysisField.update({
-          where: { id: existing.id },
-          data: { label, dataType, order },
-        });
-      } else {
-        await this.prisma.analysisField.create({
-          data: { analysisTypeId, key, label, dataType, order },
-        });
-      }
-    }
-  };
-
-  await upsert('custo_total_anterior', 'Custo total anterior', 'decimal', 0);
-  await upsert('custo_total_final',    'Custo total final',    'decimal', 1);
-  await upsert('dif_custo_total',      'Diferença',            'decimal', 2);
+    await ensureAnalysisFields(this.prisma, analysisTypeId, [
+        { key: 'custo_total_anterior', label: 'Custo total anterior', dataType: 'decimal', order: 0 },
+        { key: 'custo_total_final',    label: 'Custo total final',    dataType: 'decimal', order: 1 },
+        { key: 'dif_custo_total',      label: 'Diferença',            dataType: 'decimal', order: 2 },
+      ]);
 }
 
 
@@ -60,7 +39,7 @@ export class StockAnalysisService {
   public async diferencaProducaoTransformadoDiario(lojas: number[], dataInicial: string, dataFinal: string) {
     this.assertParams(lojas, dataInicial);
 
-    const type = await this.getOrCreateAnalysisType(this.ANALYSIS_CODE, 'Diferença Produção × Transformado', 'stock');
+    const type = await getOrCreateAnalysisType(this.prisma, {code: this.ANALYSIS_CODE, description: 'Diferença Produção × Transformado', groupName: 'stock'});
     const typeId = type.id;
     await this.ensureStockAnalysisFields(typeId);
     // gera lista de dias
@@ -155,23 +134,11 @@ export class StockAnalysisService {
     return Array.from(map.values()).sort((a, b) => a.data.localeCompare(b.data));
   }
 
-  /**
-   * Verifica se o tipo de análise existe no banco.
-   * Caso não exista, cria com base no código e descrição fornecidos.
-   */
-  async getOrCreateAnalysisType(code: string, description: string, groupName: string) {
-      return await this.prisma.analysisType.upsert({
-        where: { code },
-        update: {}, // Nenhuma atualização é feita se já existir
-        create: { code, description, groupName }, // Cria se não existir
-      });
-    }
-
   /** Resumo diferença produção x transformado - por TIMESTAMP no dia (com cache) */
   public async diferencaProducaoTransformadoNoDia(lojas: number[], data: string) {
     this.assertParams(lojas, data);
 
-    const type = await this.getOrCreateAnalysisType(this.ANALYSIS_CODE, 'Diferença Produção × Transformado', 'stock');
+    const type = await getOrCreateAnalysisType(this.prisma, {code: this.ANALYSIS_CODE, description: 'Diferença Produção × Transformado', groupName: 'stock'});
     const typeId = type.id;
     await this.ensureStockAnalysisFields(typeId);
     const bucket = this.toUtcStartOfDay(data);

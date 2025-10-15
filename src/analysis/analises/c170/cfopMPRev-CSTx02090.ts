@@ -1,4 +1,4 @@
-import { RegistroC170 } from '../../parsers/types';
+import { Registro0200, RegistroC170 } from '../../parsers/types';
 
 export const CfopMPRevCSTx02090 = {
   code: 'CFOPMPRev_CSTx02090',
@@ -8,13 +8,15 @@ export const CfopMPRevCSTx02090 = {
     { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
     { name: 'numDoc', description: 'Num Doc', order: 1, dataType: 'string' },
     { name: 'codItem', description: 'Cod. Item', order: 2, dataType: 'string' },
-    { name: 'cfop', description: 'CFOP', order: 3, dataType: 'string' },
-    { name: 'cstICMS', description: 'CST ICMS', order: 4, dataType: 'string' },
-    { name: 'erro', description: 'Erro', order: 5, dataType: 'string' }
+    { name: 'descrItem', description: 'Descrição', order: 3, dataType: 'string'},
+    { name: 'cfop', description: 'CFOP', order: 4, dataType: 'string' },
+    { name: 'cstICMS', description: 'CST ICMS', order: 5, dataType: 'string' },
+    { name: 'erro', description: 'Erro', order: 6, dataType: 'string' }
   ],
 
   execute(
-    notas: Map<string, { c100: any; itens: RegistroC170[] }>
+    notas: Map<string, { c100: any; itens: RegistroC170[] }>,
+    itens0200: Map<string, Registro0200>
   ) {
     const erros: any[] = [];
 
@@ -24,10 +26,12 @@ export const CfopMPRevCSTx02090 = {
         if (item.CFOP === '1101' || item.CFOP === '2101' || item.CFOP === '1102' || item.CFOP === '2102') {
 
           if (item.CST_ICMS !== '000' && item.CST_ICMS !== '020' && item.CST_ICMS !== '090') {
+            const cad = itens0200.get(item.COD_ITEM);
             erros.push({
               chave,
               numDoc: nota.c100.NUM_DOC,
               codItem: item.COD_ITEM,
+              descrItem: cad.DESCR_ITEM,
               cfop: item.CFOP,
               cstICMS: item.CST_ICMS,
               erro: `CFOP ${item.CFOP} exige CST = 000, 020 ou 090, mas encontrado ${item.CST_ICMS}`,

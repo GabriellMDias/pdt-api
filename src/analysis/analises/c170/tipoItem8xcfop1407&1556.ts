@@ -1,8 +1,8 @@
-import { Registro0200, RegistroC170 } from '../../parsers/types';
+import { RegistroC170, Registro0200 } from '../../parsers/types';
 
-export const Cfop1551ComCredICMS = {
-  code: 'CFOP1551_comCredICMS',
-  description: 'Ativo Imobilizado - CFOP 1.551 - com Credito ICMS',
+export const TipoItem8Cfop1407e1556 = {
+  code: 'TIPOITEM8CFOP1407E1556',
+  description: 'Uso e Consumo - Tipo Item = 08 x CFOP diferente de 1.407 ou 1.556',
   groupName: 'C170',
   fields: [
     { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
@@ -10,7 +10,7 @@ export const Cfop1551ComCredICMS = {
     { name: 'codItem', description: 'Cod. Item', order: 2, dataType: 'string' },
     { name: 'descrItem', description: 'Descrição', order: 3, dataType: 'string'},
     { name: 'cfop', description: 'CFOP', order: 4, dataType: 'string' },
-    { name: 'valorICMS', description: 'Vlr ICMS', order: 5, dataType: 'int' },
+    { name: 'tipoItem', description: 'Tipo Item', order: 5, dataType: 'string' },
     { name: 'erro', description: 'Erro', order: 6, dataType: 'string' }
   ],
 
@@ -22,21 +22,19 @@ export const Cfop1551ComCredICMS = {
 
     for (const [chave, nota] of notas.entries()) {
       for (const item of nota.itens) {
-        // Regra: se CFOP = 1551 → VL_ICMS deve ser 0
-        if (item.CFOP === '1551') {
-          
-          if (item.VL_ICMS > 0) {
-            const cad = itens0200.get(item.COD_ITEM);
-            erros.push({
+        // Regra: se TIPO_ITEM = 8 → CFOP deve ser 1407 ou 1556
+        const cad = itens0200.get(item.COD_ITEM);
+
+        if(cad.TIPO_ITEM === '08' && item.CFOP !== '1407' && item.CFOP !== '1556') {
+          erros.push({
               chave,
               numDoc: nota.c100.NUM_DOC,
               codItem: item.COD_ITEM,
               descrItem: cad.DESCR_ITEM,
               cfop: item.CFOP,
-              valorICMS: item.VL_ICMS,
-              erro: `CFOP 1551 não deve ter crédito ICMS. Valor ICMS: ${item.VL_ICMS}`,
+              tipoItem: cad.TIPO_ITEM,
+              erro: `Tipo Item = 08 exige CFOP 1.407 ou 1.556, mas encontrado ${item.CFOP}`,
             });
-          }
         }
       }
     }

@@ -8,9 +8,10 @@ export const Cfop1556TipoItem7 = {
     { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
     { name: 'numDoc', description: 'Num Doc', order: 1, dataType: 'string' },
     { name: 'codItem', description: 'Cod. Item', order: 2, dataType: 'string' },
-    { name: 'cfop', description: 'CFOP', order: 3, dataType: 'string' },
-    { name: 'tipoItem', description: 'Tipo Item', order: 4, dataType: 'string' },
-    { name: 'erro', description: 'Erro', order: 5, dataType: 'string' }
+    { name: 'descrItem', description: 'Descrição', order: 3, dataType: 'string'},
+    { name: 'cfop', description: 'CFOP', order: 4, dataType: 'string' },
+    { name: 'tipoItem', description: 'Tipo Item', order: 5, dataType: 'string' },
+    { name: 'erro', description: 'Erro', order: 6, dataType: 'string' }
   ],
 
   execute(
@@ -30,6 +31,7 @@ export const Cfop1556TipoItem7 = {
               chave,
               numDoc: nota.c100.NUM_DOC,
               codItem: item.COD_ITEM,
+              descrItem: cad.DESCR_ITEM,
               cfop: item.CFOP,
               tipoItem: cad.TIPO_ITEM,
               erro: `CFOP 1556 exige Tipo Item = 07, mas encontrado ${cad.TIPO_ITEM}`,

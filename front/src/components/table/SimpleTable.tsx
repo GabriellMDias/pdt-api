@@ -108,7 +108,7 @@ export default function SimpleTable<T>({
   headerCellClassName,
 
   bodyClassName,
-  rowBaseClassName = "border-b hover:bg-gray-50",
+  rowBaseClassName = "border-b",
   cellBaseClassName,
 
   stickyHeader = false,
@@ -280,7 +280,7 @@ export default function SimpleTable<T>({
 
   /** ====== Render ====== */
   return (
-    <div className={`overflow-x-auto ${wrapperClassName || ""}`}>
+    <div className={`overflow-x-auto rounded-lg border ${wrapperClassName || ""}`}>
       {/* Toolbar de Export (opcional) */}
       {expEnabled && (
         exportOptions?.renderControls ? (

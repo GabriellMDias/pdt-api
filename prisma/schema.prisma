@@ -35,6 +35,7 @@ model Store {
   UserPermission          UserPermission[]
 
   AnalysisResult AnalysisResult[]
+  Parameters     ParameterValue[]
 }
 
 model CostCenter {
@@ -266,7 +267,7 @@ model DbScriptRun {
   durationMs    Int?
   triggeredBy   String? // 'SCHEDULE' | 'MANUAL' | 'RETRY'
   appInstanceId String?
-  log           String?          @db.Text
+  log           String?         @db.Text
 
   @@index([scriptId])
 }
@@ -283,3 +284,65 @@ enum ScriptRunStatus {
   FAILED
   SKIPPED
 }
+
+/**
+ * == PARAMETERS MODELS ==
+ */
+// enums de apoio
+enum ParameterScope {
+  GLOBAL // só admite valor global
+  STORE // só admite valores por loja (sempre exige storeId)
+  BOTH // aceita global + overrides por loja
+}
+
+enum ParameterType {
+  STRING
+  INT
+  BOOL
+  DECIMAL
+  JSON
+}
+
+model ParameterGroup {
+  id          Int                   @id @default(autoincrement())
+  code        String                @unique
+  name        String
+  description String?
+  definitions ParameterDefinition[]
+}
+
+model ParameterDefinition {
+  id          Int            @id @default(autoincrement())
+  code        String         @unique // ex: "sankhya.base_url"
+  description String
+  type        ParameterType  @default(STRING)
+  scope       ParameterScope @default(BOTH)
+
+  groupId Int?
+  group   ParameterGroup? @relation(fields: [groupId], references: [id])
+
+  values ParameterValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// valor do parâmetro (global ou por loja)
+model ParameterValue {
+  id           Int                 @id @default(autoincrement())
+  definitionId Int
+  definition   ParameterDefinition @relation(fields: [definitionId], references: [id])
+
+  storeId Int? // quando null = GLOBAL
+  store   Store? @relation(fields: [storeId], references: [id])
+
+  tenantKey String // "GLOBAL" | `STORE:${storeId}`
+  value     String // valor bruto como string; serviço faz parse por type
+
+  @@unique([definitionId, tenantKey]) // impede duplicar global e duplicar override da mesma loja
+  @@index([storeId])
+}
+
+/**
+ * == PARAMETERS MODELS ==
+ */

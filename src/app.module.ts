@@ -20,13 +20,14 @@ import { DreModule } from './dre/dre.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { DbScriptsModule } from './db-scripts/db-scripts.module'; 
+import { ParametersModule } from './parameters/parameters.module';
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
     ScheduleModule.forRoot(),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule],
   controllers: [AppController],
   providers: [AppService],
 })

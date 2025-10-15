@@ -16,5 +16,7 @@
   {"code": "dbScripts:incluir", "label": "Incluir Ações Agendadas"},
   {"code": "dbScripts:editar", "label": "Editar Ações Agendadas"},
   {"code": "dbScripts:excluir", "label": "Excluir Ações Agendadas"},
-  {"code": "dbScripts:executar", "label": "Executar Ações Agendadas"}
+  {"code": "dbScripts:executar", "label": "Executar Ações Agendadas"},
+  {"code": "parameters:consultar", "label": "Consultar Parâmetros"},
+  {"code": "parameters:editar", "label": "Editar Parâmetros"}
 ]

@@ -73,6 +73,7 @@ export default function LoginPage() {
           <DefaultButton
             type='submit'
             onClick={() => console.log('clicked')}
+            variant='secondary'
           >
             Entrar
           </DefaultButton>

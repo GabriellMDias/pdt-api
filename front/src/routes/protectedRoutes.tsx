@@ -6,6 +6,7 @@ import KeyIcon from '@mui/icons-material/Key';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import SsidChartIcon from '@mui/icons-material/SsidChart';
 import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
+import BuildIcon from '@mui/icons-material/Build';
 import HomePage from '../pages/HomePage';
 import UsersPage from '../pages/configuracoes/cadastro/users/UsersPage';
 import PermissionsPage from '../pages/configuracoes/permissions/PermissionsPage';
@@ -16,6 +17,7 @@ import AnaliseEstoquePage from '../pages/estoque/analise/AnaliseEstoquePage';
 import AnaliseEstoqueDiaPage from '../pages/estoque/analise/AnaliseEstoqueDiaPage';
 import DbScriptsPage from '../pages/configuracoes/db-scripts/DbScriptsPage';
 import DbScriptRunsPage from '../pages/configuracoes/db-scripts/DbScriptRunsPage';
+import ParametersPage from '../pages/configuracoes/parameters/ParametersPage';
 
 
 export interface ProtectedRoute {
@@ -127,6 +129,14 @@ export const protectedRoutes: ProtectedRoute[] = [
         icon: <KeyIcon />,
         element: <PermissionsPage />,
         requiredPermissions: ["permissions:consultar", "permissions:editar"]
+      },
+      {
+        path: '/configuracoes/parametros',
+        label: "Parâmetros",
+        showInSidebar: true,
+        icon: <BuildIcon />,
+        element: <ParametersPage />,
+        requiredPermissions: ["parameters:consultar", "parameters:editar"]
       }
     ],
   },

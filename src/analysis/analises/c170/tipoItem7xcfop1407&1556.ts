@@ -1,8 +1,8 @@
 import { RegistroC170, Registro0200 } from '../../parsers/types';
 
-export const TipoItem8Cfop1407e1556 = {
-  code: 'TIPOITEM8CFOP1407E1556',
-  description: 'Uso e Consumo - Tipo Item = 08 x CFOP diferente de 1.407 ou 1.556',
+export const TipoItem7Cfop1407e1556 = {
+  code: 'TIPOITEM7CFOP1407E1556',
+  description: 'Uso e Consumo - Tipo Item = 07 x CFOP diferente de 1.407 ou 1.556',
   groupName: 'C170',
   fields: [
     { name: 'chave', description: 'Chave NFE', order: 0, dataType: 'string' },
@@ -22,10 +22,10 @@ export const TipoItem8Cfop1407e1556 = {
 
     for (const [chave, nota] of notas.entries()) {
       for (const item of nota.itens) {
-        // Regra: se TIPO_ITEM = 8 → CFOP deve ser 1407 ou 1556
+        // Regra: se TIPO_ITEM = 7 → CFOP deve ser 1407 ou 1556
         const cad = itens0200.get(item.COD_ITEM);
 
-        if(cad.TIPO_ITEM === '08' && item.CFOP !== '1407' && item.CFOP !== '1556') {
+        if(cad.TIPO_ITEM === '07' && item.CFOP !== '1407' && item.CFOP !== '1556') {
           erros.push({
               chave,
               numDoc: nota.c100.NUM_DOC,
@@ -33,7 +33,7 @@ export const TipoItem8Cfop1407e1556 = {
               descrItem: cad.DESCR_ITEM,
               cfop: item.CFOP,
               tipoItem: cad.TIPO_ITEM,
-              erro: `Tipo Item = 08 exige CFOP 1.407 ou 1.556, mas encontrado ${item.CFOP}`,
+              erro: `Tipo Item = 07 exige CFOP 1.407 ou 1.556, mas encontrado ${item.CFOP}`,
             });
         }
       }

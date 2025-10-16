@@ -108,6 +108,21 @@ docker exec -it pdt-api_postgres_1 psql -U postgres -d pdt
 
 ---
 
+### 6. 🧪 Atualizar a aplicação no servidor
+
+Execute:
+
+```bash
+docker compose build api
+```
+
+Depois:
+```bash
+docker compose up -d api
+```
+
+---
+
 ## 🧠 Observações
 
 - A aplicação usa Prisma como ORM, com migrações executadas automaticamente.

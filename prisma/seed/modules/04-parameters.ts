@@ -77,9 +77,6 @@ export default async function seedParameters() {
   });
 
   // Definições (OK atualizar metadados; valores não serão resetados)
-  await defParameter("test.test",  "Teste",  ParameterType.BOOL,    ParameterScope.STORE,  groupTeste.id, "true");
-  await defParameter("test.test2", "Teste2", ParameterType.JSON,    ParameterScope.STORE,  groupTeste.id, '{"teste":"teste"}');
-  await defParameter("test.test3", "Teste3", ParameterType.DECIMAL, ParameterScope.GLOBAL, groupTeste.id, "1.5");
   await defParameter("sankhya.base_url", "URL base do Gateway/WS do Sankhya", ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://sua-instancia-sankhya.exemplo.com.br");
   await defParameter("sankhya.port",     "Porta do serviço",                   ParameterType.INT,    ParameterScope.GLOBAL, groupSankhya.id, "8080");
   await defParameter("sankhya.username", "Usuário de integração",              ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "integracao");

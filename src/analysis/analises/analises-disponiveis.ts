@@ -24,10 +24,10 @@ import { CfopMPSubTribCSTx60 } from './c170/cfopMPSubTrib-CSTx60'
 import { CfopBonifComCredICMSCST0220 } from './c170/cfopBonif-comCredIcms-CST0220'
 import { CfopBonifSemCredICMSCST9060 } from './c170/cfopBonif-semCredIcms-CST9060'
 import { TipoItemxNat } from './reports/tipoItemxNat'
-import {TipoItem8Cfop1407e1556} from './c170/tipoItem8xcfop1407&1556'
+import { TipoItem7Cfop1407e1556 } from './c170/tipoItem7xcfop1407&1556'
 
 export const AnalisesDisponiveis = [ValorDocC100xC190, ICMSC100xC190, BaseICMSC100xC170, ICMSC100xC170, ValorMercC100xC170, BaseICMSSTC100xC170, 
     DescC100xC170, ICMSSTC100xC170, IPIC100xC170, PisC100xC170, CofinsC100xC170, Cfop1556TipoItem7, Cfop1556ComCredICMS, Cfop1556CSTx90,
     Cfop1551TipoItem8, Cfop1551ComCredICMS, Cfop1551CSTx90, Cfop1406CSTx60, Cfop1407CSTx60, CfopMPTipoItem0102, CfopMPRevCSTx02090, CfopRevSubTribCSTx60,
-    CfopMPSubTribCSTx60, CfopBonifComCredICMSCST0220, CfopBonifSemCredICMSCST9060, TipoItemxNat, TipoItem8Cfop1407e1556
+    CfopMPSubTribCSTx60, CfopBonifComCredICMSCST0220, CfopBonifSemCredICMSCST9060, TipoItemxNat, TipoItem7Cfop1407e1556
 ];

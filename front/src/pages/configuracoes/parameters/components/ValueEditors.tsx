@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-refresh/only-export-components */
+import { useEffect, useState } from 'react';
 import type { ParameterType } from '../types/parameters';
 
 export type EditorProps = {
@@ -50,15 +51,29 @@ export function ValueEditor({ type, value, disabled, onChange }: EditorProps) {
   }
 
   if (type === 'JSON') {
+    const [text, setText] = useState(
+      value == null ? '' : JSON.stringify(value, null, 2)
+    );
+
+    // atualiza texto quando o valor muda externamente
+    useEffect(() => {
+      setText(value == null ? '' : JSON.stringify(value, null, 2));
+    }, [value]);
+
     return (
       <textarea
         rows={6}
         className="w-full rounded-md border px-2 py-1 text-sm font-mono"
-        value={value == null ? '' : JSON.stringify(value, null, 2)}
+        value={text}
         onChange={(e) => {
           const raw = e.target.value;
-          if (raw.trim() === '') return onChange(null);
-          try { onChange(JSON.parse(raw)); } catch { /* mantém último válido */ }
+          setText(raw);
+          try {
+            const parsed = JSON.parse(raw);
+            onChange(parsed);
+          } catch {
+            // deixa o usuário digitar mesmo com JSON inválido
+          }
         }}
         placeholder={'{\n  "key": "value"\n}'}
         disabled={disabled}

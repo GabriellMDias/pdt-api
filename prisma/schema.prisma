@@ -283,6 +283,47 @@ enum ScriptRunStatus {
   SUCCESS
   FAILED
   SKIPPED
+  RUNNING
+}
+
+model CodeJob {
+  id               Int                 @id @default(autoincrement())
+  name             String
+  description      String?
+  handler          String
+  enabled          Boolean             @default(true)
+  timezone         String?             @default("America/Sao_Paulo")
+
+  scheduleType     ScriptScheduleType
+  cronExpression   String?
+  intervalSeconds  Int?
+  dailyAtTime      String?
+  weeklyWeekday    Int?
+  weeklyTime       String?
+
+  lastStatus       ScriptRunStatus?
+  latestRunAt      DateTime?
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  runs             CodeJobRun[]
+}
+
+model CodeJobRun {
+  id         Int              @id @default(autoincrement())
+  jobId      Int
+  job        CodeJob          @relation(fields: [jobId], references: [id])
+  status     ScriptRunStatus  // agora aceita RUNNING/SUCCESS/FAILED/SKIPPED
+  source     String           // 'SCHEDULE' | 'MANUAL' | 'RETRY'
+  startedAt  DateTime         @default(now())
+  finishedAt DateTime?
+  durationMs Int?
+  log        Json?
+  error      String?
+  createdAt  DateTime         @default(now())
+
+  @@index([jobId, createdAt])
 }
 
 /**

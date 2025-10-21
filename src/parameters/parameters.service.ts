@@ -9,7 +9,7 @@ export class ParametersService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Resolve valor efetivo (override da loja > global)
-  async getEffectiveByCode(code: string, storeId?: number) {
+  async getEffectiveByCode<T = any>(code: string, storeId?: number) {
     const def = await this.prisma.parameterDefinition.findUnique({
       where: { code },
       include: { values: true },
@@ -31,7 +31,7 @@ export class ParametersService {
       code: def.code,
       type: def.type,
       scope: def.scope,
-      value: this.parseValue(val.value, def.type),
+      value: this.parseValue(val.value, def.type) as T,
       source: val.tenantKey.startsWith('STORE:') ? 'STORE' : 'GLOBAL',
     };
   }

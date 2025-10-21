@@ -66,19 +66,26 @@ export default async function seedParameters() {
     }
   });
 
-  const groupTeste = await prisma.parameterGroup.upsert({
-    where: { code: "teste" },
+  const groupVR = await prisma.parameterGroup.upsert({
+    where: { code: "vr" },
     update: {},
     create: {
-      code: "teste",
-      name: "Teste",
-      description: "Testeee"
+      code: "vr",
+      name: "VR",
+      description: "Parâmetros VR"
     }
   });
 
-  // Definições (OK atualizar metadados; valores não serão resetados)
-  await defParameter("sankhya.base_url", "URL base do Gateway/WS do Sankhya", ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://sua-instancia-sankhya.exemplo.com.br");
-  await defParameter("sankhya.port",     "Porta do serviço",                   ParameterType.INT,    ParameterScope.GLOBAL, groupSankhya.id, "8080");
-  await defParameter("sankhya.username", "Usuário de integração",              ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "integracao");
-  await defParameter("sankhya.password", "Senha do usuário de integração",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "**trocar**");
+  // Parâmetros API Sankhya
+  await defParameter("sankhya.base_url", "URL base do Gateway/WS do Sankhya (API antiga Sankhya)", ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://sua-instancia-sankhya.exemplo.com.br");
+  await defParameter("sankhya.port",     "Porta do serviço (API antiga Sankhya)",                   ParameterType.INT,    ParameterScope.GLOBAL, groupSankhya.id, "8080");
+  await defParameter("sankhya.username", "Usuário de integração (API antiga Sankhya)",              ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "integracao");
+  await defParameter("sankhya.password", "Senha do usuário de integração (API antiga Sankhya)",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "**trocar**");
+  await defParameter("sankhya.client_id", "Identificador único da aplicação gerado na Área do Desenvolvedor.",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "client_id");
+  await defParameter("sankhya.client_secret", "Segredo da aplicação gerado na Área do Desenvolvedor.",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "client_secret");
+  await defParameter("sankhya.x-token", "Token obtido na tela Configurações Gateway do Sankhya Om.",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "x-token");
+  await defParameter("sankhya.api_base_url", "URL base da API Sankhya.",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://api.sankhya.com.br");
+
+
+  await defParameter("vr.prest_serv", "CPF Prestadores de Serviço.", ParameterType.JSON, ParameterScope.GLOBAL, groupVR.id, `{"cpfs": ["12345678978", "23456789123"]}`);
 }

@@ -2,7 +2,7 @@
 import { useCallback } from "react";
 import { dbScriptsApi } from "../api";
 import type { CreateDbScriptDto, UpdateDbScriptDto } from "../types";
-import type { Id } from "../../../../components/crud/GridForm";
+import type { Id } from "../../../../../components/crud/GridForm";
 
 export function useDbScriptsCrud(token?: string | null) {
   const fetchAll = useCallback(async () => {

@@ -1,13 +1,12 @@
 import React from "react";
-import { IconButton } from "../../../../components/crud/primitives";
+import { IconButton } from "../../../../../components/crud/primitives";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
-import DefaultInput from "../../../../components/inputs/DefaultInput";
-import DefaultSelect from "../../../../components/inputs/DefaultSelect";
-import DefaultTextarea from "../../../../components/inputs/DefaultTextarea";
-import DefaultCheckbox from "../../../../components/inputs/DefaultCheckbox";
-import DefaultButton from "../../../../components/inputs/DefaultButton";
-import TimezoneSelect from "../../../../components/inputs/TimezoneSelect";
+import DefaultInput from "../../../../../components/inputs/DefaultInput";
+import DefaultSelect from "../../../../../components/inputs/DefaultSelect";
+import DefaultCheckbox from "../../../../../components/inputs/DefaultCheckbox";
+import DefaultButton from "../../../../../components/inputs/DefaultButton";
+import TimezoneSelect from "../../../../../components/inputs/TimezoneSelect";
 
 type ScheduleType = "CRON" | "INTERVAL" | "DAILY_AT" | "WEEKLY_AT";
 
@@ -15,10 +14,6 @@ type Initial = {
   id?: number;
   name?: string;
   description?: string;
-  sqlText?: string;
-  wrapInTransaction?: boolean;
-  searchPath?: string;
-  timeoutSec?: number;
   enabled?: boolean;
 
   scheduleType?: ScheduleType;
@@ -40,7 +35,7 @@ type Props = {
   maySubmit?: boolean;
 };
 
-export default function DbScriptForm({
+export default function JobsForm({
   initial,
   onCancel,
   onSubmit,
@@ -48,12 +43,6 @@ export default function DbScriptForm({
   isEdit = false,
   maySubmit = true,
 }: Props) {
-  const [name, setName] = React.useState(initial?.name ?? "");
-  const [description, setDescription] = React.useState(initial?.description ?? "");
-  const [sqlText, setSqlText] = React.useState(initial?.sqlText ?? "");
-  const [wrapInTransaction, setWrapInTransaction] = React.useState(Boolean(initial?.wrapInTransaction));
-  const [searchPath, setSearchPath] = React.useState(initial?.searchPath ?? "");
-  const [timeoutSec, setTimeoutSec] = React.useState<number>(initial?.timeoutSec ?? 600);
   const [enabled, setEnabled] = React.useState<boolean>(initial?.enabled ?? true);
 
   const [scheduleType, setScheduleType] = React.useState<ScheduleType>(initial?.scheduleType ?? "CRON");
@@ -65,7 +54,6 @@ export default function DbScriptForm({
   const [timezone, setTimezone] = React.useState(initial?.timezone ?? "America/Sao_Paulo");
 
   const canSubmitLocal = () => {
-    if (!name.trim() || !sqlText.trim()) return false;
     switch (scheduleType) {
       case "CRON": return Boolean(cron.trim());
       case "INTERVAL": return Number(intervalSec) > 0;
@@ -80,13 +68,9 @@ export default function DbScriptForm({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: any = {
-      name,
-      description,
-      sqlText,
+      name: initial?.name ?? "",
+      description: initial?.description ?? "",
       enabled,
-      wrapInTransaction,
-      searchPath: searchPath || undefined,
-      timeoutSec,
       scheduleType,
     };
     switch (scheduleType) {
@@ -122,55 +106,35 @@ export default function DbScriptForm({
       </div>
 
       {/* GRID principal: esquerda (dados/agenda) | direita (SQL) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="gap-6">
         {/* Coluna esquerda */}
         <div className="lg:col-span-5 space-y-6">
           {/* Seção: Dados básicos */}
           <section className="rounded-2xl border border-neutral-800 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-200">Dados do script</h3>
+            <h3 className="mb-3 text-sm font-semibold text-neutral-200">Dados do job</h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="gap-4">
               <DefaultInput
                 label="Nome"
-                placeholder="Nome do script"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome do Job"
+                value={initial?.name ?? ""}
+                disabled
               />
-
               <DefaultInput
-                label="search_path"
-                placeholder="ex.: public,ext"
-                value={searchPath}
-                onChange={(e) => setSearchPath(e.target.value)}
-              />
+              label="Descrição (opcional)"
+              value={initial?.description ?? ""}
+              className="mt-4"
+              disabled
+            />
             </div>
 
-            <DefaultInput
-              label="Descrição (opcional)"
-              placeholder="Opcional"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-4"
-            />
-
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="mt-4 gap-4">
               <DefaultCheckbox
                 label="Habilitado"
                 checked={enabled}
                 onChange={(e) => setEnabled((e.target as HTMLInputElement).checked)}
               />
-              <DefaultCheckbox
-                label="Transação"
-                checked={wrapInTransaction}
-                onChange={(e) => setWrapInTransaction((e.target as HTMLInputElement).checked)}
-              />
-              <DefaultInput
-                type="number"
-                min={0}
-                label="Timeout (s)"
-                value={timeoutSec}
-                onChange={(e) => setTimeoutSec(Number(e.target.value))}
-              />
+
               <DefaultSelect
                 label="Tipo de Agendamento"
                 value={scheduleType}
@@ -271,19 +235,6 @@ export default function DbScriptForm({
                 />
               </div>
             )}
-          </section>
-        </div>
-
-        {/* Coluna direita (SQL) */}
-        <div className="lg:col-span-7">
-          <section className="rounded-2xl border border-neutral-800 p-4 lg:sticky lg:top-16">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-200">SQL</h3>
-            <DefaultTextarea
-              placeholder="Escreva o SQL a ser executado..."
-              value={sqlText}
-              onChange={(e) => setSqlText(e.target.value)}
-              className="min-h-[520px] font-mono"
-            />
           </section>
         </div>
       </div>

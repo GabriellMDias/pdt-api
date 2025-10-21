@@ -2,24 +2,32 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconButton, ConfirmDialog, EmptyState } from "./primitives";
 
-// Ícones (use os seus de preferência)
+// Ícones
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import TableRowsIcon from "@mui/icons-material/TableRows";
 import EditNoteIcon from "@mui/icons-material/EditNote";
+import BoltIcon from "@mui/icons-material/Bolt";
 
 export type Id = string | number;
 
 export type Column<T> = {
-  key: keyof T | string; // permite campos calculados
+  key: keyof T | string;
   header: string;
   width?: string;
   render?: (row: T, index: number) => React.ReactNode;
 };
 
 export type FetchParams = { search?: string };
+
+type RowAction<T> = {
+  key: string;
+  label: string;
+  disabled?: boolean;
+  onClick: (row: T) => void | Promise<void>;
+};
 
 export type GridFormProps<T, TCreate, TUpdate> = {
   title: string;
@@ -29,23 +37,21 @@ export type GridFormProps<T, TCreate, TUpdate> = {
   createItem: (data: TCreate) => Promise<void>;
   updateItem: (id: Id, data: TUpdate) => Promise<void>;
   deleteItem: (id: Id) => Promise<void>;
-  // Form embutido como render prop para reuso em entidades diferentes
   renderForm: (args: {
     initial?: Partial<T>;
     onCancel: () => void;
     onSubmit: (payload: TCreate | TUpdate, id?: Id) => Promise<void>;
     submitting: boolean;
     isEdit: boolean;
-    maySubmit: boolean; // NOVO: indica se usuário tem permissão efetiva para salvar
+    maySubmit: boolean;
   }) => React.ReactNode;
-  // Opcional: placeholder da busca
   searchPlaceholder?: string;
-  // Controle inicial
   initialMode?: "grid" | "form";
-  // ====== GATES DE PERMISSÃO (opcionais) ======
-  canCreate?: boolean;                         // padrão true
-  canEdit?: boolean | ((row: T | undefined) => boolean);   // padrão () => true
-  canDelete?: boolean | ((row: T | undefined) => boolean); // padrão () => true
+  canCreate?: boolean;
+  canEdit?: boolean | ((row: T | undefined) => boolean);
+  canDelete?: boolean | ((row: T | undefined) => boolean);
+  /** NOVO: ações de linha exibidas no botão “Ações”. Retorne vazio para ocultar o botão. */
+  actionsForRow?: (row?: T) => RowAction<T>[];
 };
 
 export function GridForm<T, TCreate = any, TUpdate = any>({
@@ -62,6 +68,7 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   canCreate,
   canEdit,
   canDelete,
+  actionsForRow,
 }: GridFormProps<T, TCreate, TUpdate>) {
   const [mode, setMode] = useState<"grid" | "form">(initialMode);
   const [rows, setRows] = useState<T[]>([]);
@@ -73,6 +80,11 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState("");
   const [confirmYes, setConfirmYes] = useState<() => void>(() => () => {});
+
+  // menu Ações
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsWrapRef = useRef<HTMLDivElement | null>(null);
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null);
 
   // ====== RESOLUÇÃO DOS GATES ======
   const _canCreate = canCreate ?? true;
@@ -87,7 +99,6 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
     const q = search.toLowerCase();
-    // fallback genérico: concatena valores primários
     return rows.filter((r) => JSON.stringify(r).toLowerCase().includes(q));
   }, [rows, search]);
 
@@ -108,7 +119,7 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   }, [fetchAll, search]);
 
   useEffect(() => {
-    const t = setTimeout(() => load(), 250); // debounce leve
+    const t = setTimeout(() => load(), 250);
     return () => clearTimeout(t);
   }, [load]);
 
@@ -121,7 +132,6 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   }, [filtered, selected, idOf]);
 
   function toggleMode() {
-    // Se não tiver permissão para criar nem editar, não alterna
     const mayToggle = _canCreate || (selected ? _canEdit(selected) : false);
     if (!mayToggle) return;
     setMode((m) => (m === "grid" ? "form" : "grid"));
@@ -194,6 +204,27 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
 
   const mayToggleButton = _canCreate || (selected ? _canEdit(selected) : false);
 
+  // === Ações (menu) ===
+  const actions = useMemo(
+    () => (actionsForRow ? actionsForRow(selected) : []),
+    [actionsForRow, selected]
+  );
+
+  // fecha menu ao clicar fora
+  useEffect(() => {
+    if (!actionsOpen) return;
+    const onDocClick = (ev: MouseEvent) => {
+      const el = ev.target as Node;
+      if (
+        actionsMenuRef.current?.contains(el) ||
+        actionsWrapRef.current?.contains(el)
+      ) return;
+      setActionsOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [actionsOpen]);
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -221,32 +252,69 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {mayToggleButton && (
-              <IconButton onClick={toggleMode} title={mode === "grid" ? "Ir para formulário" : "Ir para grade"}>
-                {mode === "grid" ? <EditNoteIcon/> : <TableRowsIcon/>}
+          {/* toolbar */}
+          <div className="relative flex justify-between" ref={actionsWrapRef}>
+            <div className="flex gap-2">
+              {mayToggleButton && (
+                <IconButton onClick={toggleMode} title={mode === "grid" ? "Ir para formulário" : "Ir para grade"}>
+                  {mode === "grid" ? <EditNoteIcon/> : <TableRowsIcon/>}
+                </IconButton>
+              )}
+
+              <IconButton onClick={openCreate} title="Incluir" variant="green" disabled={!_canCreate}>
+                <AddIcon/>
               </IconButton>
-            )}
 
-            <IconButton onClick={openCreate} title="Incluir" variant="primary" disabled={!_canCreate}>
-              <AddIcon/>
-            </IconButton>
+              <IconButton
+                onClick={() => selected && confirmDeleteRow(selected)}
+                disabled={!selected || !_canDelete(selected)}
+                title="Excluir"
+                variant="danger"
+              >
+                <DeleteIcon/>
+              </IconButton>
 
+              <IconButton onClick={() => moveSelection(-1)} disabled={!selected || filtered.length <= 1} title="Anterior">
+                <ChevronLeftIcon/>
+              </IconButton>
+              <IconButton onClick={() => moveSelection(1)} disabled={!selected || filtered.length <= 1} title="Próximo">
+                <ChevronRightIcon/>
+              </IconButton>
+            </div>
+
+            {/* ===== Botão AÇÕES + dropdown ===== */}
             <IconButton
-              onClick={() => selected && confirmDeleteRow(selected)}
-              disabled={!selected || !_canDelete(selected)}
-              title="Excluir"
-              variant="danger"
+              onClick={() => setActionsOpen((v) => !v)}
+              variant="primary"
+              title="Ações"
+              disabled={!selected || actions.length === 0}
             >
-              <DeleteIcon/>
+              <BoltIcon />
             </IconButton>
 
-            <IconButton onClick={() => moveSelection(-1)} disabled={!selected || filtered.length <= 1} title="Anterior">
-              <ChevronLeftIcon/>
-            </IconButton>
-            <IconButton onClick={() => moveSelection(1)} disabled={!selected || filtered.length <= 1} title="Próximo">
-              <ChevronRightIcon/>
-            </IconButton>
+            {actionsOpen && (
+              <div
+                ref={actionsMenuRef}
+                className="absolute z-50 right-0 top-full mt-2 w-56 rounded-xl border border-neutral-800 bg-neutral-900 shadow-lg"
+              >
+                {actions.map((a) => (
+                  <button
+                    key={a.key}
+                    className={[
+                      "w-full text-left px-3 py-2 text-sm cursor-pointer",
+                      a.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-neutral-800"
+                    ].join(" ")}
+                    onClick={async () => {
+                      if (!selected || a.disabled) return;
+                      await a.onClick(selected);
+                      setActionsOpen(false);
+                    }}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {filtered.length === 0 ? (

@@ -1,39 +1,26 @@
-import { API_BASE, authHeaders, api } from "../cadastro/users/api";
-import type { CreateDbScriptDto, DbScript, DbScriptRun, UpdateDbScriptDto } from "./types";
+import { API_BASE, authHeaders, api } from "../../cadastro/users/api";
+import type { Job, JobRun, UpdateJobDto } from "./types";
 
-const BASE = `${API_BASE}/api/db-scripts`;
+const BASE = `${API_BASE}/api/code-jobs`;
 
 type RunFilters = {
   initialDate?: string; // "YYYY-MM-DD"
   finalDate?: string;   // "YYYY-MM-DD"
-  status?: "SUCCESS" | "ERROR" | "RUNNING" | "ALL";
+  status?: "SUCCESS" | "FAILED" | "RUNNING" | "SKIPPED" | "ALL";
 };
 
-export const dbScriptsApi = {
+export const jobsApi = {
   list: (token?: string | null) =>
-    api<DbScript[]>(`${BASE}`, { headers: authHeaders(token) }),
+    api<Job[]>(`${BASE}`, { headers: authHeaders(token) }),
 
   get: (id: number, token?: string | null) =>
-    api<DbScript>(`${BASE}/${id}`, { headers: authHeaders(token) }),
+    api<Job>(`${BASE}/${id}`, { headers: authHeaders(token) }),
 
-  create: (payload: CreateDbScriptDto, token?: string | null) =>
-    api(`${BASE}`, {
-      method: "POST",
-      headers: authHeaders(token),
-      body: JSON.stringify(payload),
-    }),
-
-  update: (id: number, payload: UpdateDbScriptDto, token?: string | null) =>
+  update: (id: number, payload: UpdateJobDto, token?: string | null) =>
     api(`${BASE}/${id}`, {
       method: "PATCH",
       headers: authHeaders(token),
       body: JSON.stringify(payload),
-    }),
-
-  remove: (id: number, token?: string | null) =>
-    api<{ ok: true }>(`${BASE}/${id}`, {
-      method: "DELETE",
-      headers: authHeaders(token),
     }),
 
   runNow: (id: number, token?: string | null) =>
@@ -62,8 +49,8 @@ export const dbScriptsApi = {
     const url = `${BASE}/${id}/runs${qs.toString() ? `?${qs.toString()}` : ""}`;
 
     return api<
-      DbScriptRun[] |
-      { items: DbScriptRun[]; total: number; page: number; pageSize: number; totalPages: number }
+      JobRun[] |
+      { items: JobRun[]; total: number; page: number; pageSize: number; totalPages: number }
     >(url, { headers: authHeaders(token) });
   },
 };

@@ -1,23 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
-import Layout from "../../../components/Layout";
-import PermissionGate from "../../../components/PermissionGate";
+import Layout from "../../../../components/Layout";
+import PermissionGate from "../../../../components/PermissionGate";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../../../hooks/useAuth";
-import { dbScriptsApi } from "./api";
-import type { DbScriptRun } from "./types";
-import TableCard from "../../../components/table/TableCard";
-import { type Column } from "../../../components/table/SimpleTable";
-import DateRange from "../../../components/inputs/DateRange";
-import DefaultButton from "../../../components/inputs/DefaultButton";
-import DefaultSelect from "../../../components/inputs/DefaultSelect";
-import { useFilterDraft } from "../../../hooks/useFilterDraft";
+import { useAuth } from "../../../../hooks/useAuth";
+import { jobsApi } from "./api";
+import type { JobRun } from "./types";
+import TableCard from "../../../../components/table/TableCard";
+import { type Column } from "../../../../components/table/SimpleTable";
+import DateRange from "../../../../components/inputs/DateRange";
+import DefaultButton from "../../../../components/inputs/DefaultButton";
+import DefaultSelect from "../../../../components/inputs/DefaultSelect";
+import { useFilterDraft } from "../../../../hooks/useFilterDraft";
 
 function fmtDate(s?: string | null) {
   if (!s) return "";
   try { return new Date(s).toLocaleString("pt-BR"); } catch { return s ?? ""; }
 }
 
-type StatusOpt = "ALL" | "SUCCESS" | "ERROR" | "RUNNING";
+type StatusOpt = "ALL" | "SUCCESS" | "FAILED" | "RUNNING" | "SKIPPED";
 
 type Filters = {
   initialDate: string;
@@ -25,18 +26,18 @@ type Filters = {
   status: StatusOpt;
 };
 
-export default function DbScriptRunsPage() {
+export default function JobRunsPage() {
   const { id } = useParams<{ id: string }>();
-  const scriptId = Number(id);
+  const jobId = Number(id);
   const { token, userId } = useAuth();
   const isAdmin = userId === 0;
 
-  const [data, setData] = useState<DbScriptRun[]>([]);
+  const [data, setData] = useState<JobRun[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState<number | null>(null);
 
   // filtros (aplicado/rascunho)
@@ -50,8 +51,8 @@ export default function DbScriptRunsPage() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await dbScriptsApi.runs(
-        scriptId,
+      const resp = await jobsApi.runs(
+        jobId,
         token,
         nextPage,
         nextPageSize,
@@ -80,9 +81,16 @@ export default function DbScriptRunsPage() {
   useEffect(() => {
     consultar(1, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scriptId, token]);
+  }, [jobId, token]);
 
-  const columns: Column<DbScriptRun>[] = useMemo(
+  const pretty = (v: any) => {
+    if (v == null) return "";
+    if (typeof v === "string") return v;
+    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+  };
+
+
+  const columns: Column<JobRun>[] = useMemo(
     () => [
       { key: "id", header: "ID", width: 80, field: "id", align: "right" },
       { key: "startedAt", header: "Início", width: 200, cell: (r) => fmtDate(r.startedAt) },
@@ -90,9 +98,9 @@ export default function DbScriptRunsPage() {
       { key: "status", header: "Status", width: 120, field: "status" },
       { key: "rowsAffected", header: "Linhas", width: 100, field: "rowsAffected", align: "right" },
       { key: "durationMs", header: "Duração (ms)", width: 140, field: "durationMs", align: "right" },
-      { key: "triggeredBy", header: "Origem", width: 140, field: "triggeredBy" },
-      { key: "error", header: "Erro/Msg", cell: (r) => r.error ?? "" },
-      { key: "log", header: "Log", cell: (r) => r.log ?? "" },
+      { key: "source", header: "Origem", width: 140, field: "source" },
+      { key: "error", header: "Erro/Msg", expandOnDblClick: true, fullFormatter: (v) => pretty(v), cell: (r) => r.error ?? "", tdClassName: "cursor-pointer hover:bg-slate-600/8" },
+      { key: "log", header: "Log", expandOnDblClick: true, fullFormatter: (v) => pretty(v), cell: (r) => r.log ?? "", tdClassName: "cursor-pointer hover:bg-slate-600/8" },
     ],
     []
   );
@@ -150,8 +158,9 @@ export default function DbScriptRunsPage() {
             options={[
               { value: "ALL", label: "Todos" },
               { value: "SUCCESS", label: "SUCCESS" },
-              { value: "ERROR", label: "ERROR" },
+              { value: "FAILED", label: "FAILED" },
               { value: "RUNNING", label: "RUNNING" },
+              { value: "SKIPPED", label: "SKIPPED" },
             ]}
           />
         </div>
@@ -178,7 +187,7 @@ export default function DbScriptRunsPage() {
 
         {FiltersBar}
 
-        <TableCard<DbScriptRun>
+        <TableCard<JobRun>
           data={dataForTable}
           columns={columns}
           total={totalForPagination}
@@ -211,11 +220,11 @@ export default function DbScriptRunsPage() {
   );
 
   return (
-    <Layout title={`DB Script #${scriptId} • Execuções`}>
+    <Layout title={`Job #${jobId} • Execuções`}>
       {isAdmin ? (
         PageInner
       ) : (
-        <PermissionGate required="dbScripts:consultar">{PageInner}</PermissionGate>
+        <PermissionGate required="code-jobs:consultar">{PageInner}</PermissionGate>
       )}
     </Layout>
   );

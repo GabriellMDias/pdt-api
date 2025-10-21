@@ -12,7 +12,7 @@ export function IconButton({
   children: React.ReactNode;
   onClick?: () => void;
   title?: string;
-  variant?: "default" | "primary" | "danger";
+  variant?: "green" | "default" | "primary" | "danger";
   disabled?: boolean;
   type?: "button" | "submit";
   className?: string;
@@ -23,6 +23,7 @@ export function IconButton({
     default: "bg-neutral-800 text-white hover:bg-neutral-700",
     primary: "bg-blue-600 text-white hover:bg-blue-500",
     danger: "bg-red-600 text-white hover:bg-red-500",
+    green: "bg-green-600 text-white hover:bg-green-500"
   } as const;
   return (
     <button

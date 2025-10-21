@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   exportToPDF,
   exportToXLSX,
@@ -35,6 +36,11 @@ export type Column<T> = {
   /** ---- Estouro de conteúdo ---- */
   /** 'ellipsis' (default) => corta com … em uma linha; 'wrap' => quebra de linha */
   overflow?: "ellipsis" | "wrap";
+
+  /** ---- popup no duplo clique ---- */
+  expandOnDblClick?: boolean;
+  fullFormatter?: (value: any, row: T, rowIndex: number) => string;
+  fullTitle?: (row: T, rowIndex: number) => string;
 };
 
 /** ===== Export options para o SimpleTable ===== */
@@ -130,9 +136,45 @@ export default function SimpleTable<T>({
 }: Props<T>) {
   const hasData = (data?.length ?? 0) > 0;
 
+  // ===== PREVIEW MODAL =====
+  const [preview, setPreview] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreview(null);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, []);
+
   /** ====== Ordenação (controlada x não controlada) ====== */
   const [internalSort, setInternalSort] = useState<SortState | null>(defaultSort ?? null);
   const effectiveSort = sortState ?? internalSort;
+
+  function toRenderable(v: unknown): React.ReactNode {
+    if (v == null) return "";
+    if (React.isValidElement(v)) return v;
+    const t = typeof v;
+    if (t === "string" || t === "number" || t === "boolean") return String(v);
+    try {
+      // stringify “seguro”
+      const json = JSON.stringify(v);
+      // one-liner (respeita a classe "truncate" do SimpleTable)
+      return <span className="font-mono">{json}</span>;
+    } catch {
+      return String(v as any);
+    }
+  }
+
+  // pretty printer p/ o popup
+  function defaultFullFormatter(v: any): string {
+    if (v == null) return "";
+    if (typeof v === "string") return v;
+    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+  }
 
   function toggleSort(col: Column<T>) {
     if (!col.sortable) return;
@@ -316,9 +358,7 @@ export default function SimpleTable<T>({
       <table className={tableClassName} style={{ tableLayout: "fixed" }}>
         <colgroup>
           {columns.map((c) => {
-            const w =
-              colWidths[c.key] ??
-              (typeof c.width === "number" ? c.width : pxFromAny(c.width));
+            const w = colWidths[c.key] ?? (typeof c.width === "number" ? c.width : pxFromAny(c.width));
             return <col key={c.key} style={w ? { width: `${w}px` } : undefined} />;
           })}
         </colgroup>
@@ -343,60 +383,97 @@ export default function SimpleTable<T>({
         <tbody className={bodyClassName}>
           {loading && (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-4 text-center">
-                Carregando...
-              </td>
+              <td colSpan={columns.length} className="px-4 py-4 text-center">Carregando...</td>
             </tr>
           )}
 
           {!loading && !hasData && (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-4 text-center">
-                {emptyMessage}
-              </td>
+              <td colSpan={columns.length} className="px-4 py-4 text-center">{emptyMessage}</td>
             </tr>
           )}
 
-          {!loading &&
-            hasData &&
-            sortedData.map((row, i) => {
-              const cls = `${rowBaseClassName} ` + (rowClassName ? rowClassName(row, i) : "");
-              return (
-                <tr
-                  key={getRowKey(row, i)}
-                  className={cls}
-                  onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row, i) : undefined}
-                >
-                  {columns.map((c) => {
-                    const content = c.cell ? c.cell(row, i) : (row as any)[c.field as string];
+          {!loading && hasData && sortedData.map((row, i) => {
+            const cls = `${rowBaseClassName} ` + (rowClassName ? rowClassName(row, i) : "");
+            return (
+              <tr
+                key={getRowKey(row, i)}
+                className={cls}
+                onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row, i) : undefined}
+              >
+                {columns.map((c) => {
+                  const raw = c.cell ? c.cell(row, i) : (row as any)[c.field as string];
+                  const content = toRenderable(raw);
 
-                    const overflowMode = c.overflow ?? "ellipsis";
-                    const overflowClass =
-                      overflowMode === "wrap"
-                        ? "whitespace-normal break-words"
-                        : "truncate";
+                  const overflowMode = c.overflow ?? "ellipsis";
+                  const overflowClass = overflowMode === "wrap" ? "whitespace-normal break-words" : "truncate";
 
-                    return (
-                      <td
-                        key={c.key}
-                        className={`px-4 py-2 ${cellBaseClassName || ""} ${c.tdClassName || ""} ${alignToClass(c.align)}`}
-                      >
-                        <div
-                          className={`block max-w-full ${overflowClass}`}
-                          title={titleForContent(content)}
-                        >
-                          {content}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
+                  return (
+                    <td
+                      key={c.key}
+                      className={`px-4 py-2 ${cellBaseClassName || ""} ${c.tdClassName || ""} ${alignToClass(c.align)}`}
+                      onDoubleClick={(e) => {
+                        if (!c.expandOnDblClick) return;
+                        e.stopPropagation(); // não propaga para onRowDoubleClick
+                        const title = typeof c.fullTitle === "function"
+                          ? c.fullTitle(row, i)
+                          : (typeof c.header === "string" ? c.header : String(c.key));
+                        const formatter = c.fullFormatter ?? defaultFullFormatter;
+                        setPreview({ title, content: formatter(raw, row, i) });
+                      }}
+                      title={titleForContent(content)}
+                    >
+                      <div className={`block max-w-full ${overflowClass}`}>{content}</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
       {stickyHeader && <style>{`thead { position: sticky; top: 0; z-index: 10; }`}</style>}
+
+      {/* ===== MODAL DE PREVIEW ===== */}
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-5xl overflow-hidden rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-800 px-4 py-2">
+              <h3 className="text-base font-semibold text-neutral-100">{preview.title}</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded bg-neutral-700 px-2 py-1 text-xs text-white hover:bg-neutral-600 cursor-pointer"
+                  onClick={() => navigator.clipboard.writeText(preview.content)}
+                  title="Copiar"
+                >
+                  Copiar
+                </button>
+                <button
+                  type="button"
+                  className="rounded bg-neutral-700 px-2 py-1 text-xs text-white hover:bg-neutral-600 cursor-pointer"
+                  onClick={() => setPreview(null)}
+                  title="Fechar (Esc)"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+            <div className="max-h-[75vh] overflow-auto p-4">
+              <pre className="whitespace-pre-wrap break-words text-sm text-neutral-100">
+                {preview.content}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

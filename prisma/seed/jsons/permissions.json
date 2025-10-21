@@ -18,5 +18,8 @@
   {"code": "dbScripts:excluir", "label": "Excluir Ações Agendadas"},
   {"code": "dbScripts:executar", "label": "Executar Ações Agendadas"},
   {"code": "parameters:consultar", "label": "Consultar Parâmetros"},
-  {"code": "parameters:editar", "label": "Editar Parâmetros"}
+  {"code": "parameters:editar", "label": "Editar Parâmetros"},
+  {"code": "codeJobs:consultar", "label": "Consultar Jobs"},
+  {"code": "codeJobs:editar", "label": "Editar Jobs"},
+  {"code": "codeJobs:executar", "label": "Executar Jobs"}
 ]

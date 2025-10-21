@@ -6,6 +6,7 @@ import KeyIcon from '@mui/icons-material/Key';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import SsidChartIcon from '@mui/icons-material/SsidChart';
 import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
+import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
 import BuildIcon from '@mui/icons-material/Build';
 import HomePage from '../pages/HomePage';
 import UsersPage from '../pages/configuracoes/cadastro/users/UsersPage';
@@ -15,9 +16,11 @@ import RelatorioICMS from '../pages/fiscal/obrigacoes/RelatorioSPEDUpload';
 import RelatorioSPEDAnalises from '../pages/fiscal/obrigacoes/RelatorioSPEDAnalises';
 import AnaliseEstoquePage from '../pages/estoque/analise/AnaliseEstoquePage';
 import AnaliseEstoqueDiaPage from '../pages/estoque/analise/AnaliseEstoqueDiaPage';
-import DbScriptsPage from '../pages/configuracoes/db-scripts/DbScriptsPage';
-import DbScriptRunsPage from '../pages/configuracoes/db-scripts/DbScriptRunsPage';
+import DbScriptsPage from '../pages/configuracoes/acoes-agendadas/db-scripts/DbScriptsPage';
+import DbScriptRunsPage from '../pages/configuracoes/acoes-agendadas/db-scripts/DbScriptRunsPage';
 import ParametersPage from '../pages/configuracoes/parameters/ParametersPage';
+import JobsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobsPage';
+import JobRunsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobRunsPage';
 
 
 export interface ProtectedRoute {
@@ -104,23 +107,44 @@ export const protectedRoutes: ProtectedRoute[] = [
             element: <UsersPage />,
             requiredPermissions: ['users:consultar', 'users:incluir', 'users:editar', 'users:excluir'],
             showInSidebar: true,
-          },
+          }
+        ],
+      },
+      {
+        label: 'Ações Agendadas',
+        showInSidebar: true,
+        children: [
           {
-            path: '/configuracoes/cadastro/db-scripts',
-            label: 'Açoes Agendadas',
+            path: '/configuracoes/acoesagendadas/db-scripts',
+            label: 'Scripts BD',
             showInSidebar: true,
             icon: <ManageHistoryIcon />,
             element: <DbScriptsPage />,
-            requiredPermissions: ['dbScripts:consultar']
+            requiredPermissions: ['dbScripts:consultar'],
           },
           {
-            path: '/configuracoes/db-scripts/:id/runs',
-            label: 'Log de Execuções',
+            path: '/configuracoes/acoesagendadas/db-scripts/:id/runs',
+            label: 'Log de Execuções Scripts de Banco de Dados',
             showInSidebar: false,
             element: <DbScriptRunsPage />,
             requiredPermissions: ['dbScripts:consultar']
+          },
+          {
+            path: '/configuracoes/acoesagendadas/jobs',
+            label: 'Jobs',
+            showInSidebar: true,
+            icon: <WorkHistoryIcon />,
+            element: <JobsPage />,
+            requiredPermissions: ['dbScripts:consultar'],
+          },
+          {
+            path: '/configuracoes/acoesagendadas/jobs/:id/runs',
+            label: 'Log de Execuções Jobs',
+            showInSidebar: false,
+            element: <JobRunsPage />,
+            requiredPermissions: ['dbScripts:consultar']
           }
-        ],
+        ]
       },
       {
         path: '/configuracoes/permissoes',

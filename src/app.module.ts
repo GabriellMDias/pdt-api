@@ -21,13 +21,15 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { DbScriptsModule } from './db-scripts/db-scripts.module'; 
 import { ParametersModule } from './parameters/parameters.module';
+import { SnkApiModule } from './snk-api/snk-api.module';
+import { CodeJobsModule } from './code-jobs/code-jobs.module';
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
     ScheduleModule.forRoot(),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, MonthlyResultsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule],
   controllers: [AppController],
   providers: [AppService],
 })

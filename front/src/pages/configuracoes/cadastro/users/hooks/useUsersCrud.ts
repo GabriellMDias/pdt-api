@@ -1,6 +1,5 @@
-// src/pages/configuracoes/cadastro/users/hooks/useUsersCrud.ts
 import { useCallback } from "react";
-import { api, authHeaders, API_BASE } from "../api";
+import { api, authHeaders, API_BASE } from "../../../../../services/api";
 import type { ApiUserPayload, User } from "../types";
 import type { Id } from "../../../../../components/crud/GridForm";
 

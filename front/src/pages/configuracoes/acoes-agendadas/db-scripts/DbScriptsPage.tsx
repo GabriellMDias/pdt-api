@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/configuracoes/db-scripts/DbScriptsPage.tsx
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../../components/Layout";
@@ -11,8 +10,7 @@ import { useDbScriptsCrud } from "./hooks/useDbScriptsCrud";
 import type { CreateDbScriptDto, DbScript, UpdateDbScriptDto } from "./types";
 import DbScriptForm from "./components/DbScriptForm";
 import { scheduleToText } from "./helpers";
-import { hasPermission } from "../../cadastro/users/utils/permission";
-import type { PermissionBag } from "../../cadastro/users/types";
+import { hasPermission, type PermissionBag } from "../../../../services/permission";
 import { dbScriptsApi } from "./api";
 import { toast } from "react-toastify";
 

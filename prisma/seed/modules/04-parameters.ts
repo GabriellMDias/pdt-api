@@ -76,6 +76,16 @@ export default async function seedParameters() {
     }
   });
 
+  const groupDRE = await prisma.parameterGroup.upsert({
+    where: {code: 'dre'},
+    update: {},
+    create: {
+      code: 'dre',
+      name: 'DRE',
+      description: "Parâmetros DRE"
+    }
+  })
+
   // Parâmetros API Sankhya
   await defParameter("sankhya.base_url", "URL base do Gateway/WS do Sankhya (API antiga Sankhya)", ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://sua-instancia-sankhya.exemplo.com.br");
   await defParameter("sankhya.port",     "Porta do serviço (API antiga Sankhya)",                   ParameterType.INT,    ParameterScope.GLOBAL, groupSankhya.id, "8080");
@@ -88,4 +98,7 @@ export default async function seedParameters() {
 
 
   await defParameter("vr.prest_serv", "CPF Prestadores de Serviço.", ParameterType.JSON, ParameterScope.GLOBAL, groupVR.id, `{"cpfs": ["12345678978", "23456789123"]}`);
+
+  await defParameter("dre.prov_perda_secos", "Provisão de Perda Desconhecidas no Centro Custo Secos (% sobre o faturamento)", ParameterType.DECIMAL, ParameterScope.GLOBAL, groupDRE.id, "1")
+  await defParameter("dre.considera_quebra_negativa", "Considera valores negativos na quebra, consumo e perda", ParameterType.BOOL, ParameterScope.BOTH, groupDRE.id, "true")
 }

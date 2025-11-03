@@ -21,5 +21,7 @@
   {"code": "parameters:editar", "label": "Editar Parâmetros"},
   {"code": "codeJobs:consultar", "label": "Consultar Jobs"},
   {"code": "codeJobs:editar", "label": "Editar Jobs"},
-  {"code": "codeJobs:executar", "label": "Executar Jobs"}
+  {"code": "codeJobs:executar", "label": "Executar Jobs"},
+  {"code": "dre:consultar", "label": "Consultar DRE", "useStorePermission": true},
+  {"code": "dre:consolidar", "label": "Consolidar DRE", "useStorePermission": true}
 ]

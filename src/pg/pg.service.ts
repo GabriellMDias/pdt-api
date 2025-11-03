@@ -34,7 +34,11 @@ export class PgService implements OnModuleDestroy, OnModuleInit {
 
   async onModuleInit() {
     const c = await this.pool.connect();
-    c.release();
+    try {
+      await c.query(`SET TIME ZONE '${process.env.PG_TZ || 'America/Sao_Paulo'}'`);
+    } finally {
+      c.release();
+    }
   }
 
   async onModuleDestroy() {

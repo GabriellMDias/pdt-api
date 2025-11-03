@@ -7,6 +7,7 @@ import { PgModule } from 'src/pg/pg.module';
 @Module({
   controllers: [CostCentersController],
   providers: [CostCentersService],
-  imports: [PrismaModule, PgModule]
+  imports: [PrismaModule, PgModule],
+  exports: [CostCentersService]
 })
 export class CostCentersModule {}

@@ -8,6 +8,8 @@ import SsidChartIcon from '@mui/icons-material/SsidChart';
 import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
 import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
 import BuildIcon from '@mui/icons-material/Build';
+import CasesIcon from '@mui/icons-material/Cases';
+import BackupTableIcon from '@mui/icons-material/BackupTable';
 import HomePage from '../pages/HomePage';
 import UsersPage from '../pages/configuracoes/cadastro/users/UsersPage';
 import PermissionsPage from '../pages/configuracoes/permissions/PermissionsPage';
@@ -21,6 +23,7 @@ import DbScriptRunsPage from '../pages/configuracoes/acoes-agendadas/db-scripts/
 import ParametersPage from '../pages/configuracoes/parameters/ParametersPage';
 import JobsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobsPage';
 import JobRunsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobRunsPage';
+import ResultadoDiarioPage from '../pages/administrativo/resultado-diario/ResultadoDiarioPage';
 
 
 export interface ProtectedRoute {
@@ -41,6 +44,21 @@ export const protectedRoutes: ProtectedRoute[] = [
     icon: <HomeIcon />,
     element: <HomePage />,
     showInSidebar: true,
+  },
+  {
+    label: 'Administrativo',
+    icon: <CasesIcon />,
+    showInSidebar: true,
+    children: [
+      {
+        path: '/adm/resultadodiario',
+        label: 'Resultado Diário',
+        icon: <BackupTableIcon />,
+        element: <ResultadoDiarioPage />,
+        showInSidebar: true,
+        requiredPermissions: ["dre:consultar"]
+      }
+    ]
   },
   {
     label: 'Estoque',

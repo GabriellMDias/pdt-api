@@ -15,7 +15,7 @@ export default function DefaultButton({
   ...rest
 }: DefaultButtonProps) {
   const baseStyle = `
-    w-full py-2 px-4 rounded-md font-semibold
+    py-2 px-4 rounded-md font-semibold
     flex items-center justify-center gap-2
     transition-all duration-200 ease-in-out
     focus:outline-none focus:ring-2 focus:ring-pilar-green

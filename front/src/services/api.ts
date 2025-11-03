@@ -1,4 +1,3 @@
-// src/pages/configuracoes/cadastro/users/api.ts
 export const API_BASE = ""; // same-origin; ajuste se necessário
 
 export function authHeaders(token?: string | null): Record<string, string> {

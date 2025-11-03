@@ -7,6 +7,7 @@ import { PgModule } from 'src/pg/pg.module';
 @Module({
   controllers: [DepartmentsController],
   providers: [DepartmentsService],
-  imports: [PrismaModule, PgModule]
+  imports: [PrismaModule, PgModule],
+  exports: [DepartmentsService]
 })
 export class DepartmentsModule {}

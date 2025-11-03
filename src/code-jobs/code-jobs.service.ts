@@ -17,6 +17,9 @@ import { SnkApiService } from 'src/snk-api/snk-api.service';
 import { CodeJob, getDecoratedJobs, DecoratedJobEntry } from './code-job.decorator';
 import { ParametersService } from 'src/parameters/parameters.service';
 import { UpdateCodeJobDto } from './dto/update-code-job.dto';
+import { StoresService } from 'src/stores/stores.service';
+import { CostCentersService } from 'src/cost-centers/cost-centers.service';
+import { DepartmentsService } from 'src/departments/departments.service';
 
 const LOCK_NS = 764_001; // namespace para pg_advisory_lock
 type RunFilters = {
@@ -37,7 +40,10 @@ export class CodeJobsService implements OnApplicationBootstrap {
     private readonly pg: PgService,
     private readonly moduleRef: ModuleRef,
     private readonly snk: SnkApiService,
-    private readonly parameters: ParametersService
+    private readonly parameters: ParametersService,
+    private readonly stores: StoresService,
+    private readonly costCenters: CostCentersService,
+    private readonly departments: DepartmentsService
   ) {}
 
   // ===== Lifecycle =====
@@ -417,255 +423,270 @@ export class CodeJobsService implements OnApplicationBootstrap {
   }
 
   // ====== HANDLER: Sincronizar Funcionários ======
-@CodeJob({
-  handler: 'syncFuncionariosClubeVantagem',
-  name: 'Sync Funcionários Sankhya → VR',
-  description: 'Marca como clube de vantagens = 1 (Funcionários) para os clientes preferênciais que são funcionários.',
-  schedule: { type: 'CRON', cron: '0 */10 * * * *', timezone: 'America/Sao_Paulo' },
-  enabled: true,
-})
-private async syncFuncionariosClubeVantagem() {
-  // === 0) Prestadores de serviço (parâmetro) ===
-  const prest = (await this.parameters.getEffectiveByCode<{ cpfs?: string[] }>('vr.prest_serv'))?.value;
-  const prestCpfsRaw = Array.isArray(prest?.cpfs) ? prest!.cpfs! : [];
+  @CodeJob({
+    handler: 'syncFuncionariosClubeVantagem',
+    name: 'Sync Funcionários Sankhya → VR',
+    description: 'Marca como clube de vantagens = 1 (Funcionários) para os clientes preferênciais que são funcionários.',
+    schedule: { type: 'CRON', cron: '0 */10 * * * *', timezone: 'America/Sao_Paulo' },
+    enabled: true,
+  })
+  private async syncFuncionariosClubeVantagem() {
+    // === 0) Prestadores de serviço (parâmetro) ===
+    const prest = (await this.parameters.getEffectiveByCode<{ cpfs?: string[] }>('vr.prest_serv'))?.value;
+    const prestCpfsRaw = Array.isArray(prest?.cpfs) ? prest!.cpfs! : [];
 
-  // === 1) Tipos e utilidades ===
-  type Funcionario = {
-    CODFUNC: number;
-    NOMEFUNC: string;
-    CPF: string;   // Sankhya vem string (pode ter zeros à esquerda)
-    CODEMP: number;
-    RAZAOSOCIAL: string;
-  };
+    // === 1) Tipos e utilidades ===
+    type Funcionario = {
+      CODFUNC: number;
+      NOMEFUNC: string;
+      CPF: string;   // Sankhya vem string (pode ter zeros à esquerda)
+      CODEMP: number;
+      RAZAOSOCIAL: string;
+    };
 
-  // normaliza para **exatos 11 dígitos** preservando zeros à esquerda
-  const norm11 = (v: unknown) => {
-    const d = String(v ?? '').replace(/\D+/g, '');
-    if (!d) return '';
-    if (d.length > 11) return d.slice(-11);
-    return d.padStart(11, '0');
-  };
+    // normaliza para **exatos 11 dígitos** preservando zeros à esquerda
+    const norm11 = (v: unknown) => {
+      const d = String(v ?? '').replace(/\D+/g, '');
+      if (!d) return '';
+      if (d.length > 11) return d.slice(-11);
+      return d.padStart(11, '0');
+    };
 
-  // === 2) Funcionários (Sankhya) ===
-  const sql = `
-    SELECT
-      FUN.CODFUNC,
-      FUN.NOMEFUNC,
-      FUN.CPF AS CPF,
-      EMP.CODEMP,
-      EMP.RAZAOSOCIAL
-    FROM TFPFUN FUN
-    JOIN TSIEMP EMP ON (EMP.CODEMP = FUN.CODEMP)
-    WHERE DTDEM IS NULL
-      AND FUN.CPF NOT IN (24924146803, 02698449888)
-    ORDER BY 2 ASC
-  `;
-  const funcionarios = await this.snk.executeQueryTyped<Funcionario>(sql);
+    // === 2) Funcionários (Sankhya) ===
+    const sql = `
+      SELECT
+        FUN.CODFUNC,
+        FUN.NOMEFUNC,
+        FUN.CPF AS CPF,
+        EMP.CODEMP,
+        EMP.RAZAOSOCIAL
+      FROM TFPFUN FUN
+      JOIN TSIEMP EMP ON (EMP.CODEMP = FUN.CODEMP)
+      WHERE DTDEM IS NULL
+        AND FUN.CPF NOT IN (24924146803, 02698449888)
+      ORDER BY 2 ASC
+    `;
+    const funcionarios = await this.snk.executeQueryTyped<Funcionario>(sql);
 
-  // set de CPFs normalizados dos FUNCIONÁRIOS
-  const empSet11 = new Set<string>();
-  for (const f of funcionarios) {
-    const cpf = norm11(f.CPF);
-    if (cpf.length === 11) empSet11.add(cpf);
-  }
-
-  // === 2.1) Prestadores → somar ao conjunto
-  const prestSet11 = new Set<string>();
-  for (const p of prestCpfsRaw) {
-    const cpf = norm11(p);
-    if (cpf.length === 11) prestSet11.add(cpf);
-  }
-  // conjunto final considerado "funcionário"
-  const allEmpSet11 = new Set<string>([...empSet11, ...prestSet11]);
-
-  // === 2.2) Candidatos a criação em clientepreferencial (somente CODEMP=51) ===
-  // mapa CPF11 -> nome
-  const emp51Map = new Map<string, string>();
-  for (const f of funcionarios) {
-    if (f.CODEMP !== 51) continue;
-    const cpf = norm11(f.CPF);
-    if (cpf.length === 11 && !emp51Map.has(cpf)) {
-      emp51Map.set(cpf, f.NOMEFUNC);
+    // set de CPFs normalizados dos FUNCIONÁRIOS
+    const empSet11 = new Set<string>();
+    for (const f of funcionarios) {
+      const cpf = norm11(f.CPF);
+      if (cpf.length === 11) empSet11.add(cpf);
     }
-  }
 
-  // === 3) Preferenciais PF (Postgres) ===
-  const result = await this.pg.query<{
-    id: number;
-    nome: string;
-    cpf: string | number | null;
-    participa: boolean;
-    has_tv1: boolean;
-  }>(`
-    SELECT
-      cp.id,
-      cp.nome,
-      cp.cnpj::text AS cpf,
-      cp.participaclubevantagem AS participa,
-      EXISTS (
-        SELECT 1
-        FROM clientepreferencialtipoclubevantagem x
-        WHERE x.id_clientepreferencial = cp.id
-          AND x.id_tipoclubevantagem = 1
-      ) AS has_tv1
-    FROM clientepreferencial cp
-    WHERE cp.id_tipoinscricao = 1
-  `);
-
-  const clientes = result.rows;
-
-  // mapa CPF11 → (id, nome, participa, has_tv1)
-  const byCpf = new Map<string, { id: number; nome: string; participa: boolean; has_tv1: boolean }>();
-  const cpfDuplicados = new Map<string, number[]>();
-
-  for (const c of clientes) {
-    const cpf11 = norm11(c.cpf);
-    if (cpf11.length !== 11) continue;
-
-    if (byCpf.has(cpf11)) {
-      const prev = cpfDuplicados.get(cpf11) ?? [];
-      cpfDuplicados.set(cpf11, [...prev, c.id]);
-    } else {
-      byCpf.set(cpf11, { id: c.id, nome: c.nome, participa: !!c.participa, has_tv1: !!c.has_tv1 });
+    // === 2.1) Prestadores → somar ao conjunto
+    const prestSet11 = new Set<string>();
+    for (const p of prestCpfsRaw) {
+      const cpf = norm11(p);
+      if (cpf.length === 11) prestSet11.add(cpf);
     }
-  }
+    // conjunto final considerado "funcionário"
+    const allEmpSet11 = new Set<string>([...empSet11, ...prestSet11]);
 
-  // === 4) Diffs em memória (mínimo de DML) ===
-  const toFlagTrue: number[] = [];
-  const toInsertTV1: number[] = [];
-  const missingInPreferencial: string[] = [];
-
-  // a) quem deve ter flag/tipo 1: allEmpSet11 (funcionários + prestadores)
-  for (const cpf of allEmpSet11) {
-    const cli = byCpf.get(cpf);
-    if (!cli) {
-      missingInPreferencial.push(cpf);
-      continue;
-    }
-    if (!cli.participa) toFlagTrue.push(cli.id);
-    if (!cli.has_tv1) toInsertTV1.push(cli.id);
-  }
-
-  // b) quem deve remover tipo 1: presentes como tipo 1 mas NÃO em allEmpSet11
-  const toDeleteTV1: number[] = [];
-  for (const [cpf11, cli] of byCpf.entries()) {
-    if (cli.has_tv1 && !allEmpSet11.has(cpf11)) {
-      toDeleteTV1.push(cli.id);
-    }
-  }
-
-  // c) candidatos a CRIAÇÃO (somente CODEMP=51) = cpfs de emp51 que não existem no preferencial
-  const emp51ToCreate: { cpf: string; nome: string }[] = [];
-  for (const [cpf, nome] of emp51Map.entries()) {
-    if (!byCpf.has(cpf)) {
-      emp51ToCreate.push({ cpf, nome });
-    }
-  }
-
-  // === 5) Operações em bloco (tudo em uma transação) ===
-  let createdIds: number[] = [];
-
-  await this.pg.transaction(async (tx) => {
-    // 5.1) CRIAR clientepreferencial para CODEMP=51 que não existem (INSERT em lote)
-    if (emp51ToCreate.length) {
-      const cpfs = emp51ToCreate.map(x => x.cpf);
-      const nomes = emp51ToCreate.map(x => x.nome);
-
-      const ins = await tx.query<{ id: number }>(`
-        WITH src AS (
-          SELECT UNNEST($1::text[]) AS cpf, UNNEST($2::text[]) AS nome
-        ),
-        srcd AS (
-          SELECT DISTINCT ON (cpf) cpf, nome
-          FROM src
-          ORDER BY cpf
-        ),
-        mx AS (
-          SELECT COALESCE(MAX(id), 0) AS base FROM clientepreferencial
-        ),
-        todo AS (
-          SELECT s.cpf, s.nome, (mx.base + ROW_NUMBER() OVER (ORDER BY s.cpf)) AS new_id
-          FROM srcd s
-          LEFT JOIN clientepreferencial cp ON cp.cnpj::text = s.cpf
-          CROSS JOIN mx
-          WHERE cp.id IS NULL
-        )
-        INSERT INTO clientepreferencial (
-          id, nomepai, nomemae, observacao2, cargoconjuge, telefoneempresaconjuge,
-          bairroempresaconjuge, agencia, conta, praca, empresa, enderecoempresa,
-          bairroempresa, telefoneempresa, cargo, nomeconjuge, rgconjuge, orgaoemissorconjuge,
-          empresaconjuge, enderecoempresaconjuge, nome, id_situacaocadastro, endereco, bairro,
-          id_estado, id_municipio, cep, telefone, celular, email, inscricaoestadual,
-          orgaoemissor, cnpj, id_tipoestadocivil, datanascimento, dataresidencia, datacadastro,
-          id_tiporesidencia, sexo, observacao, cepempresa, salario, outrarenda, valorlimite,
-          cpfconjuge, cepempresaconjuge, salarioconjuge, outrarendaconjuge, id_tipoinscricao,
-          vencimentocreditorotativo, permitecreditorotativo, permitecheque, bloqueado, bloqueadoautomatico,
-          numero, id_tiporestricaocliente, dataatualizacaocadastro, complemento, enviasms, enviaemail,
-          id_regiaocliente, id_classerisco, participaclubevantagem, id_tipoorigemcadastro,
-          tipovencimentocreditorotativo, utilizaappdescontos, permitechequevista, senhaportal,
-          aceitotermosuso, protecaodadosmotivo, id_tiposolicitacaolgpd, bloqueadolgpd
-        )
-        SELECT
-          t.new_id, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-          t.nome, 1, '', '', 35, 3537800, 18187000, '', '', '', '', '', t.cpf, 0,
-          DATE '2000-01-01', DATE '2000-01-01', NOW(), 5, 1, '', 0, 0.00, 0.00, 0.00, 0, 0, 0.00, 0.00, 1,
-          0, 'f', 'f', 'f', 'f', '', 0, NOW(), '', 'f', 'f', 1, 3, 't', 1, -1, 't', 'f', '', 'f', NULL, 'f'
-        FROM todo t
-        RETURNING id
-      `, [cpfs, nomes]);
-
-      createdIds = ins.rows.map(r => r.id);
-
-      // inserir vínculo tipo=1 para os recém-criados
-      if (createdIds.length) {
-        await tx.query(
-          `INSERT INTO clientepreferencialtipoclubevantagem (id_clientepreferencial, id_tipoclubevantagem)
-           SELECT x.id, 1
-           FROM UNNEST($1::int[]) AS x(id)`,
-          [createdIds],
-        );
+    // === 2.2) Candidatos a criação em clientepreferencial (somente CODEMP=51) ===
+    // mapa CPF11 -> nome
+    const emp51Map = new Map<string, string>();
+    for (const f of funcionarios) {
+      if (f.CODEMP !== 51) continue;
+      const cpf = norm11(f.CPF);
+      if (cpf.length === 11 && !emp51Map.has(cpf)) {
+        emp51Map.set(cpf, f.NOMEFUNC);
       }
     }
 
-    // 5.2) UPDATE flag global em lote (existentes)
-    if (toFlagTrue.length) {
-      await tx.query(
-        `UPDATE clientepreferencial
-         SET participaclubevantagem = 't'
-         WHERE id = ANY($1::int[]) AND participaclubevantagem <> 't'`,
-        [toFlagTrue],
-      );
+    // === 3) Preferenciais PF (Postgres) ===
+    const result = await this.pg.query<{
+      id: number;
+      nome: string;
+      cpf: string | number | null;
+      participa: boolean;
+      has_tv1: boolean;
+    }>(`
+      SELECT
+        cp.id,
+        cp.nome,
+        cp.cnpj::text AS cpf,
+        cp.participaclubevantagem AS participa,
+        EXISTS (
+          SELECT 1
+          FROM clientepreferencialtipoclubevantagem x
+          WHERE x.id_clientepreferencial = cp.id
+            AND x.id_tipoclubevantagem = 1
+        ) AS has_tv1
+      FROM clientepreferencial cp
+      WHERE cp.id_tipoinscricao = 1
+    `);
+
+    const clientes = result.rows;
+
+    // mapa CPF11 → (id, nome, participa, has_tv1)
+    const byCpf = new Map<string, { id: number; nome: string; participa: boolean; has_tv1: boolean }>();
+    const cpfDuplicados = new Map<string, number[]>();
+
+    for (const c of clientes) {
+      const cpf11 = norm11(c.cpf);
+      if (cpf11.length !== 11) continue;
+
+      if (byCpf.has(cpf11)) {
+        const prev = cpfDuplicados.get(cpf11) ?? [];
+        cpfDuplicados.set(cpf11, [...prev, c.id]);
+      } else {
+        byCpf.set(cpf11, { id: c.id, nome: c.nome, participa: !!c.participa, has_tv1: !!c.has_tv1 });
+      }
     }
 
-    // 5.3) INSERT tipo=1 para existentes que faltam
-    if (toInsertTV1.length) {
-      await tx.query(
-        `INSERT INTO clientepreferencialtipoclubevantagem (id_clientepreferencial, id_tipoclubevantagem)
-         SELECT x.id, 1
-         FROM UNNEST($1::int[]) AS x(id)
-         LEFT JOIN clientepreferencialtipoclubevantagem c
-           ON c.id_clientepreferencial = x.id AND c.id_tipoclubevantagem = 1
-         WHERE c.id_clientepreferencial IS NULL`,
-        [toInsertTV1],
-      );
+    // === 4) Diffs em memória (mínimo de DML) ===
+    const toFlagTrue: number[] = [];
+    const toInsertTV1: number[] = [];
+    const missingInPreferencial: string[] = [];
+
+    // a) quem deve ter flag/tipo 1: allEmpSet11 (funcionários + prestadores)
+    for (const cpf of allEmpSet11) {
+      const cli = byCpf.get(cpf);
+      if (!cli) {
+        missingInPreferencial.push(cpf);
+        continue;
+      }
+      if (!cli.participa) toFlagTrue.push(cli.id);
+      if (!cli.has_tv1) toInsertTV1.push(cli.id);
     }
 
-    // 5.4) DELETE tipo=1 para quem não é mais funcionário/prestador
-    if (toDeleteTV1.length) {
-      await tx.query(
-        `DELETE FROM clientepreferencialtipoclubevantagem
-         WHERE id_tipoclubevantagem = 1
-           AND id_clientepreferencial = ANY($1::int[])`,
-        [toDeleteTV1],
-      );
+    // b) quem deve remover tipo 1: presentes como tipo 1 mas NÃO em allEmpSet11
+    const toDeleteTV1: number[] = [];
+    for (const [cpf11, cli] of byCpf.entries()) {
+      if (cli.has_tv1 && !allEmpSet11.has(cpf11)) {
+        toDeleteTV1.push(cli.id);
+      }
     }
-  });
 
-  // === 6) Retorno minimalista (incluídos/excluídos) ===
-  // incluídos = existentes que receberam tipo=1 + recém-criados
-  const included = Array.from(new Set<number>([...toInsertTV1, ...createdIds]));
-  const excluded = toDeleteTV1;
+    // c) candidatos a CRIAÇÃO (somente CODEMP=51) = cpfs de emp51 que não existem no preferencial
+    const emp51ToCreate: { cpf: string; nome: string }[] = [];
+    for (const [cpf, nome] of emp51Map.entries()) {
+      if (!byCpf.has(cpf)) {
+        emp51ToCreate.push({ cpf, nome });
+      }
+    }
 
-  return { included, excluded, createdIds };
-}
+    // === 5) Operações em bloco (tudo em uma transação) ===
+    let createdIds: number[] = [];
+
+    await this.pg.transaction(async (tx) => {
+      // 5.1) CRIAR clientepreferencial para CODEMP=51 que não existem (INSERT em lote)
+      if (emp51ToCreate.length) {
+        const cpfs = emp51ToCreate.map(x => x.cpf);
+        const nomes = emp51ToCreate.map(x => x.nome);
+
+        const ins = await tx.query<{ id: number }>(`
+          WITH src AS (
+            SELECT UNNEST($1::text[]) AS cpf, UNNEST($2::text[]) AS nome
+          ),
+          srcd AS (
+            SELECT DISTINCT ON (cpf) cpf, nome
+            FROM src
+            ORDER BY cpf
+          ),
+          mx AS (
+            SELECT COALESCE(MAX(id), 0) AS base FROM clientepreferencial
+          ),
+          todo AS (
+            SELECT s.cpf, s.nome, (mx.base + ROW_NUMBER() OVER (ORDER BY s.cpf)) AS new_id
+            FROM srcd s
+            LEFT JOIN clientepreferencial cp ON cp.cnpj::text = s.cpf
+            CROSS JOIN mx
+            WHERE cp.id IS NULL
+          )
+          INSERT INTO clientepreferencial (
+            id, nomepai, nomemae, observacao2, cargoconjuge, telefoneempresaconjuge,
+            bairroempresaconjuge, agencia, conta, praca, empresa, enderecoempresa,
+            bairroempresa, telefoneempresa, cargo, nomeconjuge, rgconjuge, orgaoemissorconjuge,
+            empresaconjuge, enderecoempresaconjuge, nome, id_situacaocadastro, endereco, bairro,
+            id_estado, id_municipio, cep, telefone, celular, email, inscricaoestadual,
+            orgaoemissor, cnpj, id_tipoestadocivil, datanascimento, dataresidencia, datacadastro,
+            id_tiporesidencia, sexo, observacao, cepempresa, salario, outrarenda, valorlimite,
+            cpfconjuge, cepempresaconjuge, salarioconjuge, outrarendaconjuge, id_tipoinscricao,
+            vencimentocreditorotativo, permitecreditorotativo, permitecheque, bloqueado, bloqueadoautomatico,
+            numero, id_tiporestricaocliente, dataatualizacaocadastro, complemento, enviasms, enviaemail,
+            id_regiaocliente, id_classerisco, participaclubevantagem, id_tipoorigemcadastro,
+            tipovencimentocreditorotativo, utilizaappdescontos, permitechequevista, senhaportal,
+            aceitotermosuso, protecaodadosmotivo, id_tiposolicitacaolgpd, bloqueadolgpd
+          )
+          SELECT
+            t.new_id, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+            t.nome, 1, '', '', 35, 3537800, 18187000, '', '', '', '', '', t.cpf, 0,
+            DATE '2000-01-01', DATE '2000-01-01', NOW(), 5, 1, '', 0, 0.00, 0.00, 0.00, 0, 0, 0.00, 0.00, 1,
+            0, 'f', 'f', 'f', 'f', '', 0, NOW(), '', 'f', 'f', 1, 3, 't', 1, -1, 't', 'f', '', 'f', NULL, 'f'
+          FROM todo t
+          RETURNING id
+        `, [cpfs, nomes]);
+
+        createdIds = ins.rows.map(r => r.id);
+
+        // inserir vínculo tipo=1 para os recém-criados
+        if (createdIds.length) {
+          await tx.query(
+            `INSERT INTO clientepreferencialtipoclubevantagem (id_clientepreferencial, id_tipoclubevantagem)
+            SELECT x.id, 1
+            FROM UNNEST($1::int[]) AS x(id)`,
+            [createdIds],
+          );
+        }
+      }
+
+      // 5.2) UPDATE flag global em lote (existentes)
+      if (toFlagTrue.length) {
+        await tx.query(
+          `UPDATE clientepreferencial
+          SET participaclubevantagem = 't'
+          WHERE id = ANY($1::int[]) AND participaclubevantagem <> 't'`,
+          [toFlagTrue],
+        );
+      }
+
+      // 5.3) INSERT tipo=1 para existentes que faltam
+      if (toInsertTV1.length) {
+        await tx.query(
+          `INSERT INTO clientepreferencialtipoclubevantagem (id_clientepreferencial, id_tipoclubevantagem)
+          SELECT x.id, 1
+          FROM UNNEST($1::int[]) AS x(id)
+          LEFT JOIN clientepreferencialtipoclubevantagem c
+            ON c.id_clientepreferencial = x.id AND c.id_tipoclubevantagem = 1
+          WHERE c.id_clientepreferencial IS NULL`,
+          [toInsertTV1],
+        );
+      }
+
+      // 5.4) DELETE tipo=1 para quem não é mais funcionário/prestador
+      if (toDeleteTV1.length) {
+        await tx.query(
+          `DELETE FROM clientepreferencialtipoclubevantagem
+          WHERE id_tipoclubevantagem = 1
+            AND id_clientepreferencial = ANY($1::int[])`,
+          [toDeleteTV1],
+        );
+      }
+    });
+
+    // === 6) Retorno minimalista (incluídos/excluídos) ===
+    // incluídos = existentes que receberam tipo=1 + recém-criados
+    const included = Array.from(new Set<number>([...toInsertTV1, ...createdIds]));
+    const excluded = toDeleteTV1;
+
+    return { included, excluded, createdIds };
+  }
+
+  @CodeJob({
+    handler: 'syncDadosVR',
+    name: 'Sync VRMaster',
+    description: 'Sincroniza com os dados do VRMaster (Lojas, Centro de Custos, Mercadológicos, etc...)',
+    schedule: { type: 'DAILY_AT', time: '12:00', timezone: 'America/Sao_Paulo' },
+    enabled: true,
+  })
+  private async syncDadosVR() {
+    const storesVr = await this.stores.getStoresFromVR()
+    const costCentersVr = await this.costCenters.getCostCenterFromVR()
+    const departmentsVr = await this.departments.getDepartmentsFromVr()
+
+    return "Dados Sincronizados"
+  }
 }

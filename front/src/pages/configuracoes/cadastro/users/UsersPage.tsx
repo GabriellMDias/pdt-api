@@ -6,9 +6,9 @@ import PermissionGate from "../../../../components/PermissionGate";
 import { useAuth } from "../../../../hooks/useAuth";
 
 import { useUsersCrud } from "./hooks/useUsersCrud";
-import { hasPermission } from "./utils/permission";
+import { hasPermission, type PermissionBag } from "../../../../services/permission";
 import UserForm from "./components/UserForm";
-import type { User, ApiUserPayload, PermissionBag } from "./types";
+import type { User, ApiUserPayload } from "./types";
 
 export default function UsersPage() {
   const { token, permissions, userId } = useAuth();

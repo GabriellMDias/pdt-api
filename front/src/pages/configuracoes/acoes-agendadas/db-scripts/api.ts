@@ -1,4 +1,4 @@
-import { API_BASE, authHeaders, api } from "../../cadastro/users/api";
+import { API_BASE, authHeaders, api } from "../../../../services/api";
 import type { CreateDbScriptDto, DbScript, DbScriptRun, UpdateDbScriptDto } from "./types";
 
 const BASE = `${API_BASE}/api/db-scripts`;

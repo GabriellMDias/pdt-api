@@ -1,5 +1,5 @@
-// src/pages/configuracoes/cadastro/users/utils/permissions.ts
-import type { PermissionBag, PermissionGrant } from "../types";
+export type PermissionGrant = { code: string; global: boolean; stores: number[] };
+export type PermissionBag = Array<string | PermissionGrant>;
 
 /**
  * Verifica se o usuário possui a permissão exigida.

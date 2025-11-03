@@ -10,8 +10,7 @@ import { useJobsCrud } from "./hooks/useJobsCrud";
 import type { Job, UpdateJobDto } from "./types";
 import JobsForm from "./components/JobsForm";
 import { scheduleToText } from "./helpers";
-import { hasPermission } from "../../cadastro/users/utils/permission";
-import type { PermissionBag } from "../../cadastro/users/types";
+import { hasPermission, type PermissionBag } from "../../../../services/permission";
 import { jobsApi } from "./api";
 import { toast } from "react-toastify";
 

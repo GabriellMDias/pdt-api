@@ -153,13 +153,18 @@ export default function DbScriptRunsPage() {
           <DefaultSelect
             label="Status"
             value={draft.status}
-            onChange={(e) => setDraft({ status: e.target.value as StatusOpt })}
+            onChangeValue={(v) => setDraft({ status: (v as StatusOpt) || "ALL" })}
             options={[
-              { value: "ALL", label: "Todos" },
+              { value: "ALL",     label: "Todos" },
               { value: "SUCCESS", label: "SUCCESS" },
-              { value: "ERROR", label: "ERROR" },
+              { value: "ERROR",   label: "ERROR" },
               { value: "RUNNING", label: "RUNNING" },
             ]}
+            
+            syncUrl
+            paramKey="status"
+            legacyKeys={["status"]}
+            replaceHistory
           />
         </div>
 

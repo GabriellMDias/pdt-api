@@ -24,6 +24,7 @@ import ParametersPage from '../pages/configuracoes/parameters/ParametersPage';
 import JobsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobsPage';
 import JobRunsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobRunsPage';
 import ResultadoDiarioPage from '../pages/administrativo/resultado-diario/ResultadoDiarioPage';
+import GestaoaVistaPage from '../pages/administrativo/gestao-a-vista/GestaoaVistaPage';
 
 
 export interface ProtectedRoute {
@@ -57,6 +58,14 @@ export const protectedRoutes: ProtectedRoute[] = [
         element: <ResultadoDiarioPage />,
         showInSidebar: true,
         requiredPermissions: ["dre:consultar"]
+      },
+      {
+        path: '/adm/gestaoavista',
+        label: 'Gestão a Vista',
+        icon: <BackupTableIcon />,
+        element: <GestaoaVistaPage />,
+        showInSidebar: true,
+        requiredPermissions: ["cost-center-comparative:consultar"]
       }
     ]
   },

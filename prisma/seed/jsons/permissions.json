@@ -23,5 +23,6 @@
   {"code": "codeJobs:editar", "label": "Editar Jobs"},
   {"code": "codeJobs:executar", "label": "Executar Jobs"},
   {"code": "dre:consultar", "label": "Consultar DRE", "useStorePermission": true},
-  {"code": "dre:consolidar", "label": "Consolidar DRE", "useStorePermission": true}
+  {"code": "dre:consolidar", "label": "Consolidar DRE", "useStorePermission": true},
+  {"code": "cost-center-comparative:consultar", "label": "Consultar Gestão a Vista", "useStorePermission": true}
 ]

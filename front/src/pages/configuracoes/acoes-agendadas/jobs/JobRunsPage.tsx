@@ -162,6 +162,11 @@ export default function JobRunsPage() {
               { value: "RUNNING", label: "RUNNING" },
               { value: "SKIPPED", label: "SKIPPED" },
             ]}
+
+            syncUrl
+            paramKey="status"
+            legacyKeys={["status"]}
+            replaceHistory
           />
         </div>
 

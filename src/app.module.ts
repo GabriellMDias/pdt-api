@@ -22,13 +22,14 @@ import { DbScriptsModule } from './db-scripts/db-scripts.module';
 import { ParametersModule } from './parameters/parameters.module';
 import { SnkApiModule } from './snk-api/snk-api.module';
 import { CodeJobsModule } from './code-jobs/code-jobs.module';
+import { CostCenterComparativeModule } from './cost-center-comparative/cost-center-comparative.module';
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
     ScheduleModule.forRoot(),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule],
   controllers: [AppController],
   providers: [AppService],
 })

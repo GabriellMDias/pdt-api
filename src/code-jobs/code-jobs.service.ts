@@ -612,10 +612,10 @@ export class CodeJobsService implements OnApplicationBootstrap {
             aceitotermosuso, protecaodadosmotivo, id_tiposolicitacaolgpd, bloqueadolgpd
           )
           SELECT
-            t.new_id, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-            t.nome, 1, '', '', 35, 3537800, 18187000, '', '', '', '', '', t.cpf, 0,
+            t.new_id, '', '', '', '','','', '', '', '', '','', '', '', '', '', '', '', '', '',
+            t.nome, 1, '', '', 35, 3537800, 18187000, '', '', '', '', '', CAST(t.cpf AS numeric), 0,
             DATE '2000-01-01', DATE '2000-01-01', NOW(), 5, 1, '', 0, 0.00, 0.00, 0.00, 0, 0, 0.00, 0.00, 1,
-            0, 'f', 'f', 'f', 'f', '', 0, NOW(), '', 'f', 'f', 1, 3, 't', 1, -1, 't', 'f', '', 'f', NULL, 'f'
+            0, 'f', 'f', 'f', 'f', '', 0, NOW(), '', 'f', 'f', 1, 3, 't', 1, -1, 't', 'f', '', 'f', '', NULL, 'f'
           FROM todo t
           RETURNING id
         `, [cpfs, nomes]);

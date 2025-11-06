@@ -48,10 +48,4 @@ export class GetLossAndConsumptionQueryDto {
   @IsBoolean()
   @Transform(({ value }) => toBool(value))
   considerNegativeValues?: boolean;
-
-  @ApiPropertyOptional({ description: 'Incluir provisão percentual (default: false)' })
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => toBool(value))
-  includeProvisionPercentage?: boolean;
 }

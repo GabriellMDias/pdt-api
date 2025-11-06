@@ -469,12 +469,10 @@ export class DreService {
     try {
       const considerNegativeValuesParameter = await this.parameters.getEffectiveByCode<boolean>('dre.considera_quebra_negativa')
       const considerNegativeValues = getLossAndConsumptionDto.considerNegativeValues === undefined ? considerNegativeValuesParameter.value : getLossAndConsumptionDto.considerNegativeValues
-      const provisionPercentageParameter = await this.parameters.getEffectiveByCode<Number>('dre.prov_perda_secos')
-      const provisionPercentage = getLossAndConsumptionDto.includeProvisionPercentage ? provisionPercentageParameter.value : 0
+
 
       // $6 pode ser null ou [] quando não quiser filtrar
-      const params: [Number, number[], string, string, boolean,  number[] | null] = [
-        provisionPercentage,
+      const params: [number[], string, string, boolean,  number[] | null] = [
         storeId,
         initialDate,
         finalDate,
@@ -486,7 +484,7 @@ export class DreService {
       SELECT * FROM(
         SELECT 
           q.id_centrocusto AS "costCenterId",
-          -CASE WHEN q.id_centrocusto = 10 THEN ROUND(SUM(q.total) + SUM(q.total) * $1, 2) ELSE ROUND(SUM(q.total), 2) END AS "totalValue"
+          -ROUND(SUM(q.total), 2) AS "totalValue"
         FROM (
           SELECT
             m.id_centrocusto,
@@ -501,8 +499,8 @@ export class DreService {
                 FROM mercadologico WHERE nivel = 1) m ON m.mercadologico1 = p.mercadologico1
           WHERE
             tmq.emitenota = 't'
-            AND data BETWEEN $3 AND $4
-            AND q.id_loja = ANY($2)
+            AND data BETWEEN $2 AND $3
+            AND q.id_loja = ANY($1)
           UNION ALL
           SELECT
             m.id_centrocusto,
@@ -517,8 +515,8 @@ export class DreService {
                 FROM mercadologico WHERE nivel = 1) m ON m.mercadologico1 = p.mercadologico1
           WHERE
             tmp.emitenota = 't'
-            AND pe.data BETWEEN $3 AND $4
-            AND pe.id_loja = ANY($2)
+            AND pe.data BETWEEN $2 AND $3
+            AND pe.id_loja = ANY($1)
           UNION ALL
           SELECT
             CASE WHEN tc.id_centrocustototal IS NULL THEN 0 ELSE tc.id_centrocustototal END AS id_centrocusto,
@@ -529,19 +527,19 @@ export class DreService {
           INNER JOIN produto p ON p.id = c.id_produto
           WHERE
             tc.emitenota = 't' 
-            AND c.data BETWEEN $3 AND $4
-            AND c.id_loja = ANY($2)
+            AND c.data BETWEEN $2 AND $3
+            AND c.id_loja = ANY($1)
         ) q
-        WHERE q.is_negative = false OR q.is_negative = $5
+        WHERE q.is_negative = false OR q.is_negative = $4
         GROUP BY q.id_centrocusto) t
         WHERE (
-            $6::int[] IS NULL
-            OR array_length($6::int[], 1) IS NULL
-            OR t."costCenterId" = ANY($6::int[])
+            $5::int[] IS NULL
+            OR array_length($5::int[], 1) IS NULL
+            OR t."costCenterId" = ANY($5::int[])
           )
       `;
 
-      const lossAndConsumption = await this.pg.query<LossAndComsumption, [Number, number[], string, string, boolean,  number[] | null]>(query,
+      const lossAndConsumption = await this.pg.query<LossAndComsumption, [number[], string, string, boolean,  number[] | null]>(query,
         params
       )
 
@@ -672,6 +670,14 @@ export class DreService {
       const packagingCost = await this.getPackagingCost(dto)
       const lossAndConsumption = await this.getLossAndConsumption(dto)
       const commercialRevenue = await this.getCommercialRevenue(dto)
+
+      /* Insere a provisão  de quebra no setor secos */
+      const secos = lossAndConsumption.find(it => it.costCenterId === 10);
+      if (secos) {
+        const provisionPercentageParameter = await this.parameters.getEffectiveByCode('dre.prov_perda_secos')
+        const provisionValue = costCenterSales.find(it => it.costCenterId === 10).saleValue * (parseFloat(provisionPercentageParameter.value) / 100)
+        secos.totalValue -= provisionValue;
+      }
 
       const lastMonth = await this.prisma.monthlyResult.findFirst({
         where: { storeId: { in: getNotConsolidatedDreDto.storeId } },

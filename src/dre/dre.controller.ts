@@ -89,7 +89,6 @@ export class DreController {
   @ApiQuery({ name: 'initialDate', required: true, type: String, example: '2025-05-01' })
   @ApiQuery({ name: 'finalDate', required: true, type: String, example: '2025-10-26' })
   @ApiQuery({ name: 'considerNegativeValues', required: false, type: Boolean, example: true })
-  @ApiQuery({ name: 'includeProvisionPercentage', required: false, type: Boolean, example: false })
   @Get('loss-and-consumption')
   @Permissions("dre:consultar")
   @ApiOkResponse({ type: LossAndComsumptionEntity, isArray: true })

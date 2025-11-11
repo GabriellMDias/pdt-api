@@ -35,7 +35,24 @@ const dateToFullMonth = (d: string) => {
 };
 
 const parseYMD = (s?: string) => (s ? new Date(s + "T00:00:00") : undefined);
-const subMonths = (d: Date, n: number) => { const x = new Date(d); x.setMonth(x.getMonth() - n); return x; };
+const subMonths = (d: Date, n: number) => {
+  const src = new Date(d);
+  const day = src.getDate();
+
+  // ir para o dia 1 evita o overflow na troca de mês
+  const m = new Date(src);
+  m.setDate(1);
+  m.setMonth(m.getMonth() - n);
+
+  // último dia do mês de destino
+  const lastDay = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+
+  // clampa para manter o "mesmo dia" quando possível,
+  // ou o último dia quando não existir (ex.: 31 -> 30/09)
+  m.setDate(Math.min(day, lastDay));
+  return m;
+};
+
 const hdr = (d: Date) => d.toLocaleDateString("pt-br", { month: "numeric", year: "numeric" }).toUpperCase();
 
 const nf2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -106,6 +123,8 @@ export default function GestaoaVistaTable({
     if (!end) return ["MÊS ANT.", "MÊS ATUAL", "% MA", "ANO ANT.", "% AA", "ANO ANT.", "MÊS ATUAL", "TENDÊNCIA"];
     const lastM = subMonths(end, 1);
     const lastY = subMonths(end, 12);
+    console.log("end: ", end)
+    console.log("lastM: ", lastM)
     return [hdr(lastM), hdr(end), "% MA", hdr(lastY), "% AA", hdr(lastY), hdr(end), "TENDÊNCIA"];
   }, [effectiveDates.end]);
 

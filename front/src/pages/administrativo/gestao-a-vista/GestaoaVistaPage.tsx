@@ -37,7 +37,7 @@ export default function GestaoaVistaPage() {
                     Lojas
                     </label>
                     <StoreMultiSelect
-                    permissionCode="dre:consultar"
+                    permissionCode="cost-center-comparative:consultar"
                     value={selectedStores}
                     onChange={(ids) => setSelectedStores(ids.map(String))}
                     placeholder="Selecione as lojas..."

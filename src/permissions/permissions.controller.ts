@@ -27,7 +27,7 @@ export class PermissionsController {
   /* Shows the permissions of a specific user */
   @Get(':userId')
   @ApiBearerAuth()
-  @Permissions('permissions:consultar')
+  /*@Permissions('permissions:consultar')*/
   @ApiOkResponse({type: UserPermissionEntity})
   findPermissionsPerUser(@Param('userId', ParseIntPipe) userId: number) {
     return this.permissionsService.findPermissionsPerUser(userId);

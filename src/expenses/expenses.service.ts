@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateExpenseApportionmentDto } from './dto/create-expense-apportionment.dto';
+import { UpdateExpenseApportionmentDto } from './dto/update-expense-apportionment.dto';
 
 @Injectable()
 export class ExpensesService {
@@ -28,5 +30,28 @@ export class ExpensesService {
 
   remove(id: number) {
     return this.prisma.expense.delete({where: {id}});
+  }
+
+  createExpenseApport(createExpenseApportionmentDto: CreateExpenseApportionmentDto) {
+    return this.prisma.expenseApportionment.create({data: createExpenseApportionmentDto});
+  }
+
+  findAllExpenseApport() {
+    return this.prisma.expenseApportionment.findMany();
+  }
+
+  findOneExpenseApport(id: number) {
+    return this.prisma.expenseApportionment.findUnique({where: {id}});
+  }
+
+  updateExpenseApport(id: number, updateExpenseApportionmentDto: UpdateExpenseApportionmentDto) {
+    return this.prisma.expenseApportionment.update({
+      where: { id },
+      data: updateExpenseApportionmentDto
+    });
+  }
+
+  removeExpenseApport(id: number) {
+    return this.prisma.expenseApportionment.delete({where: {id}});
   }
 }

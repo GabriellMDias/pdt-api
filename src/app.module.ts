@@ -11,7 +11,6 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { CostCentersModule } from './cost-centers/cost-centers.module';
 import { DepartmentsModule } from './departments/departments.module';
-import { ExpenseApportionmentsModule } from './expense-apportionments/expense-apportionments.module';
 import { PreExpenseApportionmentsModule } from './pre-expense-apportionments/pre-expense-apportionments.module';
 import { PreExpensesModule } from './pre-expenses/pre-expenses.module';
 import { PgModule } from './pg/pg.module';
@@ -29,7 +28,7 @@ import { CostCenterComparativeModule } from './cost-center-comparative/cost-cent
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
     ScheduleModule.forRoot(),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, ExpenseApportionmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule],
   controllers: [AppController],
   providers: [AppService],
 })

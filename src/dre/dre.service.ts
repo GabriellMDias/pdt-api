@@ -448,7 +448,7 @@ export class DreService {
               const cc = row.costCenterId;
               const lastEmb = row._sum.embalagem ?? 0; // assumindo armazenado positivo na consolidação
               const prorata = this.round2(-(Math.abs(lastEmb)) * fraction); // custo negativo
-              resultMap.set(cc, this.round2((resultMap.get(cc) ?? 0) + prorata));
+              resultMap.set(cc, prorata);
             }
           }
         }

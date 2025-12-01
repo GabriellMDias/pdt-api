@@ -86,6 +86,16 @@ export default async function seedParameters() {
     }
   })
 
+  const groupBackup = await prisma.parameterGroup.upsert({
+    where: { code: 'backup' },
+    update: {},
+    create: {
+      code: 'backup',
+      name: 'Backup',
+      description: 'Parâmetros de backup automático (PostgreSQL -> Google Drive)',
+    },
+  });
+
   // Parâmetros API Sankhya
   await defParameter("sankhya.base_url", "URL base do Gateway/WS do Sankhya (API antiga Sankhya)", ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://sua-instancia-sankhya.exemplo.com.br");
   await defParameter("sankhya.port",     "Porta do serviço (API antiga Sankhya)",                   ParameterType.INT,    ParameterScope.GLOBAL, groupSankhya.id, "8080");
@@ -96,9 +106,47 @@ export default async function seedParameters() {
   await defParameter("sankhya.x-token", "Token obtido na tela Configurações Gateway do Sankhya Om.",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "x-token");
   await defParameter("sankhya.api_base_url", "URL base da API Sankhya.",     ParameterType.STRING, ParameterScope.GLOBAL, groupSankhya.id, "https://api.sankhya.com.br");
 
-
+  // Parâmetros VR
   await defParameter("vr.prest_serv", "CPF Prestadores de Serviço.", ParameterType.JSON, ParameterScope.GLOBAL, groupVR.id, `{"cpfs": ["12345678978", "23456789123"]}`);
 
+  // Parâmetros DRE
   await defParameter("dre.prov_perda_secos", "Provisão de Perda Desconhecidas no Centro Custo Secos (% sobre o faturamento)", ParameterType.DECIMAL, ParameterScope.GLOBAL, groupDRE.id, "1")
   await defParameter("dre.considera_quebra_negativa", "Considera valores negativos na quebra, consumo e perda", ParameterType.BOOL, ParameterScope.BOTH, groupDRE.id, "true")
+
+  // ParAmetros Backup
+  await defParameter(
+    'backup.gdrive.client_id',
+    'OAuth Client ID do Google (Drive API)',
+    ParameterType.STRING,
+    ParameterScope.GLOBAL,
+    groupBackup.id,
+    '**preencher**',
+  );
+
+  await defParameter(
+    'backup.gdrive.client_secret',
+    'OAuth Client Secret do Google (Drive API)',
+    ParameterType.STRING,
+    ParameterScope.GLOBAL,
+    groupBackup.id,
+    '**preencher**',
+  );
+
+  await defParameter(
+    'backup.gdrive.refresh_token',
+    'Refresh token OAuth 2.0 com acesso ao Google Drive',
+    ParameterType.STRING,
+    ParameterScope.GLOBAL,
+    groupBackup.id,
+    '**preencher**',
+  );
+
+  await defParameter(
+    'backup.gdrive.folder_id',
+    'ID da pasta do Google Drive onde serão gravados os backups',
+    ParameterType.STRING,
+    ParameterScope.GLOBAL,
+    groupBackup.id,
+    '**preencher**',
+  );
 }

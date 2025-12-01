@@ -21,6 +21,14 @@ import { StoresService } from 'src/stores/stores.service';
 import { CostCentersService } from 'src/cost-centers/cost-centers.service';
 import { DepartmentsService } from 'src/departments/departments.service';
 
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import * as fs from 'fs';
+import * as path from 'path';
+import { google, drive_v3 } from 'googleapis';
+
+const execFileAsync = promisify(execFile);
+
 const LOCK_NS = 764_001; // namespace para pg_advisory_lock
 type RunFilters = {
   initialDate?: string; // "YYYY-MM-DD"
@@ -422,6 +430,144 @@ export class CodeJobsService implements OnApplicationBootstrap {
     }
   }
 
+    /**
+   * Lê DATABASE_URL (Prisma) e devolve dados de conexão para o pg_dump.
+   */
+  private parseDatabaseUrl() {
+    const raw = process.env.DATABASE_URL;
+    if (!raw) {
+      throw new Error('DATABASE_URL não está definido no ambiente.');
+    }
+
+    const url = new URL(raw);
+    const host = url.hostname || 'postgres';
+    const port = url.port || '5432';
+    const user = decodeURIComponent(url.username);
+    const password = decodeURIComponent(url.password);
+    const database = url.pathname.replace(/^\//, '');
+
+    if (!user || !database) {
+      throw new Error(`DATABASE_URL inválido: ${raw}`);
+    }
+
+    return { host, port, user, password, database };
+  }
+
+  /**
+   * Executa pg_dump (formato custom -F c) e grava em uploads/backups.
+   * Retorna o caminho do arquivo gerado.
+   */
+  private async createPgDumpFile(): Promise<string> {
+    const { host, port, user, password, database } = this.parseDatabaseUrl();
+
+    const backupDir = path.join(process.cwd(), 'uploads', 'backups');
+    await fs.promises.mkdir(backupDir, { recursive: true });
+
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const timestamp = [
+      now.getFullYear(),
+      pad(now.getMonth() + 1),
+      pad(now.getDate()),
+      '_',
+      pad(now.getHours()),
+      pad(now.getMinutes()),
+      pad(now.getSeconds()),
+    ].join('');
+
+    const fileName = `${database}_${timestamp}.dump`;
+    const fullPath = path.join(backupDir, fileName);
+
+    const args = [
+      '-h', host,
+      '-p', port,
+      '-U', user,
+      '-d', database,
+      '-F', 'c',      // formato custom (comprimido)
+      '-b',           // inclui blobs
+      '-f', fullPath, // arquivo de saída
+    ];
+
+    this.logger.log(`Iniciando pg_dump para ${database} em ${fullPath}`);
+
+    try {
+      await execFileAsync('pg_dump', args, {
+        env: {
+          ...process.env,
+          PGPASSWORD: password,
+        },
+      });
+    } catch (err: any) {
+      this.logger.error(`Erro ao executar pg_dump: ${err?.message ?? err}`);
+      throw err;
+    }
+
+    this.logger.log(`pg_dump concluído: ${fullPath}`);
+    return fullPath;
+  }
+
+  /**
+   * Lê parâmetros do módulo "parameters" para montar o client do Google Drive.
+   */
+  private async buildDriveClient(): Promise<{ drive: drive_v3.Drive; folderId: string }> {
+    const clientIdParam = await this.parameters.getEffectiveByCode<string>('backup.gdrive.client_id');
+    const clientSecretParam = await this.parameters.getEffectiveByCode<string>('backup.gdrive.client_secret');
+    const refreshTokenParam = await this.parameters.getEffectiveByCode<string>('backup.gdrive.refresh_token');
+    const folderIdParam = await this.parameters.getEffectiveByCode<string>('backup.gdrive.folder_id');
+
+    const clientId = clientIdParam.value;
+    const clientSecret = clientSecretParam.value;
+    const refreshToken = refreshTokenParam.value;
+    const folderId = folderIdParam.value;
+
+    if (!clientId || !clientSecret || !refreshToken || !folderId) {
+      throw new Error('Parâmetros do Google Drive incompletos (backup.gdrive.*).');
+    }
+
+    const oAuth2Client = new google.auth.OAuth2(clientId, clientSecret);
+    oAuth2Client.setCredentials({ refresh_token: refreshToken });
+
+    const drive = google.drive({
+      version: 'v3',
+      auth: oAuth2Client,
+    });
+
+    return { drive, folderId };
+  }
+
+  /**
+   * Envia o arquivo gerado pelo pg_dump para o Google Drive.
+   * Retorna o fileId criado no Drive.
+   */
+  private async uploadFileToDrive(localPath: string): Promise<string> {
+    const { drive, folderId } = await this.buildDriveClient();
+
+    const fileName = path.basename(localPath);
+    const fileSize = (await fs.promises.stat(localPath)).size;
+
+    this.logger.log(`Enviando backup para Google Drive: ${fileName} (${fileSize} bytes)`);
+
+    const res = await drive.files.create({
+      requestBody: {
+        name: fileName,
+        parents: [folderId],
+      },
+      media: {
+        mimeType: 'application/octet-stream',
+        body: fs.createReadStream(localPath),
+      },
+      fields: 'id, name',
+    });
+
+    const fileId = res.data.id;
+    if (!fileId) {
+      throw new Error('Upload para Google Drive retornou ID vazio.');
+    }
+
+    this.logger.log(`Backup enviado para Google Drive: ${fileName} (fileId=${fileId})`);
+    return fileId;
+  }
+
   // ====== HANDLER: Sincronizar Funcionários ======
   @CodeJob({
     handler: 'syncFuncionariosClubeVantagem',
@@ -689,4 +835,35 @@ export class CodeJobsService implements OnApplicationBootstrap {
 
     return "Dados Sincronizados"
   }
+
+    @CodeJob({
+    handler: 'backupDatabaseToGoogleDrive',
+    name: 'Backup banco PostgreSQL para Google Drive',
+    description: 'Gera um pg_dump do banco principal e envia o arquivo para o Google Drive.',
+    schedule: { type: 'DAILY_AT', time: '02:00', timezone: 'America/Sao_Paulo' },
+    enabled: true,
+  })
+  private async backupDatabaseToGoogleDrive() {
+    // 1) Gera arquivo de backup (pg_dump)
+    const localPath = await this.createPgDumpFile();
+
+    try {
+      // 2) Envia para o Google Drive
+      const fileId = await this.uploadFileToDrive(localPath);
+
+      // 3) (Opcional) remover arquivo local depois do upload
+      try {
+        await fs.promises.unlink(localPath);
+      } catch (e) {
+        this.logger.warn(`Não foi possível excluir o arquivo local de backup: ${localPath}`);
+      }
+
+      return `Backup concluído e enviado para o Google Drive (fileId=${fileId})`;
+    } catch (err) {
+      // Em caso de falha, manter o arquivo local para inspeção
+      this.logger.error(`Falha no backup/Upload. Arquivo local preservado: ${localPath}`);
+      throw err;
+    }
+  }
+
 }

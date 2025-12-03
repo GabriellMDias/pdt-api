@@ -608,7 +608,8 @@ export class CodeJobsService implements OnApplicationBootstrap {
         EMP.RAZAOSOCIAL
       FROM TFPFUN FUN
       JOIN TSIEMP EMP ON (EMP.CODEMP = FUN.CODEMP)
-      WHERE DTDEM IS NULL
+      WHERE FUN.SITUACAO NOT IN (0, 8, 9)
+        AND FUN.VINCULO NOT IN (90, 99)
         AND FUN.CPF NOT IN (24924146803, 02698449888)
       ORDER BY 2 ASC
     `;

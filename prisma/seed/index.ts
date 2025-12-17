@@ -3,6 +3,7 @@ import seedCore from "./modules/01-core";
 import seedPermissions from "./modules/02-permissions";
 import seedStatus from "./modules/03-status";
 import seedParameters from "./modules/04-parameters";
+import seedAnalyses from "./modules/05-analyses";
 
 type ModuleEntry = [string, () => Promise<void>];
 
@@ -10,7 +11,8 @@ const ALL_MODULES: ModuleEntry[] = [
   ["core",        seedCore],
   ["permissions", seedPermissions],
   ["status",      seedStatus],
-  ["parameters",  seedParameters]
+  ["parameters",  seedParameters],
+  ["analyses", seedAnalyses]
 ];
 
 /** Permite filtrar módulos via ENV ou args: SEED_MODULES=core,permissions */

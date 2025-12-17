@@ -1,0 +1,858 @@
+[
+  {
+    "code": "conc_contab_aplicacao",
+    "description": "Aplicação",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_banco",
+    "description": "Banco",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_banco_contabil",
+    "description": "Banco Contabil",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_caixa",
+    "description": "Caixa",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_cartao",
+    "description": "Cartão",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro_aberto",
+        "label": "Saldo Financeiro Aberto",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "saldo_financeiro_recebido",
+        "label": "Saldo Financeiro Recebido",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      },
+      {
+        "key": "financeiro",
+        "label": "Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 8
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_conta_transitoria_zerada",
+    "description": "Conta Transitoria Zerada",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "conta_descricao",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_contas_zeradas",
+    "description": "Contas Zeradas",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_convenio",
+    "description": "Convenio",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta contabil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro_aberto",
+        "label": "Saldo Financeiro Aberto",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "saldo_financeiro_recebido",
+        "label": "Saldo Financeiro Recebido",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      },
+      {
+        "key": "financeiro",
+        "label": "Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 8
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_credito_rotativo",
+    "description": "Crédito Rotativo",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta contabil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro_aberto",
+        "label": "Saldo Financeiro Aberto",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "saldo_financeiro_recebido",
+        "label": "Saldo Financeiro Recebido",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      },
+      {
+        "key": "financeiro",
+        "label": "Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 8
+      },
+      {
+        "key": "codigo_financeiro",
+        "label": "Codigo Financeiro",
+        "dataType": "int",
+        "nullable": true,
+        "order": 9
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_devolucao",
+    "description": "Devolução",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro_aberto",
+        "label": "Saldo Financeiro Aberto",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "saldo_financeiro_recebido",
+        "label": "Saldo Financeiro Recebido",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      },
+      {
+        "key": "financeiro",
+        "label": "Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 8
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_escrita_valor_contabil",
+    "description": "Escrita Valor Contábil",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "idloja",
+        "label": "Loja",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "id_contacontabilfiscal",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": true,
+        "order": 2
+      },
+      {
+        "key": "tipo_entrada",
+        "label": "Tipo Entrada",
+        "dataType": "int",
+        "nullable": true,
+        "order": 3
+      },
+      {
+        "key": "descricao_tipo_entrada",
+        "label": "Tipo Entrada (Descrição)",
+        "dataType": "string",
+        "nullable": true,
+        "order": 4
+      },
+      {
+        "key": "tipo_saida",
+        "label": "Tipo Saida",
+        "dataType": "int",
+        "nullable": true,
+        "order": 5
+      },
+      {
+        "key": "descricao_tipo_saida",
+        "label": "Tipo Saída (Descrição)",
+        "dataType": "string",
+        "nullable": true,
+        "order": 6
+      },
+      {
+        "key": "valor_fiscal_entrada",
+        "label": "Valor Entrada",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      },
+      {
+        "key": "valor_fiscal_saida",
+        "label": "Valor Saída",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 8
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_estoque",
+    "description": "Estoque",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "inventario_fiscal",
+        "label": "Inventário Fiscal",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Saldo Contabil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_fornecedor",
+    "description": "Fornecedor",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "mascara",
+        "label": "Mascara",
+        "dataType": "string",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_fornecedor_servico",
+    "description": "Fornecedor Serviço",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_outras_contas_pagar",
+    "description": "Outras Contas Pagar",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro",
+        "label": "Saldo Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      }
+    ]
+  },
+  {
+    "code": "conc_contab_venda_prazo",
+    "description": "Venda Prazo",
+    "groupName": "Conciliação Contábil",
+    "active": true,
+    "fields": [
+      {
+        "key": "conta_contabil",
+        "label": "Conta Contábil",
+        "dataType": "int",
+        "nullable": false,
+        "order": 1
+      },
+      {
+        "key": "nome_conta",
+        "label": "Nome Conta",
+        "dataType": "string",
+        "nullable": false,
+        "order": 2
+      },
+      {
+        "key": "loja",
+        "label": "Loja",
+        "dataType": "string",
+        "nullable": false,
+        "order": 3
+      },
+      {
+        "key": "saldo_contabil",
+        "label": "Valor Saldo Contábil",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 4
+      },
+      {
+        "key": "saldo_financeiro_aberto",
+        "label": "Saldo Financeiro Aberto",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 5
+      },
+      {
+        "key": "saldo_financeiro_recebido",
+        "label": "Saldo Financeiro Recebido",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 6
+      },
+      {
+        "key": "financeiro",
+        "label": "Financeiro",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 7
+      },
+      {
+        "key": "comparativo",
+        "label": "Comparativo",
+        "dataType": "decimal",
+        "nullable": false,
+        "order": 8
+      }
+    ]
+  }
+]

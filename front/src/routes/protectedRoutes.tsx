@@ -10,6 +10,8 @@ import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
 import BuildIcon from '@mui/icons-material/Build';
 import CasesIcon from '@mui/icons-material/Cases';
 import BackupTableIcon from '@mui/icons-material/BackupTable';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import HomePage from '../pages/HomePage';
 import UsersPage from '../pages/configuracoes/cadastro/users/UsersPage';
 import PermissionsPage from '../pages/configuracoes/permissions/PermissionsPage';
@@ -25,6 +27,7 @@ import JobsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobsPage';
 import JobRunsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobRunsPage';
 import ResultadoDiarioPage from '../pages/administrativo/resultado-diario/ResultadoDiarioPage';
 import GestaoaVistaPage from '../pages/administrativo/gestao-a-vista/GestaoaVistaPage';
+import ConcContabPage from '../pages/contabil/conc-contab/ConcContabPage';
 
 
 export interface ProtectedRoute {
@@ -88,6 +91,21 @@ export const protectedRoutes: ProtectedRoute[] = [
         requiredPermissions: ["stock-analysis:consultar"],
         element: <AnaliseEstoqueDiaPage />,
         showInSidebar: false
+      }
+    ]
+  },
+  {
+    label: 'Contábil',
+    icon: <CalculateIcon />,
+    showInSidebar: true,
+    children: [
+      {
+        path: '/contabil/conc_contab',
+        label: 'Conciliações Contábeis',
+        icon: <CompareArrowsIcon />,
+        showInSidebar: true,
+        element: <ConcContabPage />,
+        requiredPermissions: ['accounting-reconc:consultar'],
       }
     ]
   },

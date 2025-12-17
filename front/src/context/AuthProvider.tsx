@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { login } from "../services/auth";
-import { AuthContext, type PermissionGrant } from "./AuthContext";
+import { getMe } from '../services/account';
+import { AuthContext, type PermissionGrant, type UserProfile } from "./AuthContext";
 
 interface JwtPayload {
   userId: number;
@@ -12,6 +13,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [permissions, setPermissions] = useState<(string | PermissionGrant)[]>([]);
   const [token, setToken] = useState<string | null>(null);
 
@@ -30,16 +32,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserId(decoded.userId);
         setToken(savedToken);
 
+        try {
+          const me = await getMe(savedToken);
+          setUser(me);
+        } catch {
+          setUser(null);
+        }
+
         if (decoded.userId === 0) {
-          // Admin: pode ver tudo; o filtro também usa userId===0,
-          // mas manter '*' ajuda caso exista outra verificação isolada.
           setPermissions(['*']);
         } else {
           const response = await fetch(`/api/permissions/${decoded.userId}`, {
             headers: { Authorization: `Bearer ${savedToken}` },
           });
           const data = await response.json();
-          // Mantém estruturado: { userId, permissions: PermissionGrant[] }
           const arr: PermissionGrant[] = Array.isArray(data?.permissions) ? data.permissions : [];
           setPermissions(arr);
         }
@@ -49,6 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem("accessToken");
         setIsAuthenticated(false);
         setUserId(null);
+        setUser(null);
         setPermissions([]);
         setToken(null);
       } finally {
@@ -69,6 +76,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const decoded = jwtDecode<JwtPayload>(response.accessToken);
     setUserId(decoded.userId);
 
+    try {
+      const me = await getMe(response.accessToken);
+      setUser(me);
+    } catch {
+      setUser(null);
+    }
+
     if (decoded.userId === 0) {
       setPermissions(['*']);
     } else {
@@ -87,6 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem("accessToken");
     setIsAuthenticated(false);
     setUserId(null);
+    setUser(null);
     setPermissions([]);
     setToken(null);
     navigate("/", { replace: true });
@@ -94,7 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, loginUser, logout, userId, permissions, token }}
+      value={{ isAuthenticated, loginUser, logout, userId, user, permissions, token }}
     >
       {children}
     </AuthContext.Provider>

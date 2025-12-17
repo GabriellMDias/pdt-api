@@ -322,7 +322,7 @@ export default function SimpleTable<T>({
 
   /** ====== Render ====== */
   return (
-    <div className={`overflow-x-auto rounded-lg border ${wrapperClassName || ""}`}>
+    <div className={`overflow-x-auto rounded-lg ${wrapperClassName || ""}`}>
       {/* Toolbar de Export (opcional) */}
       {expEnabled && (
         exportOptions?.renderControls ? (

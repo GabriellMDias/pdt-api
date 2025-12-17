@@ -10,29 +10,25 @@ import { CreateExpenseApportionmentDto } from './dto/create-expense-apportionmen
 import { UpdateExpenseApportionmentDto } from './dto/update-expense-apportionment.dto';
 
 @Controller('expenses')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @ApiTags('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiCreatedResponse({type: ExpenseEntity})
   create(@Body() createExpenseDto: CreateExpenseDto) {
     return this.expensesService.create(createExpenseDto);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({type: ExpenseEntity, isArray: true})
   findAll() {
     return this.expensesService.findAll();
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({type: ExpenseEntity})
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const expense = await this.expensesService.findOne(id);
@@ -45,40 +41,30 @@ export class ExpensesController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiCreatedResponse({type: ExpenseEntity})
   update(@Param('id', ParseIntPipe) id: number, @Body() updateExpenseDto: UpdateExpenseDto) {
     return this.expensesService.update(id, updateExpenseDto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({type: ExpenseEntity})
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.expensesService.remove(id);
   }
 
   @Post('expense-apportionments')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiCreatedResponse({type: ExpenseApportionmentEntity})
   createExpenseApport(@Body() createExpenseApportionmentDto: CreateExpenseApportionmentDto) {
     return this.expensesService.createExpenseApport(createExpenseApportionmentDto);
   }
 
   @Get('expense-apportionments')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({type: ExpenseApportionmentEntity, isArray: true})
   findAllExpenseApport() {
     return this.expensesService.findAllExpenseApport();
   }
 
   @Get('expense-apportionments/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({type: ExpenseApportionmentEntity})
   async findOneExpenseApport(@Param('id', ParseIntPipe) id: number) {
     const expenseApportionment = await this.expensesService.findOneExpenseApport(id);
@@ -91,16 +77,12 @@ export class ExpensesController {
   }
 
   @Patch('expense-apportionments/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiCreatedResponse({type: ExpenseApportionmentEntity})
   updateExpenseApport(@Param('id', ParseIntPipe) id: number, @Body() updateExpenseApportionmentDto: UpdateExpenseApportionmentDto) {
     return this.expensesService.updateExpenseApport(id, updateExpenseApportionmentDto);
   }
 
   @Delete('expense-apportionments/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOkResponse({type: ExpenseApportionmentEntity})
   removeExpenseApport(@Param('id', ParseIntPipe) id: number) {
     return this.expensesService.removeExpenseApport(id);

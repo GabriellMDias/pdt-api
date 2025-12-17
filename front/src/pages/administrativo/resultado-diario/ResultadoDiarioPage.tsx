@@ -61,9 +61,6 @@ export default function ResultadoDiarioPage() {
       }
 
       const dreData = await fetchDREData(params);
-      console.log("dreData: ", dreData);
-      console.log("costCenters: ", costCenters);
-      console.log("stores: ", stores);
 
       setDreRows(dreData ?? []);
       setLoading(false);

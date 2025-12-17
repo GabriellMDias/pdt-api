@@ -6,12 +6,18 @@ export interface PermissionGrant {
   stores: number[];
 }
 
+export interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean
   loginUser: (email: string, password: string) => Promise<void>
   logout: () => void
   userId: number | null
-  // Agora aceitamos tanto string[] quanto PermissionGrant[]
+  user: UserProfile | null
   permissions: (string | PermissionGrant)[],
   token: string | null
 }

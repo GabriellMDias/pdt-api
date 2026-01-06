@@ -9,7 +9,7 @@ import {
   SankhyaResponseBase,
   SankhyaDollarNode,
 } from './types/sankhya.types';
-import { ParametersService } from 'src/parameters/parameters.service';
+import { ParametersService } from 'src/config/parameters/parameters.service';
 
 type Jsess = { cookieHeader: string; jsessionId: string; idusu?: string };
 

@@ -12,6 +12,7 @@ import CasesIcon from '@mui/icons-material/Cases';
 import BackupTableIcon from '@mui/icons-material/BackupTable';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import BlockIcon from '@mui/icons-material/Block';
 import HomePage from '../pages/HomePage';
 import UsersPage from '../pages/configuracoes/cadastro/users/UsersPage';
 import PermissionsPage from '../pages/configuracoes/permissions/PermissionsPage';
@@ -28,6 +29,7 @@ import JobRunsPage from '../pages/configuracoes/acoes-agendadas/jobs/JobRunsPage
 import ResultadoDiarioPage from '../pages/administrativo/resultado-diario/ResultadoDiarioPage';
 import GestaoaVistaPage from '../pages/administrativo/gestao-a-vista/GestaoaVistaPage';
 import ConcContabPage from '../pages/contabil/conc-contab/ConcContabPage';
+import RestriExcTop from '../pages/fiscal/restricoes-excecoes-top/RestriExcTop';
 
 
 export interface ProtectedRoute {
@@ -133,6 +135,14 @@ export const protectedRoutes: ProtectedRoute[] = [
             showInSidebar: false,
           }
         ]
+      },
+      {
+        path: '/restricoesescecoestop',
+        label: 'Restrições/Exceções da TOP',
+        showInSidebar: true,
+        icon: <BlockIcon />,
+        element: <RestriExcTop />,
+        requiredPermissions: ['top-restrictions:consultar', 'top-restrictions:editar']
       }
     ]
   },

@@ -4,31 +4,32 @@ import { AppService } from './app.service';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
-import { PrismaModule } from './prisma/prisma.module';
-import { StoresModule } from './stores/stores.module';
-import { ExpensesModule } from './expenses/expenses.module';
-import { UsersModule } from './users/users.module';
+import { PrismaModule } from './db/prisma/prisma.module';
+import { StoresModule } from './config/stores/stores.module';
+import { ExpensesModule } from './adm/expenses/expenses.module';
+import { UsersModule } from './config/users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { CostCentersModule } from './cost-centers/cost-centers.module';
-import { DepartmentsModule } from './departments/departments.module';
-import { PreExpenseApportionmentsModule } from './pre-expense-apportionments/pre-expense-apportionments.module';
-import { PreExpensesModule } from './pre-expenses/pre-expenses.module';
-import { PgModule } from './pg/pg.module';
-import { DreModule } from './dre/dre.module';
-import { PermissionsModule } from './permissions/permissions.module';
+import { CostCentersModule } from './adm/cost-centers/cost-centers.module';
+import { DepartmentsModule } from './adm/departments/departments.module';
+import { PreExpenseApportionmentsModule } from './adm/pre-expense-apportionments/pre-expense-apportionments.module';
+import { PreExpensesModule } from './adm/pre-expenses/pre-expenses.module';
+import { PgModule } from './db/pg/pg.module';
+import { DreModule } from './adm/dre/dre.module';
+import { PermissionsModule } from './config/permissions/permissions.module';
 import { AnalysisModule } from './analysis/analysis.module';
-import { DbScriptsModule } from './db-scripts/db-scripts.module'; 
-import { ParametersModule } from './parameters/parameters.module';
+import { DbScriptsModule } from './config/db-scripts/db-scripts.module'; 
+import { ParametersModule } from './config/parameters/parameters.module';
 import { SnkApiModule } from './snk-api/snk-api.module';
-import { CodeJobsModule } from './code-jobs/code-jobs.module';
-import { CostCenterComparativeModule } from './cost-center-comparative/cost-center-comparative.module';
+import { CodeJobsModule } from './config/code-jobs/code-jobs.module';
+import { CostCenterComparativeModule } from './adm/cost-center-comparative/cost-center-comparative.module';
+import { TopModule } from './fiscal/top/top.module';
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
     ScheduleModule.forRoot(),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, PreExpenseApportionmentsModule, PreExpensesModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule, TopModule],
   controllers: [AppController],
   providers: [AppService],
 })

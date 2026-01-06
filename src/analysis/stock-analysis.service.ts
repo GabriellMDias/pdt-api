@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { PgService } from 'src/pg/pg.service';
+import { PrismaService } from 'src/db/prisma/prisma.service';
+import { PgService } from 'src/db/pg/pg.service';
 import { ensureAnalysisFields } from './utils/ensureAnalysisFields';
 import { getOrCreateAnalysisType } from './utils/getOrCreateAnalysisType';
 

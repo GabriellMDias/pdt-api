@@ -25,5 +25,7 @@
   {"code": "dre:consultar", "label": "Consultar DRE", "useStorePermission": true},
   {"code": "dre:consolidar", "label": "Consolidar DRE", "useStorePermission": true},
   {"code": "cost-center-comparative:consultar", "label": "Consultar Gestão a Vista", "useStorePermission": true},
-  {"code": "accounting-reconc:consultar", "label": "Consultar Conciliação Contábil", "useStorePermission": true}
+  {"code": "accounting-reconc:consultar", "label": "Consultar Conciliação Contábil", "useStorePermission": true},
+  {"code": "top-restrictions:consultar", "label": "Consultar Restrições da TOP"},
+  {"code": "top-restrictions:editar", "label": "Editar Restrições da TOP"}
 ]

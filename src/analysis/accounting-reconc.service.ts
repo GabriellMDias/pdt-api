@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { PgService } from "src/pg/pg.service";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PgService } from "src/db/pg/pg.service";
+import { PrismaService } from "src/db/prisma/prisma.service";
 import { AccountingReconcQueries } from "./queries";
 
 @Injectable()

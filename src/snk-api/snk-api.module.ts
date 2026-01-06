@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { SnkApiService } from './snk-api.service';
 import { SnkApiController } from './snk-api.controller';
-import { ParametersModule } from 'src/parameters/parameters.module';
+import { ParametersModule } from 'src/config/parameters/parameters.module';
 
 @Module({
   controllers: [SnkApiController],

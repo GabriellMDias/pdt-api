@@ -6,7 +6,7 @@ import { parseRegistro0200 } from './parsers/registro-0200.parser';
 import { parseRegistroC100 } from './parsers/registro-c100.parser';
 import { parseRegistroC170 } from './parsers/registro-c170.parser';
 import { Registro0200, Registro0400, RegistroC100, RegistroC170, RegistroC190 } from './parsers/types';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/db/prisma/prisma.service';
 import { AnalisesDisponiveis } from './analisesSped/analises-disponiveis';
 import { parseRegistroC190 } from './parsers/registro-c190.parser';
 import { getOrCreateAnalysisType } from './utils/getOrCreateAnalysisType';

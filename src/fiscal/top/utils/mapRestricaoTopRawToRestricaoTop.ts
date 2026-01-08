@@ -31,9 +31,12 @@ export function mapRestricaoTopRawToRestricaoTop(
 
     const restricao = restricoesMap.get(key)!;
 
-    // evita duplicidade
-    if (!restricao.codcolrest.includes(row.codcolrest)) {
-      restricao.codcolrest.push(row.codcolrest);
+    // codcolrest pode ser null para restrições por série
+    if (row.codcolrest !== null && row.codcolrest !== undefined) {
+      // evita duplicidade
+      if (!restricao.codcolrest.includes(row.codcolrest)) {
+        restricao.codcolrest.push(row.codcolrest);
+      }
     }
 
     if (row.serie) {

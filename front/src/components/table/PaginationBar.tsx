@@ -26,15 +26,19 @@ export default function PaginationBar({
   const showingEnd = Math.min(page * pageSize, total);
 
   return (
-    <div className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-2 ${className || ""}`}>
-      <span className="text-gray-600 text-sm">
+    <div
+      className={`flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:justify-between ${
+        className || ""
+      }`}
+    >
+      <span className="min-w-0 text-gray-600 text-sm">
         {loading ? "Carregando..." : `${total} resultados`}
         {total > 0 && (
           <span className="ml-2 text-gray-400">(mostrando {showingStart}–{showingEnd})</span>
         )}
       </span>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {onPageSizeChange && (
           <>
             <label className="text-sm text-gray-500">Itens por página</label>
@@ -50,7 +54,7 @@ export default function PaginationBar({
           </>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             className="px-2 py-1 border rounded text-sm disabled:opacity-60 cursor-pointer"
             onClick={() => onPageChange(page - 1)}

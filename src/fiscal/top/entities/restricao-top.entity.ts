@@ -4,7 +4,7 @@ export interface RestricaoTopRaw {
     codtipoper: number
     id_tipmov: number
     id_tiporestricao: number
-    codcolrest: number
+    codcolrest: number | null
     serie: string | null
     restricao: 'S' | 'N'
 }

@@ -9,6 +9,7 @@ export class DreEntity {
   @ApiProperty() quebra: number;
   @ApiProperty() recCom: number;
   @ApiProperty() despesaPessoal: number;
+  @ApiProperty() despesaPessoalRat: number;
   @ApiProperty() despesaOperacional: number;
 }
 

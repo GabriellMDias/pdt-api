@@ -37,6 +37,9 @@ export class MonthlyResultEntity implements MonthlyResult {
     
     @ApiProperty()
     despesaPessoal: number
+
+    @ApiProperty()
+    despesaPessoalRat: number
     
     @ApiProperty()
     despesaOperacional: number 

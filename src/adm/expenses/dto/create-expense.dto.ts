@@ -1,26 +1,69 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
-    IsString,
-    IsNumber,
-    IsPositive,
-    IsDateString
-} from 'class-validator'
+  IsString,
+  IsNumber,
+  IsPositive,
+  IsDateString,
+  ValidateNested,
+  IsArray,
+  IsBoolean
+} from "class-validator";
+import { Type } from "class-transformer";
+
+export class ApportionmentDto {
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  costCenterId: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  storeId: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  percentage: number;
+
+  @ApiProperty()
+  @IsBoolean()
+  useParticipation: boolean;
+}
 
 export class CreateExpenseDto {
-    @IsNumber()
-    @ApiProperty()
-    storeId: number
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  storeId: number;
 
-    @IsDateString()
-    @ApiProperty()
-    date: Date
+  @ApiProperty({ example: "2025-01-15" })
+  @IsDateString()
+  date: string;
 
-    @IsString()
-    @ApiProperty()
-    description: string
+  @ApiProperty()
+  @IsString()
+  description: string;
 
-    @IsPositive()
-    @IsNumber()
-    @ApiProperty()
-    value: number
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  value: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  expenseTypeId: number;
+
+  @ApiProperty({ type: [ApportionmentDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ApportionmentDto)
+  apportionments: ApportionmentDto[];
 }

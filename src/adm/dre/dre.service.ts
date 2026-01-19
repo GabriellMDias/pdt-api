@@ -87,7 +87,7 @@ export class DreService {
   private round2(n: number) { return Number((n).toFixed(2)); }
 
   private emptyDre(): DRE {
-    return { recBruta:0, devolucao:0, imposto:0, custo:0, embalagem:0, quebra:0, recCom:0, despesaPessoal:0, despesaOperacional:0 };
+    return { recBruta:0, devolucao:0, imposto:0, custo:0, embalagem:0, quebra:0, recCom:0, despesaPessoal:0, despesaPessoalRat:0, despesaOperacional:0 };
   }
 
   private addDre(a: DRE, b: DRE): DRE {
@@ -100,6 +100,7 @@ export class DreService {
       quebra: a.quebra + b.quebra,
       recCom: a.recCom + b.recCom,
       despesaPessoal: a.despesaPessoal + b.despesaPessoal,
+      despesaPessoalRat: a.despesaPessoalRat + b.despesaPessoalRat,
       despesaOperacional: a.despesaOperacional + b.despesaOperacional,
     }
   }
@@ -640,6 +641,7 @@ export class DreService {
           quebra: true,
           recCom: true,
           despesaPessoal: true,
+          despesaPessoalRat: true,
           despesaOperacional: true,
         },
         where: {
@@ -690,6 +692,7 @@ export class DreService {
         _sum: {
           embalagem: true, // não usamos aqui, mas mantive
           despesaPessoal: true,
+          despesaPessoalRat: true,
           despesaOperacional: true,
         },
         where: {
@@ -720,6 +723,7 @@ export class DreService {
           quebra:          lossAndConsumption.find((it) => it.costCenterId === costCenter.id)?.totalValue ?? 0,
           recCom:          commercialRevenue.find((it) => it.costCenterId === costCenter.id)?.totalValue ?? 0,
           despesaPessoal:  (lastMonthData.find((it) => it.costCenterId === costCenter.id)?._sum.despesaPessoal ?? 0) * fraction,
+          despesaPessoalRat: (lastMonthData.find((it) => it.costCenterId === costCenter.id)?._sum.despesaPessoalRat ?? 0) * fraction,
           despesaOperacional: (lastMonthData.find((it) => it.costCenterId === costCenter.id)?._sum.despesaOperacional ?? 0) * fraction,
         }
         return { costCenterId: costCenter.id, data }
@@ -798,6 +802,7 @@ export class DreService {
               quebra: r._sum.quebra ?? 0,
               recCom: r._sum.recCom ?? 0,
               despesaPessoal: r._sum.despesaPessoal ?? 0,
+              despesaPessoalRat: r._sum.despesaPessoalRat ?? 0,
               despesaOperacional: r._sum.despesaOperacional ?? 0,
             };
             acc.set(cc, this.addDre(acc.get(cc) ?? this.emptyDre(), data));

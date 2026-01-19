@@ -5,10 +5,9 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ExpenseEntity } from './entities/expense.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ExpenseApportionmentEntity } from './entities/expense-apportionment.entity';
-import { CreateExpenseApportionmentDto } from './dto/create-expense-apportionment.dto';
-import { UpdateExpenseApportionmentDto } from './dto/update-expense-apportionment.dto';
-
+import { PreExpenseEntity } from './entities/pre-expense.entity';
+import { UpdatePreExpenseDto } from './dto/update-pre-expense.dto';
+import { CreatePreExpenseDto } from './dto/create-pre-expense.dto';
 @Controller('expenses')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -52,39 +51,49 @@ export class ExpensesController {
     return this.expensesService.remove(id);
   }
 
-  @Post('expense-apportionments')
-  @ApiCreatedResponse({type: ExpenseApportionmentEntity})
-  createExpenseApport(@Body() createExpenseApportionmentDto: CreateExpenseApportionmentDto) {
-    return this.expensesService.createExpenseApport(createExpenseApportionmentDto);
-  }
-
-  @Get('expense-apportionments')
-  @ApiOkResponse({type: ExpenseApportionmentEntity, isArray: true})
-  findAllExpenseApport() {
-    return this.expensesService.findAllExpenseApport();
-  }
-
-  @Get('expense-apportionments/:id')
-  @ApiOkResponse({type: ExpenseApportionmentEntity})
-  async findOneExpenseApport(@Param('id', ParseIntPipe) id: number) {
-    const expenseApportionment = await this.expensesService.findOneExpenseApport(id);
-
-    if(!expenseApportionment) {
-      throw new NotFoundException(`ExpenseApportionment with ${id} does not exist.`)
+  @Post('pre-expenses')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiCreatedResponse({type: PreExpenseEntity})
+    preExpenseCreate(@Body() createPreExpenseDto: CreatePreExpenseDto) {
+      return this.expensesService.preExpenseCreate(createPreExpenseDto);
     }
-
-    return expenseApportionment
-  }
-
-  @Patch('expense-apportionments/:id')
-  @ApiCreatedResponse({type: ExpenseApportionmentEntity})
-  updateExpenseApport(@Param('id', ParseIntPipe) id: number, @Body() updateExpenseApportionmentDto: UpdateExpenseApportionmentDto) {
-    return this.expensesService.updateExpenseApport(id, updateExpenseApportionmentDto);
-  }
-
-  @Delete('expense-apportionments/:id')
-  @ApiOkResponse({type: ExpenseApportionmentEntity})
-  removeExpenseApport(@Param('id', ParseIntPipe) id: number) {
-    return this.expensesService.removeExpenseApport(id);
-  }
+  
+    @Get('pre-expenses')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOkResponse({type: PreExpenseEntity, isArray: true})
+    preExpenseFindAll() {
+      return this.expensesService.preExpenseFindAll();
+    }
+  
+    @Get('pre-expenses/:id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOkResponse({type: PreExpenseEntity})
+    async preExpenseFindOne(@Param('id', ParseIntPipe) id: number) {
+      const preExpense = await this.expensesService.preExpenseFindOne(id);
+  
+      if(!preExpense) {
+        throw new NotFoundException(`PreExpense with ${id} does not exist.`)
+      }
+  
+      return preExpense
+    }
+  
+    @Patch('pre-expenses/:id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiCreatedResponse({type: PreExpenseEntity})
+    preExpenseUpdate(@Param('id', ParseIntPipe) id: number, @Body() updatePreExpenseDto: UpdatePreExpenseDto) {
+      return this.expensesService.preExpenseUpdate(id, updatePreExpenseDto);
+    }
+  
+    @Delete('pre-expenses/:id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOkResponse({type: PreExpenseEntity})
+    preExpenseRemove(@Param('id', ParseIntPipe) id: number) {
+      return this.expensesService.preExpenseRemove(id);
+    }
 }

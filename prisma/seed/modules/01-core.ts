@@ -42,5 +42,25 @@ export default async function seedCore() {
     }
   });
 
-  console.log({ store0: store0.id, costCenter0: costCenter0.id, admin: admin.id });
+  const expenseType0 = await prisma.expenseType.upsert({
+    where: {id: 0},
+    update: {},
+    create: {
+      id: 0,
+      description: "Sem Tipo",
+      isActived: true,
+    }
+  })
+
+  const expenseType1 = await prisma.expenseType.upsert({
+    where: {id: 1},
+    update: {},
+    create: {
+      id: 0,
+      description: "Despesa com Pessoal",
+      isActived: true,
+    }
+  })
+
+  console.log({ store0: store0.id, costCenter0: costCenter0.id, admin: admin.id, expenseType0: expenseType0.id, expenseType1: expenseType1.id });
 }

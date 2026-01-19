@@ -36,6 +36,8 @@ type Calculated = {
   percRecCom: number;     // %
   despesaPessoal: number;
   percDespPes: number;    // %
+  despesaPessoalRat: number,
+  percDespPesRat: number,
   contribuicao: number;
   margemContrib: number;  // %
   despesaOperacional: number;
@@ -93,6 +95,7 @@ export default function DRETable({
         acc.quebra += v.quebra;
         acc.recCom += v.recCom;
         acc.despesaPessoal += v.despesaPessoal;
+        acc.despesaPessoalRat +=  v.despesaPessoalRat;
         acc.despesaOperacional += v.despesaOperacional;
         return acc;
       },
@@ -105,6 +108,7 @@ export default function DRETable({
         quebra: 0,
         recCom: 0,
         despesaPessoal: 0,
+        despesaPessoalRat: 0,
         despesaOperacional: 0,
       }
     );
@@ -120,7 +124,7 @@ export default function DRETable({
 
       const receitaLiquida = v.recBruta + v.devolucao + v.imposto;
       const lucroBruto = receitaLiquida + v.custo + v.embalagem;
-      const contribuicao = lucroBruto + v.quebra + v.recCom + v.despesaPessoal;
+      const contribuicao = lucroBruto + v.quebra + v.recCom + v.despesaPessoal + v.despesaPessoalRat;
       const ebitida = contribuicao + v.despesaOperacional;
 
       map[row.costCenterId] = {
@@ -138,6 +142,8 @@ export default function DRETable({
         percRecCom: rb ? v.recCom / rb : 0,
         despesaPessoal: v.despesaPessoal,
         percDespPes: rb ? v.despesaPessoal / rb : 0,
+        despesaPessoalRat: v.despesaPessoalRat,
+        percDespPesRat: rb ? v.despesaPessoalRat / rb : 0,
         contribuicao,
         margemContrib: rb ? contribuicao / rb : 0,
         despesaOperacional: v.despesaOperacional,
@@ -154,7 +160,7 @@ export default function DRETable({
     const rb = totals.recBruta || 0;
     const receitaLiquida = totals.recBruta + totals.devolucao + totals.imposto;
     const lucroBruto = receitaLiquida + totals.custo + totals.embalagem;
-    const contribuicao = lucroBruto + totals.quebra + totals.recCom + totals.despesaPessoal;
+    const contribuicao = lucroBruto + totals.quebra + totals.recCom + totals.despesaPessoal + totals.despesaPessoalRat;
     const ebitida = contribuicao + totals.despesaOperacional;
     return {
       recBruta: totals.recBruta,
@@ -171,6 +177,8 @@ export default function DRETable({
       percRecCom: rb ? totals.recCom / rb : 0,
       despesaPessoal: totals.despesaPessoal,
       percDespPes: rb ? totals.despesaPessoal / rb : 0,
+      despesaPessoalRat: totals.despesaPessoalRat,
+      percDespPesRat: rb ?totals.despesaPessoalRat / rb : 0,
       contribuicao,
       margemContrib: rb ? contribuicao / rb : 0,
       despesaOperacional: totals.despesaOperacional,
@@ -204,6 +212,8 @@ export default function DRETable({
 
     { prop: "despesaPessoal", label: "DESPESA DIRETA COM O PESSOAL", type: "money" },
     { prop: "percDespPes", label: "%", type: "percent" },
+    { prop: "despesaPessoalRat", label: "DESPESA DIRETA COM O PESSOAL (Rateado)", type: "money" },
+    { prop: "percDespPesRat", label: "%", type: "percent" },
 
     { prop: "contribuicao", label: "CONTRIBUIÇÃO", type: "money", bold: true, shade: true },
     { prop: "margemContrib", label: "MARGEM DE CONTRIBUIÇÃO", type: "percent", bold: true, shade: true },

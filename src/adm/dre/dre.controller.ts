@@ -134,6 +134,7 @@ export class DreController {
         quebra: r._sum.quebra ?? 0,
         recCom: r._sum.recCom ?? 0,
         despesaPessoal: r._sum.despesaPessoal ?? 0,
+        despesaPessoalRat: r._sum.despesaPessoalRat ?? 0,
         despesaOperacional: r._sum.despesaOperacional ?? 0,
       } as DreEntity,
     }));

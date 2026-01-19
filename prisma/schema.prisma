@@ -73,6 +73,7 @@ model MonthlyResult {
   quebra             Float
   recCom             Float
   despesaPessoal     Float
+  despesaPessoalRat  Float    @default(0)
   despesaOperacional Float
 
   store      Store      @relation(fields: [storeId], references: [id])
@@ -80,14 +81,24 @@ model MonthlyResult {
 }
 
 model Expense {
-  id          Int      @id @default(autoincrement())
-  storeId     Int
-  date        DateTime
-  description String
-  value       Float
+  id            Int      @id @default(autoincrement())
+  storeId       Int
+  date          DateTime
+  description   String
+  value         Float
+  expenseTypeId Int      @default(0)
 
+  espenseType          ExpenseType            @relation(fields: [expenseTypeId], references: [id])
   store                Store                  @relation(fields: [storeId], references: [id])
   ExpenseApportionment ExpenseApportionment[]
+}
+
+model ExpenseType {
+  id          Int          @id @default(autoincrement())
+  description String
+  isActived   Boolean
+  expenses    Expense[]
+  preExpenses PreExpense[]
 }
 
 model ExpenseApportionment {
@@ -117,9 +128,13 @@ model PreExpenseApportionment {
 }
 
 model PreExpense {
-  id          Int    @id @default(autoincrement())
-  storeId     Int
-  description String
+  id            Int     @id @default(autoincrement())
+  storeId       Int
+  description   String
+  expenseTypeId Int     @default(0)
+  isActived     Boolean
+
+  espenseType ExpenseType @relation(fields: [expenseTypeId], references: [id])
 
   store                   Store                     @relation(fields: [storeId], references: [id])
   PreExpenseApportionment PreExpenseApportionment[]
@@ -287,41 +302,41 @@ enum ScriptRunStatus {
 }
 
 model CodeJob {
-  id               Int                 @id @default(autoincrement())
-  name             String
-  description      String?
-  handler          String
-  enabled          Boolean             @default(true)
-  timezone         String?             @default("America/Sao_Paulo")
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  handler     String
+  enabled     Boolean @default(true)
+  timezone    String? @default("America/Sao_Paulo")
 
-  scheduleType     ScriptScheduleType
-  cronExpression   String?
-  intervalSeconds  Int?
-  dailyAtTime      String?
-  weeklyWeekday    Int?
-  weeklyTime       String?
+  scheduleType    ScriptScheduleType
+  cronExpression  String?
+  intervalSeconds Int?
+  dailyAtTime     String?
+  weeklyWeekday   Int?
+  weeklyTime      String?
 
-  lastStatus       ScriptRunStatus?
-  latestRunAt      DateTime?
+  lastStatus  ScriptRunStatus?
+  latestRunAt DateTime?
 
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  runs             CodeJobRun[]
+  runs CodeJobRun[]
 }
 
 model CodeJobRun {
-  id         Int              @id @default(autoincrement())
+  id         Int             @id @default(autoincrement())
   jobId      Int
-  job        CodeJob          @relation(fields: [jobId], references: [id])
-  status     ScriptRunStatus  // agora aceita RUNNING/SUCCESS/FAILED/SKIPPED
-  source     String           // 'SCHEDULE' | 'MANUAL' | 'RETRY'
-  startedAt  DateTime         @default(now())
+  job        CodeJob         @relation(fields: [jobId], references: [id])
+  status     ScriptRunStatus // agora aceita RUNNING/SUCCESS/FAILED/SKIPPED
+  source     String // 'SCHEDULE' | 'MANUAL' | 'RETRY'
+  startedAt  DateTime        @default(now())
   finishedAt DateTime?
   durationMs Int?
   log        Json?
   error      String?
-  createdAt  DateTime         @default(now())
+  createdAt  DateTime        @default(now())
 
   @@index([jobId, createdAt])
 }

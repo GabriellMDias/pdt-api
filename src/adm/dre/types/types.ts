@@ -7,5 +7,6 @@ type DRE = {
     quebra: number;
     recCom: number;
     despesaPessoal: number;
+    despesaPessoalRat: number;
     despesaOperacional: number;
 }

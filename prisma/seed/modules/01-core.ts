@@ -56,7 +56,7 @@ export default async function seedCore() {
     where: {id: 1},
     update: {},
     create: {
-      id: 0,
+      id: 1,
       description: "Despesa com Pessoal",
       isActived: true,
     }

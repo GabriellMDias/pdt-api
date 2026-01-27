@@ -27,5 +27,6 @@
   {"code": "cost-center-comparative:consultar", "label": "Consultar Gestão a Vista", "useStorePermission": true},
   {"code": "accounting-reconc:consultar", "label": "Consultar Conciliação Contábil", "useStorePermission": true},
   {"code": "top-restrictions:consultar", "label": "Consultar Restrições da TOP"},
-  {"code": "top-restrictions:editar", "label": "Editar Restrições da TOP"}
+  {"code": "top-restrictions:editar", "label": "Editar Restrições da TOP"},
+  {"code": "ruptura:atualizar-prateleira", "label": "Atualizar Prateleiras", "useStorePermission": true}
 ]

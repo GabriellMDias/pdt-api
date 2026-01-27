@@ -30,6 +30,8 @@ import ResultadoDiarioPage from '../pages/administrativo/resultado-diario/Result
 import GestaoaVistaPage from '../pages/administrativo/gestao-a-vista/GestaoaVistaPage';
 import ConcContabPage from '../pages/contabil/conc-contab/ConcContabPage';
 import RestriExcTop from '../pages/fiscal/restricoes-excecoes-top/RestriExcTop';
+import ShelvesIcon from '@mui/icons-material/Shelves';
+import AtualPratPage from '../pages/administrativo/rupturainterna/atualizarprateleiras/AtualPratPage';
 
 
 export interface ProtectedRoute {
@@ -71,6 +73,20 @@ export const protectedRoutes: ProtectedRoute[] = [
         element: <GestaoaVistaPage />,
         showInSidebar: true,
         requiredPermissions: ["cost-center-comparative:consultar"]
+      },
+      {
+        label: 'Ruptura Interna',
+        showInSidebar: true,
+        children: [
+          {
+            path: '/adm/rupturainterna/atualizarprateleiras',
+            label: 'Atualizar Prateleiras',
+            icon: <ShelvesIcon />,
+            showInSidebar: true,
+            requiredPermissions: ["ruptura:atualizar-prateleira"],
+            element: <AtualPratPage />
+          }
+        ]
       }
     ]
   },

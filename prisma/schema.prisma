@@ -34,8 +34,9 @@ model Store {
   ArquivoAnalise          ArquivoAnalise[]
   UserPermission          UserPermission[]
 
-  AnalysisResult AnalysisResult[]
-  Parameters     ParameterValue[]
+  AnalysisResult      AnalysisResult[]
+  Parameters          ParameterValue[]
+  costCenterTypeItems CostCenterTypeItem[]
 }
 
 model CostCenter {
@@ -47,6 +48,31 @@ model CostCenter {
   MonthlyResult           MonthlyResult[]
   ExpenseApportionment    ExpenseApportionment[]
   PreExpenseApportionment PreExpenseApportionment[]
+  costCenterTypeItems     CostCenterTypeItem[]
+}
+
+model CostCenterType {
+  id                         Int                  @id @default(autoincrement())
+  description                String
+  id_costcentertype_vr       Int                  @unique()
+  codcencus_sankhya          Int?                 @unique()
+  useParticipationStore      Boolean
+  useParticiparionCostCenter Boolean
+  verified                   Boolean              @default(false)
+  costCenterTypeItems        CostCenterTypeItem[]
+}
+
+model CostCenterTypeItem {
+  id               Int      @id @default(autoincrement())
+  costCenterTypeId Int
+  costCenterId     Int?
+  storeId          Int?
+  percentage       Float?
+  participation    Boolean?
+
+  costCenterType CostCenterType @relation(fields: [costCenterTypeId], references: [id])
+  costCenter     CostCenter?     @relation(fields: [costCenterId], references: [id])
+  store          Store?          @relation(fields: [storeId], references: [id])
 }
 
 model Department {

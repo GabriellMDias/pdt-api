@@ -32,6 +32,8 @@ import ConcContabPage from '../pages/contabil/conc-contab/ConcContabPage';
 import RestriExcTop from '../pages/fiscal/restricoes-excecoes-top/RestriExcTop';
 import ShelvesIcon from '@mui/icons-material/Shelves';
 import AtualPratPage from '../pages/administrativo/rupturainterna/atualizarprateleiras/AtualPratPage';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import CostCenterTypesPage from '../pages/configuracoes/cadastro/cost-center-types/CostCenterTypesPage';
 
 
 export interface ProtectedRoute {
@@ -177,6 +179,13 @@ export const protectedRoutes: ProtectedRoute[] = [
             icon: <GroupIcon />,
             element: <UsersPage />,
             requiredPermissions: ['users:consultar', 'users:incluir', 'users:editar', 'users:excluir'],
+            showInSidebar: true,
+          },
+          {
+            path: '/configuracoes/cadastro/tipos-centro-custo',
+            label: 'Tipos de Centro de Custo',
+            icon: <AccountTreeIcon />,
+            element: <CostCenterTypesPage />,
             showInSidebar: true,
           }
         ],

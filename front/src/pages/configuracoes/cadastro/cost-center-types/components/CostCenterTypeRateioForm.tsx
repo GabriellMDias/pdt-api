@@ -37,7 +37,16 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
     parsedItems.reduce((acc, item) => acc + (typeof item.percentage === "number" ? item.percentage : 0), 0)
   ), [parsedItems]);
 
-  const disabled = submitting || !maySubmit;
+  const hasPercentage = React.useMemo(
+    () => parsedItems.some((item) => item.percentage !== null && item.percentage !== undefined),
+    [parsedItems]
+  );
+  const roundedTotal = React.useMemo(() => (
+    Math.round((totalPercentage + Number.EPSILON) * 100) / 100
+  ), [totalPercentage]);
+  const percentageInvalid = hasPercentage && roundedTotal !== 100;
+
+  const disabled = submitting || !maySubmit || percentageInvalid;
 
   return (
     <form
@@ -111,9 +120,14 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
             </p>
           </div>
           <div className="text-xs text-neutral-300">
-            Total atual: <span className="font-semibold text-neutral-100">{totalPercentage.toFixed(2)}%</span>
+            Total atual: <span className="font-semibold text-neutral-100">{roundedTotal.toFixed(2)}%</span>
           </div>
         </div>
+        {percentageInvalid && (
+          <div className="text-xs text-red-400">
+            A soma dos percentuais deve ser exatamente 100% para salvar as alterações.
+          </div>
+        )}
 
         {items.length === 0 ? (
           <div className="text-sm text-neutral-400">Nenhum item de rateio disponível.</div>

@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateCostCenterDto } from './dto/create-cost-center.dto';
 import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
 import { PrismaService } from 'src/db/prisma/prisma.service';
@@ -229,16 +229,39 @@ export class CostCentersService {
 
   async updateCostCenterType(id: number, updateCostCenterTypeDto: UpdateCostCenterTypeDto) {
     const { costCenterTypeItems, ...data } = updateCostCenterTypeDto;
+    const costCenterType = await this.prisma.costCenterType.findUnique({ where: { id } });
 
-    return this.prisma.costCenterType.update({
-      where: { id },
-      data: {
-        ...data,
-        costCenterTypeItems: {
-          create: costCenterTypeItems
-        }
+    if (!costCenterType) {
+      throw new NotFoundException(`Cost center type with ${id} does not exist.`);
+    }
+
+    if (costCenterTypeItems) {
+      this.validateCostCenterTypeItems(costCenterTypeItems);
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (costCenterTypeItems) {
+        await tx.costCenterTypeItem.deleteMany({ where: { costCenterTypeId: id } });
       }
+
+      return tx.costCenterType.update({
+        where: { id },
+        data: {
+          ...data,
+          costCenterTypeItems: costCenterTypeItems
+            ? {
+                create: costCenterTypeItems,
+              }
+            : undefined,
+        },
+      });
     });
+
+    if (costCenterTypeItems) {
+      await this.syncCostCenterTypeItemsToVr(costCenterType.id_costcentertype_vr, costCenterTypeItems);
+    }
+
+    return result;
   }
 
   async removeCostCenterType(id: number) {
@@ -255,5 +278,81 @@ export class CostCentersService {
 
   async findOneCostCenterType(id: number) {
     return this.prisma.costCenterType.findUnique({where: {id}});
+  }
+
+  private validateCostCenterTypeItems(costCenterTypeItems: CostCenterTypeItemDto[]) {
+    const hasPercentage = costCenterTypeItems.some((item) => item.percentage !== null && item.percentage !== undefined);
+
+    if (!hasPercentage) {
+      return;
+    }
+
+    const total = costCenterTypeItems.reduce((acc, item) => acc + (item.percentage ?? 0), 0);
+    const roundedTotal = Math.round((total + Number.EPSILON) * 100) / 100;
+
+    if (roundedTotal !== 100) {
+      throw new BadRequestException('A soma dos percentuais deve ser 100%.');
+    }
+  }
+
+  private async syncCostCenterTypeItemsToVr(costCenterTypeVrId: number, costCenterTypeItems: CostCenterTypeItemDto[]) {
+    for (const item of costCenterTypeItems) {
+      if (!item.costCenterId || !item.storeId) {
+        continue;
+      }
+
+      const costCenterVr = await this.pg.query<{ centrocusto1: number; centrocusto2: number; centrocusto3: number }>(
+        'select centrocusto1, centrocusto2, centrocusto3 from centrocusto where id = $1 and nivel = 3',
+        [item.costCenterId]
+      );
+
+      const costCenterVrRow = costCenterVr.rows[0];
+      if (!costCenterVrRow) {
+        continue;
+      }
+
+      const existingItem = await this.pg.query(
+        `select 1 from centrocustoitem
+         where id_centrocusto = $1
+           and centrocusto1 = $2
+           and centrocusto2 = $3
+           and centrocusto3 = $4
+           and id_loja = $5`,
+        [costCenterTypeVrId, costCenterVrRow.centrocusto1, costCenterVrRow.centrocusto2, costCenterVrRow.centrocusto3, item.storeId]
+      );
+
+      if (existingItem.rowCount && existingItem.rowCount > 0) {
+        await this.pg.query(
+          `update centrocustoitem
+           set percentual = $6
+           where id_centrocusto = $1
+             and centrocusto1 = $2
+             and centrocusto2 = $3
+             and centrocusto3 = $4
+             and id_loja = $5`,
+          [
+            costCenterTypeVrId,
+            costCenterVrRow.centrocusto1,
+            costCenterVrRow.centrocusto2,
+            costCenterVrRow.centrocusto3,
+            item.storeId,
+            item.percentage ?? 0,
+          ]
+        );
+      } else {
+        await this.pg.query(
+          `insert into centrocustoitem (id_centrocusto, centrocusto1, centrocusto2, centrocusto3, id_loja, percentual)
+           values ($1, $2, $3, $4, $5, $6)`,
+          [
+            costCenterTypeVrId,
+            costCenterVrRow.centrocusto1,
+            costCenterVrRow.centrocusto2,
+            costCenterVrRow.centrocusto3,
+            item.storeId,
+            item.percentage ?? 0,
+          ]
+        );
+      }
+    }
   }
 }

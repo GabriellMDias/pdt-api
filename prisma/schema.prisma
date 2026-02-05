@@ -54,10 +54,11 @@ model CostCenter {
 model CostCenterType {
   id                         Int                  @id @default(autoincrement())
   description                String
+  activeStatus               Boolean?             @default(false)
   id_costcentertype_vr       Int                  @unique()
   codcencus_sankhya          Int?                 @unique()
   useParticipationStore      Boolean
-  useParticiparionCostCenter Boolean
+  useParticipationCostCenter Boolean
   verified                   Boolean              @default(false)
   costCenterTypeItems        CostCenterTypeItem[]
 }
@@ -71,8 +72,8 @@ model CostCenterTypeItem {
   participation    Boolean?
 
   costCenterType CostCenterType @relation(fields: [costCenterTypeId], references: [id])
-  costCenter     CostCenter?     @relation(fields: [costCenterId], references: [id])
-  store          Store?          @relation(fields: [storeId], references: [id])
+  costCenter     CostCenter?    @relation(fields: [costCenterId], references: [id])
+  store          Store?         @relation(fields: [storeId], references: [id])
 }
 
 model Department {

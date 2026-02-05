@@ -2,10 +2,11 @@
 CREATE TABLE "CostCenterType" (
     "id" SERIAL NOT NULL,
     "description" TEXT NOT NULL,
+    "activeStatus" BOOLEAN DEFAULT false,
     "id_costcentertype_vr" INTEGER NOT NULL,
     "codcencus_sankhya" INTEGER,
     "useParticipationStore" BOOLEAN NOT NULL,
-    "useParticiparionCostCenter" BOOLEAN NOT NULL,
+    "useParticipationCostCenter" BOOLEAN NOT NULL,
     "verified" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "CostCenterType_pkey" PRIMARY KEY ("id")

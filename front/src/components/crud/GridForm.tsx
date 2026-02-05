@@ -26,6 +26,7 @@ type RowAction<T> = {
   key: string;
   label: string;
   disabled?: boolean;
+  allowWithoutSelection?: boolean;
   onClick: (row: T) => void | Promise<void>;
 };
 
@@ -287,7 +288,10 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
               onClick={() => setActionsOpen((v) => !v)}
               variant="primary"
               title="Ações"
-              disabled={!selected || actions.length === 0}
+              disabled={
+                actions.length === 0 ||
+                (!selected && actions.every((action) => !action.allowWithoutSelection))
+              }
             >
               <BoltIcon />
             </IconButton>
@@ -305,8 +309,8 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
                       a.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-neutral-800"
                     ].join(" ")}
                     onClick={async () => {
-                      if (!selected || a.disabled) return;
-                      await a.onClick(selected);
+                      if ((!selected && !a.allowWithoutSelection) || a.disabled) return;
+                      await a.onClick(selected as T);
                       setActionsOpen(false);
                     }}
                   >

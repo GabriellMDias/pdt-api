@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateCostCenterDto } from './dto/create-cost-center.dto';
 import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
 import { PrismaService } from 'src/db/prisma/prisma.service';
@@ -215,30 +215,74 @@ export class CostCentersService {
   async createCostCenterType(createCostCenterTypeDto: CreateCostCenterTypeDto) {
     const { costCenterTypeItems, ...data } = createCostCenterTypeDto;
 
-    const result =  this.prisma.costCenterType.create({
+    this.validateCostCenterTypeItems(costCenterTypeItems);
+
+    const costCenterTypeVrId = await this.ensureCostCenterTypeInVr({
+      description: data.description,
+      activeStatus: data.activeStatus,
+      hasPercentage: this.hasPercentageRateio(costCenterTypeItems),
+      existingVrId: data.id_costcentertype_vr,
+    });
+
+    const result = await this.prisma.costCenterType.create({
       data: {
         ...data,
+        activeStatus: data.activeStatus ?? true,
+        id_costcentertype_vr: costCenterTypeVrId,
         costCenterTypeItems: {
-          create: costCenterTypeItems
-        }
-      }
+          create: costCenterTypeItems,
+        },
+      },
     });
+
+    await this.syncCostCenterTypeItemsToVr(costCenterTypeVrId, costCenterTypeItems);
 
     return result;
   }
 
   async updateCostCenterType(id: number, updateCostCenterTypeDto: UpdateCostCenterTypeDto) {
     const { costCenterTypeItems, ...data } = updateCostCenterTypeDto;
+    const costCenterType = await this.prisma.costCenterType.findUnique({ where: { id } });
 
-    return this.prisma.costCenterType.update({
-      where: { id },
-      data: {
-        ...data,
-        costCenterTypeItems: {
-          create: costCenterTypeItems
-        }
+    if (!costCenterType) {
+      throw new NotFoundException(`Cost center type with ${id} does not exist.`);
+    }
+
+    if (costCenterTypeItems) {
+      this.validateCostCenterTypeItems(costCenterTypeItems);
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (costCenterTypeItems) {
+        await tx.costCenterTypeItem.deleteMany({ where: { costCenterTypeId: id } });
       }
+
+      return tx.costCenterType.update({
+        where: { id },
+        data: {
+          ...data,
+          costCenterTypeItems: costCenterTypeItems
+            ? {
+                create: costCenterTypeItems,
+              }
+            : undefined,
+        },
+      });
     });
+
+    if (data.activeStatus !== undefined || data.description || costCenterTypeItems) {
+      await this.syncCostCenterTypeToVr(costCenterType.id_costcentertype_vr, {
+        activeStatus: data.activeStatus,
+        description: data.description,
+        hasPercentage: costCenterTypeItems ? this.hasPercentageRateio(costCenterTypeItems) : undefined,
+      });
+    }
+
+    if (costCenterTypeItems) {
+      await this.syncCostCenterTypeItemsToVr(costCenterType.id_costcentertype_vr, costCenterTypeItems);
+    }
+
+    return result;
   }
 
   async removeCostCenterType(id: number) {
@@ -255,5 +299,147 @@ export class CostCentersService {
 
   async findOneCostCenterType(id: number) {
     return this.prisma.costCenterType.findUnique({where: {id}});
+  }
+
+  private validateCostCenterTypeItems(costCenterTypeItems: CostCenterTypeItemDto[]) {
+    if (!costCenterTypeItems || costCenterTypeItems.length === 0) {
+      throw new BadRequestException('É necessário informar itens de rateio.');
+    }
+
+    costCenterTypeItems.forEach((item) => {
+      if (!item.costCenterId || !item.storeId) {
+        throw new BadRequestException('Centro de custo e loja são obrigatórios nos itens de rateio.');
+      }
+    });
+
+    const hasPercentage = this.hasPercentageRateio(costCenterTypeItems);
+    const hasNullPercentage = costCenterTypeItems.some((item) => item.percentage === null || item.percentage === undefined);
+
+    if (hasPercentage && hasNullPercentage) {
+      throw new BadRequestException('O rateio deve ser totalmente por percentual ou totalmente por participação.');
+    }
+
+    if (!hasPercentage) {
+      const hasInvalidParticipation = costCenterTypeItems.some(
+        (item) => item.participation === null || item.participation === undefined
+      );
+
+      if (hasInvalidParticipation) {
+        throw new BadRequestException('Informe participação em todos os itens do rateio.');
+      }
+
+      return;
+    }
+
+    const total = costCenterTypeItems.reduce((acc, item) => acc + (item.percentage ?? 0), 0);
+    const roundedTotal = Math.round((total + Number.EPSILON) * 100) / 100;
+
+    if (roundedTotal !== 100) {
+      throw new BadRequestException('A soma dos percentuais deve ser 100%.');
+    }
+  }
+
+  private hasPercentageRateio(costCenterTypeItems: CostCenterTypeItemDto[]) {
+    return costCenterTypeItems.some((item) => item.percentage !== null && item.percentage !== undefined);
+  }
+
+  private async ensureCostCenterTypeInVr({
+    description,
+    activeStatus,
+    hasPercentage,
+    existingVrId,
+  }: {
+    description: string;
+    activeStatus?: boolean | null;
+    hasPercentage: boolean;
+    existingVrId?: number;
+  }) {
+    if (existingVrId) {
+      await this.syncCostCenterTypeToVr(existingVrId, { description, activeStatus, hasPercentage });
+      return existingVrId;
+    }
+
+    const sqlNewId = `select max(id) + 1 as new_id from tipocentrocusto`;
+    const newId = (await this.pg.query<{ new_id: number }>(sqlNewId)).rows[0].new_id;
+    const status = activeStatus === false ? 2 : 1;
+
+    const sqlInsertCostCenterTypeInVr = `insert into tipocentrocusto
+      (id, descricao, id_situacaocadastro, id_grupoeconomico, utilizapercentual) values
+      ($1, $2, $3, 1, $4)`;
+
+    await this.pg.query(sqlInsertCostCenterTypeInVr, [newId, description, status, hasPercentage]);
+
+    return newId;
+  }
+
+  private async syncCostCenterTypeToVr(
+    costCenterTypeVrId: number,
+    {
+      description,
+      activeStatus,
+      hasPercentage,
+    }: {
+      description?: string;
+      activeStatus?: boolean | null;
+      hasPercentage?: boolean;
+    }
+  ) {
+    const fields: string[] = [];
+    const params: Array<string | number | boolean> = [];
+
+    if (description !== undefined) {
+      params.push(description);
+      fields.push(`descricao = $${params.length}`);
+    }
+
+    if (activeStatus !== undefined) {
+      params.push(activeStatus === false ? 2 : 1);
+      fields.push(`id_situacaocadastro = $${params.length}`);
+    }
+
+    if (hasPercentage !== undefined) {
+      params.push(hasPercentage);
+      fields.push(`utilizapercentual = $${params.length}`);
+    }
+
+    if (fields.length === 0) {
+      return;
+    }
+
+    params.push(costCenterTypeVrId);
+    await this.pg.query(`update tipocentrocusto set ${fields.join(', ')} where id = $${params.length}`, params);
+  }
+
+  private async syncCostCenterTypeItemsToVr(costCenterTypeVrId: number, costCenterTypeItems: CostCenterTypeItemDto[]) {
+    await this.pg.query('delete from centrocustoitem where id_centrocusto = $1', [costCenterTypeVrId]);
+
+    for (const item of costCenterTypeItems) {
+      if (!item.costCenterId || !item.storeId) {
+        continue;
+      }
+
+      const costCenterVr = await this.pg.query<{ centrocusto1: number; centrocusto2: number; centrocusto3: number }>(
+        'select centrocusto1, centrocusto2, centrocusto3 from centrocusto where id = $1 and nivel = 3',
+        [item.costCenterId]
+      );
+
+      const costCenterVrRow = costCenterVr.rows[0];
+      if (!costCenterVrRow) {
+        continue;
+      }
+
+      await this.pg.query(
+        `insert into centrocustoitem (id_centrocusto, centrocusto1, centrocusto2, centrocusto3, id_loja, percentual)
+         values ($1, $2, $3, $4, $5, $6)`,
+        [
+          costCenterTypeVrId,
+          costCenterVrRow.centrocusto1,
+          costCenterVrRow.centrocusto2,
+          costCenterVrRow.centrocusto3,
+          item.storeId,
+          item.percentage ?? 0,
+        ]
+      );
+    }
   }
 }

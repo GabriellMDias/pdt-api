@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsNumber, IsPositive, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsPositive, IsString, Min, ValidateNested } from "class-validator";
 
 export class CostCenterTypeItemDto {
     @ApiProperty()
@@ -16,12 +16,14 @@ export class CostCenterTypeItemDto {
     storeId?: number | null;
 
     @ApiProperty()
+    @IsOptional()
     @IsNumber()
-    @IsPositive()
+    @Min(0)
     @Type(() => Number)
     percentage?: number | null;
 
     @ApiProperty()
+    @IsOptional()
     @IsBoolean()
     @Type(() => Boolean)
     participation?: boolean | null;
@@ -33,12 +35,14 @@ export class CreateCostCenterTypeDto {
     description: string;
 
     @ApiProperty()
+    @IsOptional()
     @IsNumber()
     @IsPositive()
     @Type(() => Number)
-    id_costcentertype_vr: number;
+    id_costcentertype_vr?: number;
 
     @ApiProperty()
+    @IsOptional()
     @IsNumber()
     @IsPositive()
     @Type(() => Number)
@@ -58,6 +62,12 @@ export class CreateCostCenterTypeDto {
     @IsBoolean()
     @Type(() => Boolean)
     verified?: boolean | null;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    activeStatus?: boolean | null;
 
     @ApiProperty()
     @IsArray()

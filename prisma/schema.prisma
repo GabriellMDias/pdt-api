@@ -17,6 +17,7 @@ model User {
 
   UserPermission UserPermission[]
   ArquivoAnalise ArquivoAnalise[]
+  NotificationRecipient NotificationRecipient[]
 }
 
 model Store {
@@ -188,6 +189,30 @@ model UserPermission {
 
   // Garante que não existam duplicatas do mesmo (user, perm, store)
   @@unique([userId, permissionId, storeId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  recipients NotificationRecipient[]
+}
+
+model NotificationRecipient {
+  id             Int          @id @default(autoincrement())
+  notificationId Int
+  userId         Int
+  readAt         DateTime?
+
+  notification Notification @relation(fields: [notificationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
 }
 
 model AnalysisType {

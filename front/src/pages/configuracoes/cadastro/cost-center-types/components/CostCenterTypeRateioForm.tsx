@@ -240,10 +240,25 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
   };
 
   React.useEffect(() => {
-    if (token) {
-      loadCostCenters();
-      loadStores();
-    }
+    if (!token) return;
+    const loadAll = async () => {
+      setLookupLoading(true);
+      try {
+        const [costCenterData, storeData] = await Promise.all([
+          api<CostCenterOption[]>(`${API_BASE}/api/cost-centers`, {
+            headers: authHeaders(token),
+          }),
+          api<StoreOption[]>(`${API_BASE}/api/stores`, {
+            headers: authHeaders(token),
+          }),
+        ]);
+        setCostCenters(costCenterData);
+        setStores(storeData);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+    loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 

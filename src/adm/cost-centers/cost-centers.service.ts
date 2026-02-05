@@ -11,10 +11,16 @@ import { CostCenterTypeVr, CostCenterTypeVrGrouped } from './entities/cost-cente
 import { CostCenterEntity } from './entities/cost-center.entity';
 import { SnkApiService } from 'src/snk-api/snk-api.service';
 import { CostCenterSnk } from './entities/cost-center-snk.entity';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class CostCentersService {
-  constructor(private prisma: PrismaService, private pg: PgService, private snk: SnkApiService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pg: PgService,
+    private snk: SnkApiService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async createCostCenter(createCostCenterDto: CreateCostCenterDto): Promise<CostCenter> {
     return this.prisma.costCenter.create({data: createCostCenterDto});
@@ -237,6 +243,8 @@ export class CostCentersService {
 
     await this.syncCostCenterTypeItemsToVr(costCenterTypeVrId, costCenterTypeItems);
 
+    await this.notifyCostCenterTypeCreated(result.id);
+
     return result;
   }
 
@@ -441,5 +449,17 @@ export class CostCentersService {
         ]
       );
     }
+  }
+
+  private async notifyCostCenterTypeCreated(costCenterTypeId: number) {
+    const rows = await this.prisma.userPermission.findMany({
+      where: { permission: { code: 'cost-center-types:rateio' } },
+      select: { userId: true },
+    });
+
+    const admin = await this.prisma.user.findUnique({ where: { id: 0 }, select: { id: true } });
+    const userIds = Array.from(new Set([...(admin ? [admin.id] : []), ...rows.map((row) => row.userId)]));
+
+    await this.notificationsService.notifyCostCenterTypeCreated(costCenterTypeId, userIds);
   }
 }

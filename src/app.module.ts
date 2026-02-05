@@ -22,13 +22,14 @@ import { CodeJobsModule } from './config/code-jobs/code-jobs.module';
 import { CostCenterComparativeModule } from './adm/cost-center-comparative/cost-center-comparative.module';
 import { TopModule } from './fiscal/top/top.module';
 import { RupturaModule } from './adm/ruptura/ruptura.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..',  'front', 'dist'),
     }),
     ScheduleModule.forRoot(),
-    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule, TopModule, RupturaModule],
+    PrismaModule, StoresModule, ExpensesModule, UsersModule, AuthModule, CostCentersModule, DepartmentsModule, PgModule, DreModule, PermissionsModule, AnalysisModule, DbScriptsModule, ParametersModule, SnkApiModule, CodeJobsModule, CostCenterComparativeModule, TopModule, RupturaModule, NotificationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

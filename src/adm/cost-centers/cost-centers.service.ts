@@ -215,14 +215,27 @@ export class CostCentersService {
   async createCostCenterType(createCostCenterTypeDto: CreateCostCenterTypeDto) {
     const { costCenterTypeItems, ...data } = createCostCenterTypeDto;
 
-    const result =  this.prisma.costCenterType.create({
+    this.validateCostCenterTypeItems(costCenterTypeItems);
+
+    const costCenterTypeVrId = await this.ensureCostCenterTypeInVr({
+      description: data.description,
+      activeStatus: data.activeStatus,
+      hasPercentage: this.hasPercentageRateio(costCenterTypeItems),
+      existingVrId: data.id_costcentertype_vr,
+    });
+
+    const result = await this.prisma.costCenterType.create({
       data: {
         ...data,
+        activeStatus: data.activeStatus ?? true,
+        id_costcentertype_vr: costCenterTypeVrId,
         costCenterTypeItems: {
-          create: costCenterTypeItems
-        }
-      }
+          create: costCenterTypeItems,
+        },
+      },
     });
+
+    await this.syncCostCenterTypeItemsToVr(costCenterTypeVrId, costCenterTypeItems);
 
     return result;
   }
@@ -257,6 +270,14 @@ export class CostCentersService {
       });
     });
 
+    if (data.activeStatus !== undefined || data.description || costCenterTypeItems) {
+      await this.syncCostCenterTypeToVr(costCenterType.id_costcentertype_vr, {
+        activeStatus: data.activeStatus,
+        description: data.description,
+        hasPercentage: costCenterTypeItems ? this.hasPercentageRateio(costCenterTypeItems) : undefined,
+      });
+    }
+
     if (costCenterTypeItems) {
       await this.syncCostCenterTypeItemsToVr(costCenterType.id_costcentertype_vr, costCenterTypeItems);
     }
@@ -281,9 +302,32 @@ export class CostCentersService {
   }
 
   private validateCostCenterTypeItems(costCenterTypeItems: CostCenterTypeItemDto[]) {
-    const hasPercentage = costCenterTypeItems.some((item) => item.percentage !== null && item.percentage !== undefined);
+    if (!costCenterTypeItems || costCenterTypeItems.length === 0) {
+      throw new BadRequestException('É necessário informar itens de rateio.');
+    }
+
+    costCenterTypeItems.forEach((item) => {
+      if (!item.costCenterId || !item.storeId) {
+        throw new BadRequestException('Centro de custo e loja são obrigatórios nos itens de rateio.');
+      }
+    });
+
+    const hasPercentage = this.hasPercentageRateio(costCenterTypeItems);
+    const hasNullPercentage = costCenterTypeItems.some((item) => item.percentage === null || item.percentage === undefined);
+
+    if (hasPercentage && hasNullPercentage) {
+      throw new BadRequestException('O rateio deve ser totalmente por percentual ou totalmente por participação.');
+    }
 
     if (!hasPercentage) {
+      const hasInvalidParticipation = costCenterTypeItems.some(
+        (item) => item.participation === null || item.participation === undefined
+      );
+
+      if (hasInvalidParticipation) {
+        throw new BadRequestException('Informe participação em todos os itens do rateio.');
+      }
+
       return;
     }
 
@@ -295,7 +339,80 @@ export class CostCentersService {
     }
   }
 
+  private hasPercentageRateio(costCenterTypeItems: CostCenterTypeItemDto[]) {
+    return costCenterTypeItems.some((item) => item.percentage !== null && item.percentage !== undefined);
+  }
+
+  private async ensureCostCenterTypeInVr({
+    description,
+    activeStatus,
+    hasPercentage,
+    existingVrId,
+  }: {
+    description: string;
+    activeStatus?: boolean | null;
+    hasPercentage: boolean;
+    existingVrId?: number;
+  }) {
+    if (existingVrId) {
+      await this.syncCostCenterTypeToVr(existingVrId, { description, activeStatus, hasPercentage });
+      return existingVrId;
+    }
+
+    const sqlNewId = `select max(id) + 1 as new_id from tipocentrocusto`;
+    const newId = (await this.pg.query<{ new_id: number }>(sqlNewId)).rows[0].new_id;
+    const status = activeStatus === false ? 2 : 1;
+
+    const sqlInsertCostCenterTypeInVr = `insert into tipocentrocusto
+      (id, descricao, id_situacaocadastro, id_grupoeconomico, utilizapercentual) values
+      ($1, $2, $3, 1, $4)`;
+
+    await this.pg.query(sqlInsertCostCenterTypeInVr, [newId, description, status, hasPercentage]);
+
+    return newId;
+  }
+
+  private async syncCostCenterTypeToVr(
+    costCenterTypeVrId: number,
+    {
+      description,
+      activeStatus,
+      hasPercentage,
+    }: {
+      description?: string;
+      activeStatus?: boolean | null;
+      hasPercentage?: boolean;
+    }
+  ) {
+    const fields: string[] = [];
+    const params: Array<string | number | boolean> = [];
+
+    if (description !== undefined) {
+      params.push(description);
+      fields.push(`descricao = $${params.length}`);
+    }
+
+    if (activeStatus !== undefined) {
+      params.push(activeStatus === false ? 2 : 1);
+      fields.push(`id_situacaocadastro = $${params.length}`);
+    }
+
+    if (hasPercentage !== undefined) {
+      params.push(hasPercentage);
+      fields.push(`utilizapercentual = $${params.length}`);
+    }
+
+    if (fields.length === 0) {
+      return;
+    }
+
+    params.push(costCenterTypeVrId);
+    await this.pg.query(`update tipocentrocusto set ${fields.join(', ')} where id = $${params.length}`, params);
+  }
+
   private async syncCostCenterTypeItemsToVr(costCenterTypeVrId: number, costCenterTypeItems: CostCenterTypeItemDto[]) {
+    await this.pg.query('delete from centrocustoitem where id_centrocusto = $1', [costCenterTypeVrId]);
+
     for (const item of costCenterTypeItems) {
       if (!item.costCenterId || !item.storeId) {
         continue;
@@ -311,48 +428,18 @@ export class CostCentersService {
         continue;
       }
 
-      const existingItem = await this.pg.query(
-        `select 1 from centrocustoitem
-         where id_centrocusto = $1
-           and centrocusto1 = $2
-           and centrocusto2 = $3
-           and centrocusto3 = $4
-           and id_loja = $5`,
-        [costCenterTypeVrId, costCenterVrRow.centrocusto1, costCenterVrRow.centrocusto2, costCenterVrRow.centrocusto3, item.storeId]
+      await this.pg.query(
+        `insert into centrocustoitem (id_centrocusto, centrocusto1, centrocusto2, centrocusto3, id_loja, percentual)
+         values ($1, $2, $3, $4, $5, $6)`,
+        [
+          costCenterTypeVrId,
+          costCenterVrRow.centrocusto1,
+          costCenterVrRow.centrocusto2,
+          costCenterVrRow.centrocusto3,
+          item.storeId,
+          item.percentage ?? 0,
+        ]
       );
-
-      if (existingItem.rowCount && existingItem.rowCount > 0) {
-        await this.pg.query(
-          `update centrocustoitem
-           set percentual = $6
-           where id_centrocusto = $1
-             and centrocusto1 = $2
-             and centrocusto2 = $3
-             and centrocusto3 = $4
-             and id_loja = $5`,
-          [
-            costCenterTypeVrId,
-            costCenterVrRow.centrocusto1,
-            costCenterVrRow.centrocusto2,
-            costCenterVrRow.centrocusto3,
-            item.storeId,
-            item.percentage ?? 0,
-          ]
-        );
-      } else {
-        await this.pg.query(
-          `insert into centrocustoitem (id_centrocusto, centrocusto1, centrocusto2, centrocusto3, id_loja, percentual)
-           values ($1, $2, $3, $4, $5, $6)`,
-          [
-            costCenterTypeVrId,
-            costCenterVrRow.centrocusto1,
-            costCenterVrRow.centrocusto2,
-            costCenterVrRow.centrocusto3,
-            item.storeId,
-            item.percentage ?? 0,
-          ]
-        );
-      }
     }
   }
 }

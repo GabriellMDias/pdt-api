@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { api, authHeaders, API_BASE } from "../../../../../services/api";
-import type { CostCenterType, UpdateCostCenterTypePayload } from "../types";
+import type { CostCenterType, CreateCostCenterTypePayload, UpdateCostCenterTypePayload } from "../types";
 import type { Id } from "../../../../../components/crud/GridForm";
 
 export function useCostCenterTypesCrud(token?: string | null) {
@@ -18,5 +18,20 @@ export function useCostCenterTypesCrud(token?: string | null) {
     });
   }, [token]);
 
-  return { fetchAll, updateItem } as const;
+  const createItem = useCallback(async (data: CreateCostCenterTypePayload) => {
+    await api(`${API_BASE}/api/cost-centers/create-cost-center-type`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  }, [token]);
+
+  const syncFromSnk = useCallback(async () => {
+    await api(`${API_BASE}/api/cost-centers/get-cost-center-snk`, {
+      method: "POST",
+      headers: authHeaders(token),
+    });
+  }, [token]);
+
+  return { fetchAll, updateItem, createItem, syncFromSnk } as const;
 }

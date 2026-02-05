@@ -4,16 +4,23 @@ import { GridForm, type Column, type Id } from "../../../../components/crud/Grid
 import { useAuth } from "../../../../hooks/useAuth";
 import { useCostCenterTypesCrud } from "./hooks/useCostCenterTypesCrud";
 import CostCenterTypeRateioForm from "./components/CostCenterTypeRateioForm";
-import type { CostCenterType, UpdateCostCenterTypePayload } from "./types";
+import type { CostCenterType, CreateCostCenterTypePayload, UpdateCostCenterTypePayload } from "./types";
+import { toast } from "react-toastify";
 
 export default function CostCenterTypesPage() {
   const { token } = useAuth();
 
-  const { fetchAll, updateItem } = useCostCenterTypesCrud(token);
+  const { fetchAll, updateItem, createItem, syncFromSnk } = useCostCenterTypesCrud(token);
 
   const columns: Column<CostCenterType>[] = useMemo(() => [
     { key: "id", header: "ID", width: "80px" },
     { key: "description", header: "Descrição", width: "320px" },
+    {
+      key: "activeStatus",
+      header: "Ativo",
+      width: "90px",
+      render: (row) => (row.activeStatus ? "Sim" : "Não"),
+    },
     { key: "id_costcentertype_vr", header: "ID VR", width: "110px" },
     {
       key: "useParticipationStore",
@@ -37,19 +44,48 @@ export default function CostCenterTypesPage() {
 
   return (
     <Layout title="Tipos de Centro de Custo">
-      <GridForm<CostCenterType, UpdateCostCenterTypePayload>
+      <GridForm<CostCenterType, CreateCostCenterTypePayload, UpdateCostCenterTypePayload>
         title=""
         idOf={(row) => row.id}
         columns={columns}
         fetchAll={async () => fetchAll()}
-        createItem={async () => console.log("")}
+        createItem={(data) => createItem(data)}
         updateItem={(id: Id, data) => updateItem(id, data)}
         deleteItem={async () => console.log("")}
         renderForm={(props: any) => <CostCenterTypeRateioForm {...props} />}
         searchPlaceholder="Buscar por descrição ou ID..."
-        canCreate={false}
+        canCreate={true}
         canEdit={true}
         canDelete={false}
+        actionsForRow={() => [
+          {
+            key: "sync-snk",
+            label: "Sincronizar tipos (SNK)",
+            allowWithoutSelection: true,
+            onClick: async () => {
+              try {
+                await syncFromSnk();
+                toast.success("Sincronização com Sankhya concluída.", {
+                  position: "top-right",
+                  autoClose: 5000,
+                  hideProgressBar: false,
+                  pauseOnHover: true,
+                  draggable: true,
+                  theme: "dark",
+                });
+              } catch (error: any) {
+                toast.error(`Falha ao sincronizar: ${error?.message ?? error}`, {
+                  position: "top-right",
+                  autoClose: 5000,
+                  hideProgressBar: false,
+                  pauseOnHover: true,
+                  draggable: true,
+                  theme: "dark",
+                });
+              }
+            },
+          },
+        ]}
       />
     </Layout>
   );

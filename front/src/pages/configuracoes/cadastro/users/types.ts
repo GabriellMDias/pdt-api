@@ -1,3 +1,3 @@
 // src/pages/configuracoes/cadastro/users/types.ts
-export interface User { id: number; name: string; email: string }
-export interface ApiUserPayload { name: string; email: string; password?: string }
+export interface User { id: number; name: string; email: string; notifyCostCenterType?: boolean }
+export interface ApiUserPayload { name: string; email: string; password?: string; notifyCostCenterType?: boolean }

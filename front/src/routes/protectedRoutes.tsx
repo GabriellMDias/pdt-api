@@ -32,6 +32,10 @@ import ConcContabPage from '../pages/contabil/conc-contab/ConcContabPage';
 import RestriExcTop from '../pages/fiscal/restricoes-excecoes-top/RestriExcTop';
 import ShelvesIcon from '@mui/icons-material/Shelves';
 import AtualPratPage from '../pages/administrativo/rupturainterna/atualizarprateleiras/AtualPratPage';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import CostCenterTypesPage from '../pages/configuracoes/cadastro/cost-center-types/CostCenterTypesPage';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsPage from '../pages/configuracoes/notifications/NotificationsPage';
 
 
 export interface ProtectedRoute {
@@ -178,6 +182,13 @@ export const protectedRoutes: ProtectedRoute[] = [
             element: <UsersPage />,
             requiredPermissions: ['users:consultar', 'users:incluir', 'users:editar', 'users:excluir'],
             showInSidebar: true,
+          },
+          {
+            path: '/configuracoes/cadastro/tipos-centro-custo',
+            label: 'Tipos de Centro de Custo',
+            icon: <AccountTreeIcon />,
+            element: <CostCenterTypesPage />,
+            showInSidebar: true,
           }
         ],
       },
@@ -232,6 +243,13 @@ export const protectedRoutes: ProtectedRoute[] = [
         icon: <BuildIcon />,
         element: <ParametersPage />,
         requiredPermissions: ["parameters:consultar", "parameters:editar"]
+      },
+      {
+        path: '/configuracoes/notificacoes',
+        label: "Notificações",
+        showInSidebar: true,
+        icon: <NotificationsIcon />,
+        element: <NotificationsPage />,
       }
     ],
   },

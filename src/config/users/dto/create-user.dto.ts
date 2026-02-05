@@ -3,7 +3,9 @@ import {
     IsString,
     IsEmail,
     IsNotEmpty,
-    MinLength
+    MinLength,
+    IsBoolean,
+    IsOptional
 } from 'class-validator'
 
 export class CreateUserDto {
@@ -23,4 +25,9 @@ export class CreateUserDto {
     @MinLength(6)
     @ApiProperty()
     password: string
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({ required: false })
+    notifyCostCenterType?: boolean
 }

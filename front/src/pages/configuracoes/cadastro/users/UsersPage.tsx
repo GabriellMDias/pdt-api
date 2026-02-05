@@ -20,6 +20,11 @@ export default function UsersPage() {
     { key: "id", header: "ID" },
     { key: "name", header: "Nome" },
     { key: "email", header: "E-mail" },
+    {
+      key: "notifyCostCenterType",
+      header: "Notif. Centro Custo",
+      render: (row) => (row.notifyCostCenterType ? "Sim" : "Não"),
+    },
   ];
 
   // === Gates considerando admin (userId === 0) e permissões estruturadas ===

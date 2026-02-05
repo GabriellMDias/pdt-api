@@ -10,6 +10,9 @@ export default function UserForm({ initial, onCancel, onSubmit, submitting, isEd
   const [name, setName] = React.useState(initial?.name ?? "");
   const [email, setEmail] = React.useState(initial?.email ?? "");
   const [password, setPassword] = React.useState("");
+  const [notifyCostCenterType, setNotifyCostCenterType] = React.useState(
+    initial?.notifyCostCenterType ?? false
+  );
 
   const canSubmitLocal = () => {
     if (!name.trim() || !email.trim()) return false;
@@ -27,6 +30,7 @@ export default function UserForm({ initial, onCancel, onSubmit, submitting, isEd
         e.preventDefault();
         if (disabled) return;
         const payload: ApiUserPayload = { name: name.trim(), email: email.trim() };
+        payload.notifyCostCenterType = notifyCostCenterType;
         if (password.trim()) payload.password = password.trim();
         await onSubmit(payload, initial?.id);
       }}
@@ -91,6 +95,15 @@ export default function UserForm({ initial, onCancel, onSubmit, submitting, isEd
             name="new-password"
             id="new-password"
           />
+        </label>
+        <label className="flex items-center gap-2 text-sm text-neutral-300 md:col-span-2">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-neutral-600 bg-neutral-900 text-blue-600 focus:ring-blue-600"
+            checked={notifyCostCenterType}
+            onChange={(e) => setNotifyCostCenterType(e.target.checked)}
+          />
+          Receber notificações de novos tipos de centro de custo
         </label>
       </div>
     </form>

@@ -361,7 +361,7 @@ export class CostCentersService {
 
     const sqlNewId = `select max(id) + 1 as new_id from tipocentrocusto`;
     const newId = (await this.pg.query<{ new_id: number }>(sqlNewId)).rows[0].new_id;
-    const status = activeStatus === false ? 2 : 1;
+    const status = activeStatus === false ? 0 : 1;
 
     const sqlInsertCostCenterTypeInVr = `insert into tipocentrocusto
       (id, descricao, id_situacaocadastro, id_grupoeconomico, utilizapercentual) values
@@ -393,7 +393,7 @@ export class CostCentersService {
     }
 
     if (activeStatus !== undefined) {
-      params.push(activeStatus === false ? 2 : 1);
+      params.push(activeStatus === false ? 0 : 1);
       fields.push(`id_situacaocadastro = $${params.length}`);
     }
 

@@ -2,8 +2,12 @@ import React from "react";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
 import { IconButton } from "../../../../../components/crud/primitives";
 import type { CostCenterTypeItem, CreateCostCenterTypePayload, UpdateCostCenterTypePayload } from "../types";
+import { api, authHeaders, API_BASE } from "../../../../../services/api";
+import { useAuth } from "../../../../../hooks/useAuth";
 
 type RateioMode = "percentage" | "participation";
 
@@ -12,12 +16,31 @@ type RateioRow = CostCenterTypeItem & {
   isNew?: boolean;
 };
 
+type CostCenterOption = {
+  id: number;
+  description: string;
+};
+
+type StoreOption = {
+  id: number;
+  description?: string | null;
+  storeName?: string | null;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, submitting, isEdit, maySubmit }: any) {
+  const { token } = useAuth();
   const [items, setItems] = React.useState<RateioRow[]>([]);
   const [description, setDescription] = React.useState("");
   const [activeStatus, setActiveStatus] = React.useState(true);
   const [mode, setMode] = React.useState<RateioMode>("percentage");
+  const [costCenters, setCostCenters] = React.useState<CostCenterOption[]>([]);
+  const [stores, setStores] = React.useState<StoreOption[]>([]);
+  const [lookupOpen, setLookupOpen] = React.useState(false);
+  const [lookupType, setLookupType] = React.useState<"costCenter" | "store">("costCenter");
+  const [lookupRowIndex, setLookupRowIndex] = React.useState<number | null>(null);
+  const [lookupSearch, setLookupSearch] = React.useState("");
+  const [lookupLoading, setLookupLoading] = React.useState(false);
 
   React.useEffect(() => {
     setDescription(initial?.description ?? "");
@@ -120,6 +143,67 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
   }, [parsedItems, roundedTotal, mode]);
 
   const disabled = submitting || !maySubmit || hasMissingFields || hasInvalidMode || hasNoItems || (!isEdit && !description.trim());
+
+  const filteredCostCenters = React.useMemo(() => {
+    if (!lookupSearch.trim()) return costCenters;
+    const q = lookupSearch.toLowerCase();
+    return costCenters.filter((cc) => `${cc.id} ${cc.description}`.toLowerCase().includes(q));
+  }, [costCenters, lookupSearch]);
+
+  const filteredStores = React.useMemo(() => {
+    if (!lookupSearch.trim()) return stores;
+    const q = lookupSearch.toLowerCase();
+    return stores.filter((store) =>
+      `${store.id} ${store.storeName ?? ""} ${store.description ?? ""}`.toLowerCase().includes(q)
+    );
+  }, [stores, lookupSearch]);
+
+  const openLookup = async (type: "costCenter" | "store", rowIndex: number) => {
+    setLookupType(type);
+    setLookupRowIndex(rowIndex);
+    setLookupSearch("");
+    setLookupOpen(true);
+    if (type === "costCenter" && costCenters.length === 0) {
+      await loadCostCenters();
+    }
+    if (type === "store" && stores.length === 0) {
+      await loadStores();
+    }
+  };
+
+  const loadCostCenters = async () => {
+    setLookupLoading(true);
+    try {
+      const data = await api<CostCenterOption[]>(`${API_BASE}/api/cost-centers`, {
+        headers: authHeaders(token),
+      });
+      setCostCenters(data);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const loadStores = async () => {
+    setLookupLoading(true);
+    try {
+      const data = await api<StoreOption[]>(`${API_BASE}/api/stores`, {
+        headers: authHeaders(token),
+      });
+      setStores(data);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const selectLookupValue = (id: number) => {
+    if (lookupRowIndex === null) return;
+    if (lookupType === "costCenter") {
+      handleChange(lookupRowIndex, { costCenterId: id, isNew: true });
+    } else {
+      handleChange(lookupRowIndex, { storeId: id, isNew: true });
+    }
+    setLookupOpen(false);
+  };
 
   return (
     <form
@@ -297,36 +381,54 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                 {items.map((item, index) => (
                   <tr key={item.key} className="bg-neutral-950/40">
                     <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.costCenterId ?? ""}
-                        onChange={(e) =>
-                          handleChange(index, {
-                            costCenterId: e.target.value === "" ? null : Number(e.target.value),
-                            isNew: true,
-                          })
-                        }
-                        className="w-36 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                        placeholder="ID"
-                        disabled={!item.isNew && isEdit}
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.costCenterId ?? ""}
+                          onChange={(e) =>
+                            handleChange(index, {
+                              costCenterId: e.target.value === "" ? null : Number(e.target.value),
+                              isNew: true,
+                            })
+                          }
+                          className="w-32 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                          placeholder="ID"
+                          disabled={!item.isNew && isEdit}
+                        />
+                        <IconButton
+                          onClick={() => openLookup("costCenter", index)}
+                          variant="default"
+                          title="Buscar centro de custo"
+                        >
+                          <SearchIcon />
+                        </IconButton>
+                      </div>
                     </td>
                     <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.storeId ?? ""}
-                        onChange={(e) =>
-                          handleChange(index, {
-                            storeId: e.target.value === "" ? null : Number(e.target.value),
-                            isNew: true,
-                          })
-                        }
-                        className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-                        placeholder="Loja"
-                        disabled={!item.isNew && isEdit}
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.storeId ?? ""}
+                          onChange={(e) =>
+                            handleChange(index, {
+                              storeId: e.target.value === "" ? null : Number(e.target.value),
+                              isNew: true,
+                            })
+                          }
+                          className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                          placeholder="Loja"
+                          disabled={!item.isNew && isEdit}
+                        />
+                        <IconButton
+                          onClick={() => openLookup("store", index)}
+                          variant="default"
+                          title="Buscar loja"
+                        >
+                          <SearchIcon />
+                        </IconButton>
+                      </div>
                     </td>
                     <td className="px-3 py-2">
                       <input
@@ -370,6 +472,77 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
           </div>
         )}
       </section>
+      {lookupOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setLookupOpen(false);
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div className="w-full max-w-3xl rounded-xl border border-neutral-800 bg-neutral-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 p-4">
+              <h2 className="text-lg font-semibold text-neutral-100">
+                {lookupType === "costCenter" ? "Selecionar centro de custo" : "Selecionar loja"}
+              </h2>
+              <button
+                type="button"
+                className="text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                onClick={() => setLookupOpen(false)}
+                aria-label="Fechar"
+              >
+                <CloseIcon fontSize="small" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <input
+                className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="Buscar..."
+                value={lookupSearch}
+                onChange={(e) => setLookupSearch(e.target.value)}
+              />
+              {lookupLoading ? (
+                <div className="text-sm text-neutral-400">Carregando...</div>
+              ) : (
+                <div className="max-h-[360px] overflow-y-auto rounded-xl border border-neutral-800">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-neutral-950 text-left text-neutral-300">
+                      <tr>
+                        <th className="p-3 w-28">ID</th>
+                        <th className="p-3">Descrição</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(lookupType === "costCenter" ? filteredCostCenters : filteredStores).map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-t border-neutral-800 hover:bg-neutral-800/60 cursor-pointer"
+                          onClick={() => selectLookupValue(row.id)}
+                        >
+                          <td className="p-3 text-neutral-100">{row.id}</td>
+                          <td className="p-3 text-neutral-200">
+                            {"description" in row && row.description
+                              ? row.description
+                              : row.storeName ?? "-"}
+                          </td>
+                        </tr>
+                      ))}
+                      {(lookupType === "costCenter" ? filteredCostCenters : filteredStores).length === 0 && (
+                        <tr>
+                          <td colSpan={2} className="p-4 text-center text-neutral-400">
+                            Nenhum resultado encontrado.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

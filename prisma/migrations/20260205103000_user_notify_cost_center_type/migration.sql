@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN "notifyCostCenterType" BOOLEAN NOT NULL DEFAULT false;

@@ -52,7 +52,7 @@ Body:
 Ao criar um novo tipo de centro de custo, o backend dispara automaticamente uma notificação do tipo
 `cost-center-type.created`. Os destinatários são:
 - Usuário administrador (id = 0), caso exista.
-- Usuários que possuem a permissão `cost-center-types:rateio`.
+- Usuários marcados para receber notificações de novos tipos de centro de custo.
 
 Isso permite alertar quem deve configurar o rateio sem acoplamento direto a uma tela específica.
 
@@ -61,7 +61,13 @@ Isso permite alertar quem deve configurar o rateio sem acoplamento direto a uma 
 2. Chame esse método no serviço que dispara o evento (ex.: criação de registros, falhas em jobs, etc.).
 3. Opcional: estenda o payload `data` com informações adicionais para a UI.
 
+## UI de notificações
+- Existe uma tela dedicada em **Configurações > Notificações** que lista e permite marcar como lida/não lida.
+- O topo da aplicação exibe um ícone de notificações com badge de não lidas e um painel rápido.
+
 ## Próximos passos sugeridos
-- Criar uma tela no frontend para listar e marcar notificações como lidas.
-- Adicionar badge com contagem de não lidas.
 - Criar templates de mensagens para padronizar comunicações.
+
+## Preferências por usuário
+No cadastro de usuário existe a opção **Receber notificações de novos tipos de centro de custo**.
+Quando marcada, esse usuário passa a receber automaticamente notificações de criação de tipos de centro de custo.

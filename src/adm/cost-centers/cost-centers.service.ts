@@ -452,13 +452,13 @@ export class CostCentersService {
   }
 
   private async notifyCostCenterTypeCreated(costCenterTypeId: number) {
-    const rows = await this.prisma.userPermission.findMany({
-      where: { permission: { code: 'cost-center-types:rateio' } },
-      select: { userId: true },
+    const rows = await this.prisma.user.findMany({
+      where: { notifyCostCenterType: true },
+      select: { id: true },
     });
 
     const admin = await this.prisma.user.findUnique({ where: { id: 0 }, select: { id: true } });
-    const userIds = Array.from(new Set([...(admin ? [admin.id] : []), ...rows.map((row) => row.userId)]));
+    const userIds = Array.from(new Set([...(admin ? [admin.id] : []), ...rows.map((row) => row.id)]));
 
     await this.notificationsService.notifyCostCenterTypeCreated(costCenterTypeId, userIds);
   }

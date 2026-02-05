@@ -55,13 +55,13 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
       isNew: false,
     }));
 
-    setItems(initialItems);
-
     const hasPercentage = initialItems.some((item) => item.percentage !== null && item.percentage !== undefined);
     if (initial?.useParticipationCostCenter) {
       setMode("participation");
+      setItems(distributeParticipationPercentages(initialItems));
     } else {
       setMode(hasPercentage ? "percentage" : "participation");
+      setItems(initialItems);
     }
   }, [initial]);
 
@@ -69,33 +69,56 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...value } : item)));
   };
 
+  const distributeParticipationPercentages = (rows: RateioRow[]) => {
+    if (rows.length === 0) return rows;
+    const portion = Number((100 / rows.length).toFixed(2));
+    return rows.map((row, idx) => {
+      if (idx === rows.length - 1) {
+        const subtotal = Number((portion * (rows.length - 1)).toFixed(2));
+        return { ...row, percentage: Number((100 - subtotal).toFixed(2)), participation: true };
+      }
+      return { ...row, percentage: portion, participation: true };
+    });
+  };
+
   const handleModeChange = (nextMode: RateioMode) => {
     setMode(nextMode);
-    setItems((prev) =>
-      prev.map((item) => ({
+    setItems((prev) => {
+      if (nextMode === "participation") {
+        return distributeParticipationPercentages(prev.map((item) => ({ ...item })));
+      }
+
+      return prev.map((item) => ({
         ...item,
-        percentage: nextMode === "percentage" ? item.percentage ?? 0 : null,
-        participation: nextMode === "participation" ? item.participation ?? false : false,
-      }))
-    );
+        percentage: item.percentage ?? 0,
+        participation: false,
+      }));
+    });
   };
 
   const addRow = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        key: `new-${Date.now()}-${Math.random()}`,
-        costCenterId: null,
-        storeId: null,
-        percentage: mode === "percentage" ? 0 : null,
-        participation: mode === "participation" ? false : false,
-        isNew: true,
-      },
-    ]);
+    setItems((prev) => {
+      const next = [
+        ...prev,
+        {
+          key: `new-${Date.now()}-${Math.random()}`,
+          costCenterId: null,
+          storeId: null,
+          percentage: mode === "percentage" ? 0 : null,
+          participation: mode === "participation" ? true : false,
+          isNew: true,
+        },
+      ];
+
+      return mode === "participation" ? distributeParticipationPercentages(next) : next;
+    });
   };
 
   const removeRow = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
+    setItems((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      return mode === "participation" ? distributeParticipationPercentages(next) : next;
+    });
   };
 
   const parsedItems = React.useMemo<CostCenterTypeItem[]>(() => (
@@ -109,9 +132,9 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
       percentage: item.percentage === null || item.percentage === undefined || item.percentage === ""
         ? null
         : Number(item.percentage),
-      participation: item.participation ?? false,
+      participation: mode === "participation",
     }))
-  ), [items]);
+  ), [items, mode]);
 
   const totalPercentage = React.useMemo(() => (
     parsedItems.reduce((acc, item) => acc + (typeof item.percentage === "number" ? item.percentage : 0), 0)
@@ -131,15 +154,12 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
   const hasInvalidMode = React.useMemo(() => {
     const hasPercentage = parsedItems.some((item) => item.percentage !== null && item.percentage !== undefined);
     const hasNullPercentage = parsedItems.some((item) => item.percentage === null || item.percentage === undefined);
-    const hasNullParticipation = parsedItems.some(
-      (item) => item.participation === null || item.participation === undefined
-    );
 
     if (mode === "percentage") {
       return !hasPercentage || hasNullPercentage || roundedTotal !== 100;
     }
 
-    return hasPercentage || hasNullParticipation;
+    return hasPercentage && roundedTotal !== 100;
   }, [parsedItems, roundedTotal, mode]);
 
   const disabled = submitting || !maySubmit || hasMissingFields || hasInvalidMode || hasNoItems || (!isEdit && !description.trim());
@@ -204,6 +224,28 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
     }
     setLookupOpen(false);
   };
+
+  const costCenterLabel = (id?: number | null) => {
+    if (!id) return "-";
+    const match = costCenters.find((cc) => cc.id === id);
+    return match ? `${match.id} - ${match.description}` : String(id);
+  };
+
+  const storeLabel = (id?: number | null) => {
+    if (!id) return "-";
+    const match = stores.find((store) => store.id === id);
+    if (!match) return String(id);
+    const label = match.storeName || match.description || "-";
+    return `${match.id} - ${label}`;
+  };
+
+  React.useEffect(() => {
+    if (token) {
+      loadCostCenters();
+      loadStores();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return (
     <form
@@ -372,8 +414,9 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                 <tr>
                   <th className="text-left px-3">Centro de custo</th>
                   <th className="text-left px-3">Loja</th>
+                  <th className="text-left px-3">Descrição</th>
                   <th className="text-left px-3">Percentual</th>
-                  <th className="text-left px-3">Participa</th>
+                  <th className="text-left px-3">Tipo</th>
                   <th className="text-left px-3">Ações</th>
                 </tr>
               </thead>
@@ -430,6 +473,10 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                         </IconButton>
                       </div>
                     </td>
+                    <td className="px-3 py-2 text-xs text-neutral-300">
+                      <div>{costCenterLabel(item.costCenterId)}</div>
+                      <div>{storeLabel(item.storeId)}</div>
+                    </td>
                     <td className="px-3 py-2">
                       <input
                         type="number"
@@ -445,16 +492,9 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                       />
                     </td>
                     <td className="px-3 py-2">
-                      <label className="flex items-center gap-2 text-xs text-neutral-200">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(item.participation)}
-                          onChange={(e) => handleChange(index, { participation: e.target.checked })}
-                          className="h-4 w-4 rounded border-neutral-600 bg-neutral-900 text-blue-600 focus:ring-blue-600"
-                          disabled={mode !== "participation"}
-                        />
-                        Participa
-                      </label>
+                      <span className="text-xs text-neutral-300">
+                        {mode === "participation" ? "Participação" : "Porcentagem"}
+                      </span>
                     </td>
                     <td className="px-3 py-2">
                       <IconButton

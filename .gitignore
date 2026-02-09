@@ -145,3 +145,4 @@ dist
 
 # Ignora tudo dentro de uploads/
 uploads/*
+apps/api/uploads/*

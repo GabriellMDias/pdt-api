@@ -1,139 +1,107 @@
-# 📦 PdT API
+# PDT Monorepo
 
-API desenvolvida com NestJS e PostgreSQL, containerizada via Docker. Inclui autenticação JWT, documentação Swagger protegida por login e conexão direta com PostgreSQL via Prisma e `pg`.
+Repositorio organizado em tres projetos:
 
----
+- `apps/api`: backend NestJS + Prisma (tambem serve o build do frontend).
+- `apps/web`: frontend React + Vite.
+- `apps/mobile`: app mobile em Expo.
 
-## 🚀 Como rodar o projeto
+Infraestrutura Docker:
 
-### 1. ✅ Pré-requisitos
+- `infra/docker/docker-compose.yml`
+- `infra/docker/api.Dockerfile`
 
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
+## Estrutura
 
----
-
-### 2. ⚙️ Variáveis de ambiente
-
-Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
-
-```env
-# PostgreSQL
-POSTGRES_USER=pdt
-POSTGRES_PASSWORD=pdt2020
-POSTGRES_PORT=5432
-
-# API
-PORT=4495
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/pdt
-
-# Swagger
-SWAGGER_USER=admin
-SWAGGER_PASSWORD=123456
-
-# PGService (VR Database)
-PG_DATABASE_USER=postgres
-PG_DATABASE_PASSWORD=VrPost@Server
-PG_DATABASE_HOST=172.30.5.5
-PG_DATABASE_PORT=8745
-PG_DATABASE_DATABASE=vr
-PG_APPLICATION_NAME=pdt-api
-
-#JWT
-JWT_SECRET=superSecretaChaveJWT_98327asduyh1*&YHuhkjh!@2923
+```text
+.
++-- apps
+|   +-- api
+|   +-- web
+|   `-- mobile
++-- infra
+|   `-- docker
++-- guides
++-- .env
+`-- package.json
 ```
 
----
+## Pre-requisitos
 
-### 3. 🐳 Subindo a aplicação com Docker
+- Node.js 20+
+- npm
+- Docker e Docker Compose
 
-Para subir a aplicação e o banco:
+## Desenvolvimento Local
+
+Instale dependencias de todos os apps:
 
 ```bash
-docker-compose up --build
+npm run setup
 ```
 
-Esse comando irá:
-
-- Criar os containers da API e do PostgreSQL
-- Rodar as migrações com `npx prisma migrate deploy`
-- Executar os seeds, se houver
-- Iniciar a aplicação em modo de produção
-
----
-
-### 4. 📄 Documentação da API
-
-Acesse a documentação Swagger em:
-
-```
-http://localhost:4495/api
-```
-
-> Será solicitado login:
-> - **Usuário:** `admin`
-> - **Senha:** `admin123`
-
----
-
-### 5. 📦 Comandos úteis
-
-#### Derrubar os containers:
+Executar API:
 
 ```bash
-docker-compose down
+npm run dev:api
 ```
 
-#### Derrubar e apagar volumes (⚠️ remove os dados do banco):
+Executar Web:
 
 ```bash
-docker-compose down -v
+npm run dev:web
 ```
 
-#### Ver status dos containers:
+Executar Mobile:
 
 ```bash
-docker ps
+npm run dev:mobile
 ```
 
----
-
-### 6. 🧪 Testar conexão com banco
-
-Se quiser testar manualmente o banco de dados, execute:
+Builds:
 
 ```bash
-docker exec -it pdt-api_postgres_1 psql -U postgres -d pdt
+npm run build:api
+npm run build:web
 ```
 
----
+## Docker
 
-### 6. 🧪 Atualizar a aplicação no servidor
-
-Execute:
+Subir API + PostgreSQL:
 
 ```bash
-docker compose build api
+npm run docker:up
 ```
 
-Depois:
+Parar containers:
+
 ```bash
-docker compose up -d api
+npm run docker:down
 ```
 
----
+Parar e remover volumes:
 
-## 🧠 Observações
+```bash
+npm run docker:down:volumes
+```
 
-- A aplicação usa Prisma como ORM, com migrações executadas automaticamente.
-- O serviço de banco está com `healthcheck`, garantindo que a API só inicie após o PostgreSQL estar pronto.
-- JWT é usado para autenticação das rotas protegidas.
+## Variaveis de ambiente
 
----
+Use o arquivo `.env` na raiz do repositorio. Ele e lido pelo compose em `infra/docker/docker-compose.yml`.
 
-## 👨‍💻 Autor
+Variaveis principais:
 
-Gabriel Dias  
-Engenharia de Computação | Desenvolvedor Backend
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `PORT`
+- `DATABASE_URL`
+- `SWAGGER_USER`
+- `SWAGGER_PASSWORD`
+- `JWT_SECRET`
 
----
+## Observacoes
+
+- O backend serve os arquivos estaticos do web buildados em `apps/web/dist`.
+- Uploads e backups ficam em `apps/api/uploads`.

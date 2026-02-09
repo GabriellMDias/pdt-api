@@ -1,22 +1,22 @@
-# Node / build
 node_modules
-front/node_modules
+**/node_modules
 dist
-front/dist
+**/dist
+coverage
+**/.cache
 
-# VCS
+apps/mobile
+apps/api/uploads
+
 .git
-.gitignore
 .github
+.gitignore
 
-# Logs / testes / cache
+*.log
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-coverage
-.cache
 
-# Outros
 *.swp
 .DS_Store
 .env

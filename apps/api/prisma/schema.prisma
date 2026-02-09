@@ -1,0 +1,456 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  notifyCostCenterType Boolean @default(false)
+
+  UserPermission UserPermission[]
+  ArquivoAnalise ArquivoAnalise[]
+  NotificationRecipient NotificationRecipient[]
+}
+
+model Store {
+  id           Int      @id
+  description  String?  @default("")
+  storeName    String?  @default("")
+  activeStatus Boolean? @default(false)
+  cnpj         String   @unique
+
+  expenses                Expense[]
+  MonthlyResult           MonthlyResult[]
+  ExpenseApportionment    ExpenseApportionment[]
+  PreExpense              PreExpense[]
+  PreExpenseApportionment PreExpenseApportionment[]
+  ArquivoAnalise          ArquivoAnalise[]
+  UserPermission          UserPermission[]
+
+  AnalysisResult      AnalysisResult[]
+  Parameters          ParameterValue[]
+  costCenterTypeItems CostCenterTypeItem[]
+}
+
+model CostCenter {
+  id           Int      @id
+  description  String
+  activeStatus Boolean? @default(false)
+
+  Department              Department[]
+  MonthlyResult           MonthlyResult[]
+  ExpenseApportionment    ExpenseApportionment[]
+  PreExpenseApportionment PreExpenseApportionment[]
+  costCenterTypeItems     CostCenterTypeItem[]
+}
+
+model CostCenterType {
+  id                         Int                  @id @default(autoincrement())
+  description                String
+  activeStatus               Boolean?             @default(false)
+  id_costcentertype_vr       Int                  @unique()
+  codcencus_sankhya          Int?                 @unique()
+  useParticipationStore      Boolean
+  useParticipationCostCenter Boolean
+  verified                   Boolean              @default(false)
+  costCenterTypeItems        CostCenterTypeItem[]
+}
+
+model CostCenterTypeItem {
+  id               Int      @id @default(autoincrement())
+  costCenterTypeId Int
+  costCenterId     Int?
+  storeId          Int?
+  percentage       Float?
+  participation    Boolean?
+
+  costCenterType CostCenterType @relation(fields: [costCenterTypeId], references: [id])
+  costCenter     CostCenter?    @relation(fields: [costCenterId], references: [id])
+  store          Store?         @relation(fields: [storeId], references: [id])
+}
+
+model Department {
+  id              Int    @id @default(autoincrement())
+  costCenterId    Int
+  description     String
+  departmentVrId1 Int
+  departmentVrId2 Int
+  level           Int
+
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+}
+
+model MonthlyResult {
+  id                 Int      @id @default(autoincrement())
+  storeId            Int
+  costCenterId       Int
+  date               DateTime @default(now())
+  recBruta           Float
+  devolucao          Float
+  imposto            Float
+  custo              Float
+  embalagem          Float
+  quebra             Float
+  recCom             Float
+  despesaPessoal     Float
+  despesaPessoalRat  Float    @default(0)
+  despesaOperacional Float
+
+  store      Store      @relation(fields: [storeId], references: [id])
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+}
+
+model Expense {
+  id            Int      @id @default(autoincrement())
+  storeId       Int
+  date          DateTime
+  description   String
+  value         Float
+  expenseTypeId Int      @default(0)
+
+  espenseType          ExpenseType            @relation(fields: [expenseTypeId], references: [id])
+  store                Store                  @relation(fields: [storeId], references: [id])
+  ExpenseApportionment ExpenseApportionment[]
+}
+
+model ExpenseType {
+  id          Int          @id @default(autoincrement())
+  description String
+  isActived   Boolean
+  expenses    Expense[]
+  preExpenses PreExpense[]
+}
+
+model ExpenseApportionment {
+  id               Int      @id @default(autoincrement())
+  expenseId        Int
+  costCenterId     Int
+  storeId          Int
+  percentage       Float?
+  useParticipation Boolean?
+
+  expense    Expense    @relation(fields: [expenseId], references: [id])
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+  store      Store      @relation(fields: [storeId], references: [id])
+}
+
+model PreExpenseApportionment {
+  id               Int      @id @default(autoincrement())
+  preExpenseId     Int
+  costCenterId     Int
+  storeId          Int
+  percentage       Float?
+  useParticipation Boolean?
+
+  preExpense PreExpense @relation(fields: [preExpenseId], references: [id])
+  costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+  store      Store      @relation(fields: [storeId], references: [id])
+}
+
+model PreExpense {
+  id            Int     @id @default(autoincrement())
+  storeId       Int
+  description   String
+  expenseTypeId Int     @default(0)
+  isActived     Boolean
+
+  espenseType ExpenseType @relation(fields: [expenseTypeId], references: [id])
+
+  store                   Store                     @relation(fields: [storeId], references: [id])
+  PreExpenseApportionment PreExpenseApportionment[]
+}
+
+model Permission {
+  id                 Int     @id @default(autoincrement())
+  code               String  @unique // Ex: "users:consultar"
+  label              String // Ex: "Consultar usuários"
+  useStorePermission Boolean @default(false)
+
+  users UserPermission[]
+}
+
+model UserPermission {
+  id           Int  @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  storeId      Int? // null = global
+
+  user       User       @relation(fields: [userId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+  store      Store?     @relation(fields: [storeId], references: [id])
+
+  // Garante que não existam duplicatas do mesmo (user, perm, store)
+  @@unique([userId, permissionId, storeId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  recipients NotificationRecipient[]
+}
+
+model NotificationRecipient {
+  id             Int          @id @default(autoincrement())
+  notificationId Int
+  userId         Int
+  readAt         DateTime?
+
+  notification Notification @relation(fields: [notificationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
+}
+
+model AnalysisType {
+  id          Int     @id @default(autoincrement())
+  code        String  @unique // Ex: "PIS_C100_C170"
+  description String // Ex: "Validação de PIS entre C100 e C170"
+  active      Boolean @default(true)
+  groupName   String  @default("")
+
+  fields  AnalysisField[]
+  results AnalysisResult[]
+}
+
+model StatusAnalise {
+  id             Int              @id @default(autoincrement())
+  descricao      String
+  ArquivoAnalise ArquivoAnalise[]
+}
+
+model ArquivoAnalise {
+  id              Int      @id @default(autoincrement())
+  dataImportacao  DateTime @default(now())
+  mesRef          DateTime
+  arquivoNome     String
+  userId          Int
+  statusAnaliseId Int
+  storeId         Int
+
+  store         Store         @relation(fields: [storeId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  statusAnalise StatusAnalise @relation(fields: [statusAnaliseId], references: [id])
+
+  AnalysisResult AnalysisResult[]
+}
+
+enum AnalysisDataType {
+  string
+  int
+  decimal
+  boolean
+  date
+  datetime
+}
+
+enum AnalysisGranularity {
+  timestamp
+  day
+  month
+}
+
+model AnalysisField {
+  id             Int              @id @default(autoincrement())
+  analysisTypeId Int
+  key            String
+  label          String
+  dataType       AnalysisDataType
+  isArray        Boolean          @default(false)
+  nullable       Boolean          @default(false)
+  order          Int              @default(0)
+
+  analysisType AnalysisType @relation(fields: [analysisTypeId], references: [id])
+
+  @@unique([analysisTypeId, key], name: "analysisTypeId_key")
+}
+
+model AnalysisResult {
+  id             BigInt              @id @default(autoincrement())
+  analysisTypeId Int
+  storeId        Int?
+  bucket         DateTime
+  granularity    AnalysisGranularity
+  data           Json
+  sourceStart    DateTime?
+  sourceEnd      DateTime?
+  computedAt     DateTime            @default(now())
+  checksum       String?
+
+  // 🔽 novo (link direto com o arquivo SPED)
+  arquivoAnaliseId Int?
+  arquivoAnalise   ArquivoAnalise? @relation(fields: [arquivoAnaliseId], references: [id])
+
+  analysisType AnalysisType @relation(fields: [analysisTypeId], references: [id])
+  store        Store?       @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, bucket, granularity])
+  @@index([analysisTypeId, bucket, granularity])
+  @@index([arquivoAnaliseId]) // 🔽 para consultas por arquivo
+}
+
+model DbScript {
+  id                Int                @id @default(autoincrement())
+  name              String
+  description       String?
+  sqlText           String
+  enabled           Boolean            @default(true)
+  scheduleType      ScriptScheduleType @default(CRON)
+  cronExpression    String?
+  intervalSeconds   Int?
+  timezone          String             @default("America/Sao_Paulo")
+  timeoutSec        Int                @default(600)
+  wrapInTransaction Boolean            @default(false)
+  searchPath        String?
+  lastStatus        ScriptRunStatus?
+  latestRunAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  runs              DbScriptRun[]
+}
+
+model DbScriptRun {
+  id            Int             @id @default(autoincrement())
+  scriptId      Int
+  script        DbScript        @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  startedAt     DateTime        @default(now())
+  finishedAt    DateTime?
+  status        ScriptRunStatus
+  rowsAffected  Int?
+  error         String?
+  durationMs    Int?
+  triggeredBy   String? // 'SCHEDULE' | 'MANUAL' | 'RETRY'
+  appInstanceId String?
+  log           String?         @db.Text
+
+  @@index([scriptId])
+}
+
+enum ScriptScheduleType {
+  CRON
+  INTERVAL
+  DAILY_AT
+  WEEKLY_AT
+}
+
+enum ScriptRunStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
+  RUNNING
+}
+
+model CodeJob {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  handler     String
+  enabled     Boolean @default(true)
+  timezone    String? @default("America/Sao_Paulo")
+
+  scheduleType    ScriptScheduleType
+  cronExpression  String?
+  intervalSeconds Int?
+  dailyAtTime     String?
+  weeklyWeekday   Int?
+  weeklyTime      String?
+
+  lastStatus  ScriptRunStatus?
+  latestRunAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs CodeJobRun[]
+}
+
+model CodeJobRun {
+  id         Int             @id @default(autoincrement())
+  jobId      Int
+  job        CodeJob         @relation(fields: [jobId], references: [id])
+  status     ScriptRunStatus // agora aceita RUNNING/SUCCESS/FAILED/SKIPPED
+  source     String // 'SCHEDULE' | 'MANUAL' | 'RETRY'
+  startedAt  DateTime        @default(now())
+  finishedAt DateTime?
+  durationMs Int?
+  log        Json?
+  error      String?
+  createdAt  DateTime        @default(now())
+
+  @@index([jobId, createdAt])
+}
+
+/**
+ * == PARAMETERS MODELS ==
+ */
+// enums de apoio
+enum ParameterScope {
+  GLOBAL // só admite valor global
+  STORE // só admite valores por loja (sempre exige storeId)
+  BOTH // aceita global + overrides por loja
+}
+
+enum ParameterType {
+  STRING
+  INT
+  BOOL
+  DECIMAL
+  JSON
+}
+
+model ParameterGroup {
+  id          Int                   @id @default(autoincrement())
+  code        String                @unique
+  name        String
+  description String?
+  definitions ParameterDefinition[]
+}
+
+model ParameterDefinition {
+  id          Int            @id @default(autoincrement())
+  code        String         @unique // ex: "sankhya.base_url"
+  description String
+  type        ParameterType  @default(STRING)
+  scope       ParameterScope @default(BOTH)
+
+  groupId Int?
+  group   ParameterGroup? @relation(fields: [groupId], references: [id])
+
+  values ParameterValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// valor do parâmetro (global ou por loja)
+model ParameterValue {
+  id           Int                 @id @default(autoincrement())
+  definitionId Int
+  definition   ParameterDefinition @relation(fields: [definitionId], references: [id])
+
+  storeId Int? // quando null = GLOBAL
+  store   Store? @relation(fields: [storeId], references: [id])
+
+  tenantKey String // "GLOBAL" | `STORE:${storeId}`
+  value     String // valor bruto como string; serviço faz parse por type
+
+  @@unique([definitionId, tenantKey]) // impede duplicar global e duplicar override da mesma loja
+  @@index([storeId])
+}
+
+/**
+ * == PARAMETERS MODELS ==
+ */

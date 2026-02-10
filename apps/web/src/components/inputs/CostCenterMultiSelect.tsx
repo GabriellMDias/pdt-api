@@ -101,7 +101,6 @@ export default function ConstCenterMultiSelect({
       qs.set(urlParamKey, ids.join(','));
       for (const legacy of legacyUrlKeys) qs.delete(legacy);
       setSearchParams(qs, { replace: true });
-      console.log("qs: ", ids.join(','))
       lastUrlValueRef.current = ids.join(',');
     }
 

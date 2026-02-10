@@ -19,6 +19,10 @@ import {
         throw new NotFoundException(`Nenhum usuário com email informado encontrado: ${email}`);
       }
   
+      if (!user.activeStatus) {
+        throw new UnauthorizedException('Usuario inativo');
+      }
+
       const isPasswordValid = await bcrypt.compare(password, user.password);
   
       if (!isPasswordValid) {

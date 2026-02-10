@@ -227,13 +227,13 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
   }, [actionsOpen]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-neutral-800 dark:text-neutral-100">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{title}</h1>
       </header>
 
       {error && (
-        <div className="rounded-xl border border-red-700 bg-red-900/30 p-3 text-sm text-red-200">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/30 dark:text-red-200">
           {error}
         </div>
       )}
@@ -242,13 +242,13 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <input
-              className="w-full max-w-md rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full max-w-md rounded-xl border border-neutral-300 bg-white p-3 text-sm text-neutral-900 shadow-sm outline-none transition-colors duration-150 placeholder:text-neutral-400 focus:border-pilar-green focus:ring-2 focus:ring-pilar-green/35 dark:border-neutral-600 dark:bg-pilar-default-bg-dark dark:text-neutral-100 dark:placeholder:text-neutral-500"
               placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Buscar"
             />
-            <div className="text-sm text-neutral-400">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
               {loading ? "Carregando..." : `${filtered.length} registro(s)`}
             </div>
           </div>
@@ -299,14 +299,16 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
             {actionsOpen && (
               <div
                 ref={actionsMenuRef}
-                className="absolute z-50 right-0 top-full mt-2 w-56 rounded-xl border border-neutral-800 bg-neutral-900 shadow-lg"
+                className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-neutral-200 bg-white text-neutral-700 shadow-lg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
               >
                 {actions.map((a) => (
                   <button
                     key={a.key}
                     className={[
-                      "w-full text-left px-3 py-2 text-sm cursor-pointer",
-                      a.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-neutral-800"
+                      "w-full px-3 py-2 text-left text-sm transition-colors",
+                      a.disabled
+                        ? "cursor-not-allowed opacity-50"
+                        : "cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
                     ].join(" ")}
                     onClick={async () => {
                       if ((!selected && !a.allowWithoutSelection) || a.disabled) return;
@@ -324,9 +326,9 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
           {filtered.length === 0 ? (
             <EmptyState action={<IconButton onClick={openCreate} variant="primary" disabled={!_canCreate}>Novo</IconButton>} />
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-neutral-800">
-              <table className="min-w-full text-sm ">
-                <thead className="bg-neutral-900 text-left text-neutral-200 ">
+            <div className="overflow-x-auto rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900/20">
+              <table className="min-w-full text-sm text-neutral-700 dark:text-neutral-200">
+                <thead className="bg-neutral-100 text-left text-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200">
                   <tr>
                     {columns.map((c) => (
                       <th key={String(c.key)} className="p-3 resize-x overflow-hidden" style={{ width: c.width }}>{c.header}</th>
@@ -342,9 +344,9 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
                         id={`row-${String(id)}`}
                         key={String(id)}
                         className={[
-                          "border-t border-neutral-800 cursor-pointer",
-                          "hover:bg-neutral-700/50",
-                          isSelected ? "bg-neutral-600 ring-1 ring-blue-600" : "",
+                          "cursor-pointer border-t border-neutral-200 dark:border-neutral-700",
+                          "hover:bg-neutral-50 dark:hover:bg-neutral-800/70",
+                          isSelected ? "bg-pilar-green/10 ring-1 ring-pilar-green/40 dark:bg-pilar-green/20 dark:ring-pilar-green/50" : "",
                         ].join(" ")}
                         onClick={() => setSelected(row)}
                         onDoubleClick={() => (_canEdit(row) ? openEdit(row) : undefined)}
@@ -365,7 +367,7 @@ export function GridForm<T, TCreate = any, TUpdate = any>({
       )}
 
       {mode === "form" && (
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-950 p-5">
+        <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/35">
           <h2 className="mb-4 text-lg font-semibold">
             {selected ? `Editar: ${String(idOf(selected))}` : "Novo registro"}
           </h2>

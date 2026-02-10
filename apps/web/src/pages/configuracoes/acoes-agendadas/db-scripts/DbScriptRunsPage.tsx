@@ -98,8 +98,8 @@ export default function DbScriptRunsPage() {
       { key: "rowsAffected", header: "Linhas", width: 100, field: "rowsAffected", align: "right" },
       { key: "durationMs", header: "Duração (ms)", width: 140, field: "durationMs", align: "right" },
       { key: "triggeredBy", header: "Origem", width: 140, field: "triggeredBy" },
-      { key: "error", header: "Erro/Msg", expandOnDblClick: true, fullFormatter: (v) => pretty(v), cell: (r) => r.error ?? "", tdClassName: "cursor-pointer hover:bg-slate-600/8" },
-      { key: "log", header: "Log", expandOnDblClick: true, fullFormatter: (v) => pretty(v), cell: (r) => r.log ?? "", tdClassName: "cursor-pointer hover:bg-slate-600/8" },
+      { key: "error", header: "Erro/Msg", expandOnDblClick: true, fullFormatter: (v) => pretty(v), cell: (r) => r.error ?? "", tdClassName: "cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50" },
+      { key: "log", header: "Log", expandOnDblClick: true, fullFormatter: (v) => pretty(v), cell: (r) => r.log ?? "", tdClassName: "cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50" },
     ],
     []
   );
@@ -137,7 +137,7 @@ export default function DbScriptRunsPage() {
   const FiltersBar = (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-pilar-default-bg2-dark p-4 mb-4"
+      className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30"
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-6">
@@ -182,10 +182,10 @@ export default function DbScriptRunsPage() {
   );
 
   const PageInner = (
-    <div className="p-6 h-full">
-      <div className="max-w-8xl h-full bg-pilar-default-bg2-dark shadow rounded-lg p-4 overflow-y-scroll">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Execuções</h2>
+    <div className="h-full p-6">
+      <div className="max-w-8xl h-full overflow-y-auto rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/35">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Execuções</h2>
         </div>
 
         {FiltersBar}
@@ -216,7 +216,7 @@ export default function DbScriptRunsPage() {
             }
           }}
           className="mb-4"
-          tableClassName="w-full text-sm text-left"
+          tableClassName="w-full text-sm text-left text-neutral-800 dark:text-neutral-100"
         />
       </div>
     </div>

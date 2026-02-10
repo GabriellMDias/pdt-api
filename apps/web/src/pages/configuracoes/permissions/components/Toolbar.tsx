@@ -14,31 +14,24 @@ function ToolbarButton({
   tone?: "neutral"|"primary"|"danger";
   disabled?: boolean;
 }) {
-  const bg =
-    tone === "primary" ? "var(--color-pilar-green)"
-    : tone === "danger" ? "var(--color-pilar-orange)"
-    : "var(--color-pilar-default-bg2-dark)";
-  const border = tone === "neutral" ? "1px solid rgba(255,255,255,0.10)" : "0";
+  const toneClass =
+    tone === "primary"
+      ? "border border-transparent bg-pilar-green text-white hover:bg-[#006b4a] dark:hover:bg-[#0b7a56]"
+      : tone === "danger"
+        ? "border border-transparent bg-pilar-orange text-white hover:brightness-110"
+        : "border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-100 dark:border-white/15 dark:bg-pilar-default-bg-dark dark:text-neutral-200 dark:hover:bg-white/10";
 
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        background: bg,
-        color: "#fff",
-        padding: "8px 12px",
-        border: border as any,
-        borderRadius: 10,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1
-      }}
+      className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      } ${toneClass}`}
     >
-      <span style={{ display: "grid", placeItems: "center" }}>{icon}</span>
-      <span style={{ fontWeight: 600 }}>{label}</span>
+      <span className="grid place-items-center">{icon}</span>
+      <span>{label}</span>
     </button>
   );
 }

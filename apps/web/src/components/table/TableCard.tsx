@@ -43,13 +43,15 @@ export default function TableCard<T>({
   rowClassName,
 }: Props<T>) {
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 text-black ${className}`}>
+    <div
+      className={`rounded-lg border border-gray-200 bg-white text-black dark:border-neutral-700 dark:bg-neutral-900/35 dark:text-neutral-100 ${className}`}
+    >
       <PaginationBar
         total={total}
         page={page}
         pageSize={pageSize}
         loading={!!loading}
-        className="border-b"
+        className="border-b border-gray-200 dark:border-neutral-700"
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
@@ -59,6 +61,8 @@ export default function TableCard<T>({
         loading={!!loading}
         emptyMessage={error ?? emptyMessage}
         tableClassName={tableClassName ?? "w-full text-sm text-left"}
+        headerWrapperClassName="bg-neutral-100 text-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
+        headerCellClassName="border-b border-gray-200 dark:border-neutral-700"
         stickyHeader={stickyHeader}
         getRowKey={getRowKey}
         onRowDoubleClick={onRowDoubleClick}

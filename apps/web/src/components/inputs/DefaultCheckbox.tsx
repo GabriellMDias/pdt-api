@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from "react";
+import { fieldHintClass } from "./styles";
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label?: string;
@@ -15,11 +16,11 @@ export default function DefaultCheckbox({
     <label className={`inline-flex items-center gap-2 ${className}`}>
       <input
         type="checkbox"
-        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900 text-pilar-green focus:ring-pilar-green accent-pilar-green "
+        className="h-4 w-4 rounded border-neutral-400 bg-white text-pilar-green accent-pilar-green focus:ring-pilar-green dark:border-neutral-600 dark:bg-pilar-default-bg-dark"
         {...rest}
       />
-      {label && <span className="text-sm text-neutral-200">{label}</span>}
-      {hint && <span className="text-xs text-neutral-400">{hint}</span>}
+      {label && <span className="text-sm text-neutral-800 dark:text-neutral-200">{label}</span>}
+      {hint && <span className={fieldHintClass}>{hint}</span>}
     </label>
   );
 }

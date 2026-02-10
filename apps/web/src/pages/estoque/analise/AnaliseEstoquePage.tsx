@@ -183,10 +183,10 @@ export default function AnaliseEstoquePage() {
 
   return (
     <Layout title="Análise de Estoque - Mês">
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-pilar-default-bg2-dark p-5 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
+      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white/95 dark:bg-pilar-default-bg2-dark p-5 shadow-sm text-neutral-800 dark:text-neutral-100">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="xl:col-span-5">
+            <label className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               Lojas
             </label>
             <StoreMultiSelect
@@ -205,25 +205,27 @@ export default function AnaliseEstoquePage() {
             />
           </div>
 
-          <DateRange
-            start={dataInicial}
-            end={dataFinal}
-            onChange={handleDatesChange}
-            // sem onEnter -> só consulta no botão
-            syncUrl
-            startKey="initialDate"
-            endKey="finalDate"
-            startLegacyKeys={['dataInicial', 'start']}
-            endLegacyKeys={['dataFinal', 'end']}
-            replaceHistory
-            autoOrder={false} // não reordenar durante digitação
-          />
+          <div className="xl:col-span-5">
+            <DateRange
+              start={dataInicial}
+              end={dataFinal}
+              onChange={handleDatesChange}
+              // sem onEnter -> só consulta no botão
+              syncUrl
+              startKey="initialDate"
+              endKey="finalDate"
+              startLegacyKeys={['dataInicial', 'start']}
+              endLegacyKeys={['dataFinal', 'end']}
+              replaceHistory
+              autoOrder={false} // não reordenar durante digitação
+            />
+          </div>
 
-          <div className="flex items-end">
+          <div className="flex items-end xl:col-span-2">
             <button
               onClick={() => consultar()}
               disabled={loading}
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium text-white bg-pilar-green hover:opacity-95 disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-pilar-green bg-pilar-green px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-pilar-green/90 disabled:opacity-60"
             >
               {loading && (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -234,7 +236,7 @@ export default function AnaliseEstoquePage() {
         </div>
 
         {error && (
-          <div className="mt-3 text-sm font-medium text-red-700 dark:text-red-400 break-words">
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 break-words dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
             <span className="mr-1">Erro:</span> {error}
           </div>
         )}
@@ -245,18 +247,19 @@ export default function AnaliseEstoquePage() {
             data={rows}
             loading={loading}
             emptyMessage="Sem resultados"
-            tableClassName="min-w-full border-collapse"
-            headerWrapperClassName="bg-transparent"
-            headerRowClassName="text-left text-sm text-neutral-600 dark:text-neutral-300"
-            headerCellClassName="py-2 border-b border-neutral-200 dark:border-neutral-700"
-            bodyClassName="text-sm"
-            cellBaseClassName="py-2 border-b border-neutral-100 dark:border-neutral-700"
-            rowBaseClassName="cursor-pointer hover:bg-pilar-default-bg-light/40 dark:hover:bg-neutral-700/40"
+            wrapperClassName="rounded-xl border border-neutral-200 bg-white/80 dark:border-neutral-700 dark:bg-transparent"
+            tableClassName="min-w-full border-collapse text-neutral-800 dark:text-neutral-100"
+            headerWrapperClassName="bg-neutral-50 dark:bg-neutral-900/30"
+            headerRowClassName="text-left text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300"
+            headerCellClassName="py-3 border-b border-neutral-200 font-semibold dark:border-neutral-700"
+            bodyClassName="text-sm text-neutral-700 dark:text-neutral-100"
+            cellBaseClassName="py-2.5 border-b border-neutral-200/80 dark:border-neutral-700"
+            rowBaseClassName="cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700/40"
             defaultSort={{ key: 'data', direction: 'asc' }}
             getRowKey={(r) => r.data}
             onRowDoubleClick={(r) => abrirDetalheDia(r)}
           />
-          <p className="mt-3 text-center text-xs text-neutral-500">
+          <p className="mt-3 text-center text-xs text-neutral-500 dark:text-neutral-400">
             Dê <strong>duplo clique</strong> em uma linha para abrir o detalhamento por dia.
           </p>
         </div>

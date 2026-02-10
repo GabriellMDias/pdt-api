@@ -33,12 +33,15 @@ export default async function seedCore() {
 
   const admin = await prisma.user.upsert({
     where: { id: 0 },
-    update: {},
+    update: {
+      activeStatus: true,
+    },
     create: {
       id: 0,
       name: "Administrador",
       email: "admin@admin.com",
-      password: hashedPassword
+      password: hashedPassword,
+      activeStatus: true,
     }
   });
 

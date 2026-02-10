@@ -31,19 +31,19 @@ export default function PaginationBar({
         className || ""
       }`}
     >
-      <span className="min-w-0 text-gray-600 text-sm">
+      <span className="min-w-0 text-sm text-gray-600 dark:text-neutral-300">
         {loading ? "Carregando..." : `${total} resultados`}
         {total > 0 && (
-          <span className="ml-2 text-gray-400">(mostrando {showingStart}–{showingEnd})</span>
+          <span className="ml-2 text-gray-400 dark:text-neutral-500">(mostrando {showingStart}–{showingEnd})</span>
         )}
       </span>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         {onPageSizeChange && (
           <>
-            <label className="text-sm text-gray-500">Itens por página</label>
+            <label className="text-sm text-gray-500 dark:text-neutral-400">Itens por página</label>
             <select
-              className="border rounded px-2 py-1 text-sm cursor-pointer"
+              className="cursor-pointer rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
             >
@@ -56,17 +56,17 @@ export default function PaginationBar({
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            className="px-2 py-1 border rounded text-sm disabled:opacity-60 cursor-pointer"
+            className="cursor-pointer rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1 || loading}
           >
             Anterior
           </button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-600 dark:text-neutral-300">
             Página {page} de {totalPages}
           </span>
           <button
-            className="px-2 py-1 border rounded text-sm disabled:opacity-60 cursor-pointer"
+            className="cursor-pointer rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages || loading}
           >
@@ -77,3 +77,4 @@ export default function PaginationBar({
     </div>
   );
 }
+

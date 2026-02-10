@@ -23,5 +23,8 @@ export class UserEntity implements User{
     notifyCostCenterType: boolean;
 
     @ApiProperty()
+    activeStatus: boolean;
+
+    @ApiProperty()
     createdAt: Date;
 }

@@ -1,14 +1,13 @@
 // src/pages/configuracoes/cadastro/UsersPage.tsx
 import { useMemo } from "react";
-import Layout from "../../../../components/Layout";
 import { GridForm, type Column, type Id } from "../../../../components/crud/GridForm";
+import Layout from "../../../../components/Layout";
 import PermissionGate from "../../../../components/PermissionGate";
 import { useAuth } from "../../../../hooks/useAuth";
-
-import { useUsersCrud } from "./hooks/useUsersCrud";
 import { hasPermission, type PermissionBag } from "../../../../services/permission";
 import UserForm from "./components/UserForm";
-import type { User, ApiUserPayload } from "./types";
+import { useUsersCrud } from "./hooks/useUsersCrud";
+import type { ApiUserPayload, User } from "./types";
 
 export default function UsersPage() {
   const { token, permissions, userId } = useAuth();
@@ -21,21 +20,28 @@ export default function UsersPage() {
     { key: "name", header: "Nome" },
     { key: "email", header: "E-mail" },
     {
+      key: "activeStatus",
+      header: "Status",
+      render: (row) => ((row.activeStatus ?? true) ? "Ativo" : "Inativo"),
+    },
+    {
       key: "notifyCostCenterType",
       header: "Notif. Centro Custo",
       render: (row) => (row.notifyCostCenterType ? "Sim" : "Não"),
     },
   ];
 
-  // === Gates considerando admin (userId === 0) e permissões estruturadas ===
+  // Gates considerando admin (userId === 0) e permissões estruturadas
   const isAdmin = userId === 0;
 
   const canCreate = isAdmin || hasPermission(perms, "users:incluir");
-  const canEdit   = isAdmin ? (() => true) : (() => hasPermission(perms, "users:editar"));
-  // Admin NÃO pode excluir (regra mantida)
-  const canDelete = isAdmin ? (() => false) : (() => hasPermission(perms, "users:excluir"));
+  const canEdit = isAdmin ? () => true : () => hasPermission(perms, "users:editar");
+  const canDelete = (row?: User) => {
+    if (!row || row.id === 0) return false;
+    return isAdmin || hasPermission(perms, "users:excluir");
+  };
 
-  const Grid = (
+  const grid = (
     <GridForm<User, ApiUserPayload, ApiUserPayload>
       title=""
       idOf={(u) => u.id}
@@ -54,13 +60,7 @@ export default function UsersPage() {
 
   return (
     <Layout title="Usuários">
-      {isAdmin ? (
-        Grid
-      ) : (
-        <PermissionGate required="users:consultar">
-          {Grid}
-        </PermissionGate>
-      )}
+      {isAdmin ? grid : <PermissionGate required="users:consultar">{grid}</PermissionGate>}
     </Layout>
   );
 }

@@ -74,7 +74,7 @@ export default function Sidebar({ isOpen, toggleMenu }: SidebarProps) {
       {isOpen && (
         <div
           data-sidebar-overlay
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden"
+          className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-[1px] md:hidden"
           onClick={toggleMenu}
           aria-hidden="true"
         />
@@ -85,7 +85,7 @@ export default function Sidebar({ isOpen, toggleMenu }: SidebarProps) {
         role="navigation"
         aria-label="Menu principal"
         className={clsx(
-          'fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 z-[110] h-full transition-all duration-300 ease-in-out',
           'bg-gradient-to-b from-pilar-green to-pilar-default-bg2-dark',
           'flex flex-col shadow-2xl border-r border-white/10',
           isOpen ? 'w-64' : 'w-16'

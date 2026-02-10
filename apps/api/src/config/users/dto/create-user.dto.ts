@@ -30,4 +30,9 @@ export class CreateUserDto {
     @IsBoolean()
     @ApiProperty({ required: false })
     notifyCostCenterType?: boolean
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({ required: false, default: true })
+    activeStatus?: boolean
 }

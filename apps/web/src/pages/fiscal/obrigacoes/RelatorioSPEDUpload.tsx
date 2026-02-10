@@ -206,14 +206,14 @@ export default function RelatorioSPEDUpload() {
 
   return (
     <Layout title="Relatório ICMS - SPED">
-      <div className="p-6 h-full">
-        <div className="max-w-8xl h-full bg-pilar-default-bg2-dark shadow rounded-lg p-4 overflow-y-scroll">
+      <div className="h-full p-4 md:p-6">
+        <div className="mx-auto h-full max-w-[1400px] overflow-y-auto rounded-2xl border border-neutral-200 bg-white/95 p-4 text-neutral-800 shadow-sm dark:border-neutral-700 dark:bg-pilar-default-bg2-dark dark:text-neutral-100">
           {/* Upload + Ações */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Arquivos</h2>
-            <div className="flex gap-2">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Arquivos</h2>
+            <div className="flex flex-wrap items-center gap-2">
               <PermissionGate required="sped:upload">
-                <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700">
+                <label className="inline-flex cursor-pointer items-center rounded-xl border border-blue-700 bg-blue-600 px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
                   Enviar Arquivo
                   <input
                     ref={fileInputRef}
@@ -225,22 +225,27 @@ export default function RelatorioSPEDUpload() {
                 </label>
               </PermissionGate>
               {file && (
-                <button
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                >
-                  {uploading ? "Enviando..." : "Upload"}
-                </button>
+                <>
+                  <span className="max-w-xs truncate rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-300">
+                    {file.name}
+                  </span>
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="inline-flex items-center rounded-xl border border-emerald-700 bg-emerald-600 px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {uploading ? "Enviando..." : "Upload"}
+                  </button>
+                </>
               )}
             </div>
           </div>
 
           {/* Filtros */}
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-pilar-default-bg2-dark p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-1">
-                <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
+          <div className="mb-4 rounded-2xl border border-neutral-200 bg-white/90 p-4 dark:border-neutral-700 dark:bg-pilar-default-bg2-dark">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+              <div className="xl:col-span-5">
+                <label className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
                   Lojas
                 </label>
                 <StoreMultiSelect
@@ -259,7 +264,7 @@ export default function RelatorioSPEDUpload() {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div className="xl:col-span-5">
                 <DateRange
                   start={dataInicial}
                   end={dataFinal}
@@ -278,11 +283,11 @@ export default function RelatorioSPEDUpload() {
                 />
               </div>
 
-              <div className="flex items-end">
+              <div className="flex items-end xl:col-span-2">
                 <button
                   onClick={onClickConsultar}
                   disabled={loading}
-                  className="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium text-white bg-pilar-green hover:opacity-95 disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-pilar-green bg-pilar-green px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-pilar-green/90 disabled:opacity-60"
                 >
                   {loading && (
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -294,13 +299,13 @@ export default function RelatorioSPEDUpload() {
           </div>
 
           {/* Tabela + Paginação */}
-          <div className="bg-white rounded-lg border border-gray-200 text-black">
+          <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white/80 text-neutral-800 dark:border-neutral-700 dark:bg-transparent dark:text-neutral-100">
             <PaginationBar
               total={total}
               page={page}
               pageSize={pageSize}
               loading={loading}
-              className="border-b"
+              className="border-b border-neutral-200 bg-neutral-50/70 dark:border-neutral-700 dark:bg-neutral-900/20"
               onPageChange={(next) => {
                 const totalPages = Math.max(1, Math.ceil(total / pageSize));
                 const nextClamped = Math.max(1, Math.min(next, totalPages));
@@ -333,6 +338,13 @@ export default function RelatorioSPEDUpload() {
               data={arquivos}
               loading={loading}
               emptyMessage="Nenhum arquivo encontrado."
+              tableClassName="min-w-full border-collapse text-neutral-800 dark:text-neutral-100"
+              headerWrapperClassName="bg-neutral-50 dark:bg-neutral-900/30"
+              headerRowClassName="text-left text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300"
+              headerCellClassName="py-3 border-b border-neutral-200 font-semibold dark:border-neutral-700"
+              bodyClassName="text-sm text-neutral-700 dark:text-neutral-100"
+              cellBaseClassName="py-2.5 border-b border-neutral-200/80 dark:border-neutral-700"
+              rowBaseClassName="cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700/40"
               getRowKey={(row) => row.id}
               onRowDoubleClick={(row) => navigate(`/relatorio_sped/analises/${row.id}`)}
             />

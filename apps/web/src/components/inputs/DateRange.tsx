@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { fieldControlBaseClass, fieldLabelClass } from "./styles";
 
 type DateYMD = string; // "YYYY-MM-DD"
 
@@ -45,7 +46,7 @@ export default function DateRange({
   endLabel = "Data final",
   autoOrder = false,
   className,
-  inputClassName = "w-full rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-pilar-default-bg-dark p-2 outline-none focus:ring-2 focus:ring-pilar-green",
+  inputClassName = fieldControlBaseClass,
   required,
   disabled,
   min,
@@ -132,8 +133,6 @@ export default function DateRange({
     const curPair = `${start || ""}|${end || ""}`;
     const inUrl = `${sp.get(startKey) || ""}|${sp.get(endKey) || ""}`;
 
-    console.log(inUrl)
-
     if (curPair === inUrl || curPair === lastUrlPairRef.current) return;
 
     const qs = new URLSearchParams(sp);
@@ -151,7 +150,7 @@ export default function DateRange({
     <div className={className}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
+          <label className={fieldLabelClass}>
             {startLabel}
           </label>
           <input
@@ -168,7 +167,7 @@ export default function DateRange({
         </div>
 
         <div>
-          <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
+          <label className={fieldLabelClass}>
             {endLabel}
           </label>
           <input

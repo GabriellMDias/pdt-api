@@ -1,6 +1,12 @@
 /* src/components/inputs/TimezoneSelect.tsx */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DefaultInput from "./DefaultInput";
+import {
+  fieldControlInteractiveClass,
+  fieldHintClass,
+  fieldLabelClass,
+  fieldMenuSurfaceClass,
+} from "./styles";
 
 type ControlledSelectProps = Pick<
   React.SelectHTMLAttributes<HTMLSelectElement>,
@@ -139,17 +145,17 @@ export default function TimezoneSelect({
 
   useEffect(() => { setActiveIdx(0); }, [query, open]);
 
-  function emitChange(next: string) {
+  const emitChange = useCallback((next: string) => {
     if (!onChange) return;
     const ev = { target: { value: next } } as unknown as React.ChangeEvent<HTMLSelectElement>;
     onChange(ev);
-  }
+  }, [onChange]);
 
-  function selectValue(tz: string) {
+  const selectValue = useCallback((tz: string) => {
     emitChange(tz);
     setOpen(false);
     setQuery("");
-  }
+  }, [emitChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -171,7 +177,7 @@ export default function TimezoneSelect({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, list.flat, activeIdx]);
+  }, [open, list.flat, activeIdx, selectValue]);
 
   useEffect(() => {
     if (!open || !listRef.current) return;
@@ -191,12 +197,12 @@ export default function TimezoneSelect({
       ? offsetMap.get(String(value))!.label
       : value
       ? formatTzLabel(String(value))
-      : "Selecione…";
+      : "Selecione...";
 
   return (
     <div className={`w-full ${className}`} ref={wrapRef}>
       {label && (
-        <label className="mb-1 block text-sm text-neutral-300" htmlFor={id}>
+        <label className={fieldLabelClass} htmlFor={id}>
           {label}
         </label>
       )}
@@ -212,24 +218,24 @@ export default function TimezoneSelect({
         autoFocus={autoFocus}
         onClick={() => setOpen((v) => !v)}
         className={`
-          w-full h-10 px-3 rounded-xl text-left
-          border border-neutral-700 bg-white/30
-          text-neutral-200
-          hover:border-neutral-600
-          disabled:opacity-50
-          flex items-center justify-between cursor-pointer 
+          ${fieldControlInteractiveClass}
+          h-10 text-left
+          flex items-center justify-between
         `}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="truncate">{currentLabel}</span>
-        <span className="ml-2 text-neutral-400">▾</span>
+        <span className={`truncate ${!value ? "text-neutral-500 dark:text-neutral-400" : ""}`}>
+          {currentLabel}
+        </span>
+        <span className="ml-2 text-neutral-500 dark:text-neutral-400">{"\u25BE"}</span>
       </button>
 
       {open && (
         <div
           className={`
-            mt-2 rounded-xl border border-neutral-700 bg-neutral-900 shadow-lg
+            ${fieldMenuSurfaceClass}
+            mt-2
             p-2
           `}
         >
@@ -243,10 +249,10 @@ export default function TimezoneSelect({
             />
           )}
 
-          <div ref={listRef} className="max-h-72 overflow-auto rounded-lg divide-y divide-neutral-800">
+          <div ref={listRef} className="max-h-72 overflow-auto rounded-lg divide-y divide-neutral-200 dark:divide-neutral-800">
             {list.pref.length > 0 && (
               <div>
-                <div className="px-2 py-1 text-xs uppercase tracking-wide text-neutral-500">
+                <div className="px-2 py-1 text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                   Preferidos
                 </div>
                 {list.pref.map((tz, idx) => {
@@ -271,7 +277,7 @@ export default function TimezoneSelect({
 
             <div>
               {list.pref.length > 0 && list.rest.length > 0 && (
-                <div className="px-2 py-1 text-xs uppercase tracking-wide text-neutral-500">
+                <div className="px-2 py-1 text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                   Outros
                 </div>
               )}
@@ -296,7 +302,7 @@ export default function TimezoneSelect({
         </div>
       )}
 
-      {hint && <span className="mt-1 block text-xs text-neutral-400">{hint}</span>}
+      {hint && <span className={fieldHintClass}>{hint}</span>}
     </div>
   );
 }
@@ -320,10 +326,10 @@ function OptionRow({
       data-idx={idx}
       onClick={onClick}
       className={`
-        w-full text-left px-3 py-2 text-sm
-        ${active ? "bg-neutral-800" : ""}
-        ${selected ? "text-pilar-orange" : "text-neutral-200"}
-        hover:bg-neutral-800
+        w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-100
+        ${active ? "bg-neutral-100 dark:bg-neutral-800" : ""}
+        ${selected ? "text-pilar-orange" : ""}
+        hover:bg-neutral-100 dark:hover:bg-neutral-800
         focus:outline-none
       `}
       role="option"

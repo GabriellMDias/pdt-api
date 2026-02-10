@@ -1,6 +1,4 @@
 import React, { useMemo, useState } from "react";
-import Layout from "../../../components/Layout";
-import { useAuth } from "../../../hooks/useAuth";
 import SearchIcon from "@mui/icons-material/Search";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -8,6 +6,8 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 
+import Layout from "../../../components/Layout";
+import { useAuth } from "../../../hooks/useAuth";
 import { getGroupPath, topGroupFromPath } from "./utils";
 import { rowStyle } from "./styles";
 import Section from "./components/Section";
@@ -52,14 +52,12 @@ export default function PermissionsPage() {
     copyFromUser,
   } = usePermissionsData(token);
 
-  // Filtros e UI local
   const [userQuery, setUserQuery] = useState("");
   const [permQuery, setPermQuery] = useState("");
   const [rootsOpen, setRootsOpen] = useState<Record<string, boolean>>({});
   const [groupsOpen, setGroupsOpen] = useState<Record<string, boolean>>({});
   const [copyFromId, setCopyFromId] = useState<number | "">("");
 
-  // Inicializa grupos abertos quando catalogo mudar
   React.useEffect(() => {
     const roots: Record<string, boolean> = {};
     const groups: Record<string, boolean> = {};
@@ -76,7 +74,9 @@ export default function PermissionsPage() {
   const filteredCatalog = useMemo(() => {
     const q = permQuery.trim().toLowerCase();
     return q
-      ? catalog.filter((p) => `${p.code} ${p.label} ${getGroupPath(p)}`.toLowerCase().includes(q))
+      ? catalog.filter((p) =>
+          `${p.code} ${p.label} ${getGroupPath(p)}`.toLowerCase().includes(q),
+        )
       : catalog;
   }, [catalog, permQuery]);
 
@@ -158,7 +158,7 @@ export default function PermissionsPage() {
 
   return (
     <Layout title="Permissoes">
-      <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 16, alignItems: "start" }}>
+      <div className="grid items-start gap-4 xl:grid-cols-[340px_1fr]">
         <UsersSidebar
           users={users}
           selectedUserId={selectedUserId}
@@ -168,110 +168,99 @@ export default function PermissionsPage() {
           copyFromId={copyFromId}
           onChangeCopyFromId={setCopyFromId}
           onCopyFrom={() => {
-            if (copyFromId !== "" && copyFromId !== selectedUserId) copyFromUser(Number(copyFromId));
+            if (copyFromId !== "" && copyFromId !== selectedUserId) {
+              copyFromUser(Number(copyFromId));
+            }
           }}
         />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
           <Section
             title="Editor de permissoes"
-            right={<Toolbar canSave={canSave} saving={saving} onSave={save} onReset={resetChanges} onReload={reloadUserPerms} hasChanges={hasChanges} />}
+            right={
+              <Toolbar
+                canSave={canSave}
+                saving={saving}
+                onSave={save}
+                onReset={resetChanges}
+                onReload={reloadUserPerms}
+                hasChanges={hasChanges}
+              />
+            }
           >
             {selectedUserId === null || selectedUserId === undefined ? (
-              <div style={{ display: "grid", placeItems: "center", padding: 40, color: "#9ca3af" }}>
-                <InfoOutlinedIcon style={{ marginBottom: 8 }} />
+              <div className="grid place-items-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-10 text-sm text-neutral-500 dark:border-white/15 dark:bg-pilar-default-bg-dark/40 dark:text-neutral-400">
+                <InfoOutlinedIcon className="mb-2" />
                 Selecione um usuario a esquerda para editar.
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="flex flex-col gap-3">
                 {error && (
-                  <div style={{ background: "var(--color-pilar-orange)", color: "#fee2e2", padding: 12, borderRadius: 8 }}>
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                     <strong>Erro:</strong> {error}
                   </div>
                 )}
+
                 {hasChanges && (
-                  <div style={{ background: "rgba(0,85,59,0.25)", color: "#dbeafe", padding: 12, borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                    <InfoOutlinedIcon />
-                    Voce tem alteracoes nao salvas em <strong style={{ marginLeft: 4 }}>{changedCodes.length}</strong> permissao(oes).
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200">
+                    <InfoOutlinedIcon fontSize="small" />
+                    Voce tem alteracoes nao salvas em
+                    <strong className="mx-1">{changedCodes.length}</strong>
+                    permissao(oes).
                   </div>
                 )}
+
                 {selectedUserId === 0 && (
-                  <div style={{ background: "rgba(0,85,59,0.25)", color: "var(--color-pilar-default-bg-light)", padding: 12, borderRadius: 8 }}>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
                     Usuario administrador (id = 0). No sistema, ele nao sofre validacao de permissoes.
                   </div>
                 )}
 
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <SearchIcon />
+                <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-300">
+                  <SearchIcon fontSize="small" />
                   <input
                     value={permQuery}
                     onChange={(e) => setPermQuery(e.target.value)}
                     placeholder="Buscar permissao (codigo/label/grupo)..."
-                    style={{
-                      flex: 1,
-                      background: "var(--color-pilar-default-bg-dark)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      color: "#e5e7eb",
-                      borderRadius: 8,
-                      padding: "6px 10px",
-                    }}
+                    className="min-w-0 flex-1 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none placeholder:text-neutral-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-pilar-default-bg-dark dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/20"
                   />
                 </div>
 
-                <div style={{ padding: 0, borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div className="overflow-hidden rounded-xl border border-neutral-200 dark:border-white/10">
                   {loading ? (
-                    <div style={{ padding: 20, color: "#9ca3af" }}>Carregando permissoes...</div>
+                    <div className="p-5 text-sm text-neutral-500 dark:text-neutral-400">
+                      Carregando permissoes...
+                    </div>
                   ) : (
                     groupedRoots.map((rootNode) => (
                       <div key={rootNode.root}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: 8,
-                            padding: "12px 14px",
-                            borderBottom: "1px solid rgba(255,255,255,0.08)",
-                            background: "var(--color-pilar-default-bg2-dark)",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <strong style={{ color: "#f3f4f6", textTransform: "capitalize" }}>{rootNode.root}</strong>
+                        <div className="flex items-center justify-between gap-2 border-b border-neutral-200 bg-neutral-50 px-3.5 py-3 dark:border-white/10 dark:bg-pilar-default-bg2-dark">
+                          <div className="flex items-center gap-2">
+                            <strong className="text-sm text-neutral-800 capitalize dark:text-neutral-100">
+                              {rootNode.root}
+                            </strong>
                             <Badge tone="neutral">{rootNode.count}</Badge>
                           </div>
 
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div className="flex items-center gap-2">
                             <button
+                              type="button"
                               onClick={() => applyRootGroup(rootNode.root, true)}
-                              style={{
-                                background: "rgba(0,85,59,0.25)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                color: "#e5e7eb",
-                                borderRadius: 8,
-                                padding: "4px 8px",
-                                cursor: "pointer",
-                                fontSize: 12,
-                              }}
+                              className="rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
                             >
                               Liberar grupo
                             </button>
                             <button
+                              type="button"
                               onClick={() => applyRootGroup(rootNode.root, false)}
-                              style={{
-                                background: "rgba(213,85,0,0.20)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                color: "#e5e7eb",
-                                borderRadius: 8,
-                                padding: "4px 8px",
-                                cursor: "pointer",
-                                fontSize: 12,
-                              }}
+                              className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-200 dark:hover:bg-amber-500/30"
                             >
                               Remover grupo
                             </button>
                             <button
+                              type="button"
                               onClick={() => toggleRoot(rootNode.root)}
-                              style={{ background: "transparent", border: 0, color: "#e5e7eb", cursor: "pointer" }}
+                              className="rounded-md p-1 text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-800 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-neutral-100"
                             >
                               {rootsOpen[rootNode.root] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                             </button>
@@ -281,54 +270,31 @@ export default function PermissionsPage() {
                         {rootsOpen[rootNode.root] &&
                           rootNode.groups.map((groupNode) => (
                             <div key={groupNode.path}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "space-between",
-                                  gap: 8,
-                                  padding: "10px 14px",
-                                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                                  background: "var(--color-pilar-default-bg-dark)",
-                                }}
-                              >
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                  <span style={{ color: "#d1d5db", fontSize: 13 }}>{groupNode.path}</span>
+                              <div className="flex items-center justify-between gap-2 border-b border-neutral-200 bg-white px-3.5 py-2.5 dark:border-white/10 dark:bg-pilar-default-bg-dark">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-neutral-600 dark:text-neutral-300">{groupNode.path}</span>
                                   <Badge tone="neutral">{groupNode.items.length}</Badge>
                                 </div>
 
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div className="flex items-center gap-2">
                                   <button
+                                    type="button"
                                     onClick={() => applyPathGroup(groupNode.path, true)}
-                                    style={{
-                                      background: "transparent",
-                                      border: "1px solid rgba(255,255,255,0.10)",
-                                      color: "#cbd5e1",
-                                      borderRadius: 8,
-                                      padding: "3px 8px",
-                                      cursor: "pointer",
-                                      fontSize: 12,
-                                    }}
+                                    className="rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-white/20 dark:bg-transparent dark:text-neutral-200 dark:hover:bg-white/10"
                                   >
                                     Liberar
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => applyPathGroup(groupNode.path, false)}
-                                    style={{
-                                      background: "transparent",
-                                      border: "1px solid rgba(255,255,255,0.10)",
-                                      color: "#cbd5e1",
-                                      borderRadius: 8,
-                                      padding: "3px 8px",
-                                      cursor: "pointer",
-                                      fontSize: 12,
-                                    }}
+                                    className="rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-white/20 dark:bg-transparent dark:text-neutral-200 dark:hover:bg-white/10"
                                   >
                                     Remover
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={() => toggleGroup(groupNode.path)}
-                                    style={{ background: "transparent", border: 0, color: "#e5e7eb", cursor: "pointer" }}
+                                    className="rounded-md p-1 text-neutral-600 transition-colors hover:bg-neutral-200 hover:text-neutral-800 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-neutral-100"
                                   >
                                     {groupsOpen[groupNode.path] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                   </button>
@@ -337,9 +303,12 @@ export default function PermissionsPage() {
 
                               {groupsOpen[groupNode.path] && (
                                 <div>
-                                  <div style={{ ...rowStyle, fontSize: 12, color: "#9ca3af", background: "var(--color-pilar-default-bg-dark)" }}>
+                                  <div
+                                    style={rowStyle}
+                                    className="border-b border-neutral-200 bg-neutral-50 text-xs text-neutral-500 dark:border-white/10 dark:bg-pilar-default-bg-dark dark:text-neutral-400"
+                                  >
                                     <div>Permissao</div>
-                                    <div style={{ textAlign: "left" }}>Global/Conceder</div>
+                                    <div className="text-left">Global/Conceder</div>
                                     <div>Lojas (quando nao global)</div>
                                   </div>
 
@@ -361,14 +330,19 @@ export default function PermissionsPage() {
                                         setWorking((prev) => {
                                           const base = prev[p.code] || EMPTY;
                                           const has = base.stores.includes(storeId);
-                                          const nextStores = has ? base.stores.filter((i) => i !== storeId) : [...base.stores, storeId];
+                                          const nextStores = has
+                                            ? base.stores.filter((i) => i !== storeId)
+                                            : [...base.stores, storeId];
                                           return { ...prev, [p.code]: { ...base, stores: nextStores } };
                                         })
                                       }
                                       onSetAllStores={(on) =>
                                         setWorking((prev) => ({
                                           ...prev,
-                                          [p.code]: { ...(prev[p.code] || EMPTY), stores: on ? stores.map((s) => s.id) : [] },
+                                          [p.code]: {
+                                            ...(prev[p.code] || EMPTY),
+                                            stores: on ? stores.map((s) => s.id) : [],
+                                          },
                                         }))
                                       }
                                       changed={isChanged(p.code)}
@@ -383,12 +357,14 @@ export default function PermissionsPage() {
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: 10, alignItems: "center", color: "#9ca3af" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <CheckIcon fontSize="small" /> {Object.values(working).filter((x) => x.global).length} globais ativas
+                <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                    <CheckIcon fontSize="small" />
+                    {Object.values(working).filter((x) => x.global).length} globais ativas
                   </span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <CloseIcon fontSize="small" /> {Object.values(working).filter((x) => !x.global && x.stores.length > 0).length} por loja com alguma selecao
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                    <CloseIcon fontSize="small" />
+                    {Object.values(working).filter((x) => !x.global && x.stores.length > 0).length} por loja com alguma selecao
                   </span>
                 </div>
               </div>

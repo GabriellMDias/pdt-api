@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes, ReactNode } from 'react'
+import { fieldControlBaseClass, fieldLabelClass } from './styles'
 
 type DefaultInputProps = InputHTMLAttributes<HTMLInputElement> & {
   label?: string
@@ -15,23 +16,22 @@ export default function DefaultInput({
 }: DefaultInputProps) {
   return (
     <div>
-      {label && <label className="block mb-1">{label}</label>}
+      {label && <label className={fieldLabelClass}>{label}</label>}
       <div className="relative">
         {iconLeft && (
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-inherit">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
             {iconLeft}
           </span>
         )}
         <input
           className={`
-            w-full px-4 py-2 rounded-md bg-white/30 text-inherit
-            focus:outline-none focus:ring-2 focus:ring-pilar-green
+            ${fieldControlBaseClass}
             ${iconLeft ? 'pl-10' : ''} ${iconRight ? 'pr-10' : ''} ${className}
           `}
           {...rest}
         />
         {iconRight && (
-          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-inherit">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
             {iconRight}
           </span>
         )}

@@ -7,31 +7,42 @@ interface NotificationDetailsModalProps {
   item: NotificationRecipient | null;
 }
 
-export default function NotificationDetailsModal({ open, onClose, item }: NotificationDetailsModalProps) {
+function formatDateTime(input: string): string {
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) return input;
+  return date.toLocaleString();
+}
+
+export default function NotificationDetailsModal({
+  open,
+  onClose,
+  item,
+}: NotificationDetailsModalProps) {
   if (!open || !item) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-900/45 px-4 backdrop-blur-sm dark:bg-black/65"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       aria-modal="true"
       role="dialog"
     >
-      <div className="w-full max-w-lg rounded-xl bg-pilar-default-bg-light dark:bg-pilar-default-bg-dark border border-white/10 shadow-2xl">
-        <div className="flex items-center justify-between gap-3 p-4 border-b border-white/10">
+      <div className="w-full max-w-xl rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-pilar-default-bg-dark">
+        <div className="flex items-center justify-between gap-3 border-b border-neutral-200 p-4 dark:border-white/10">
           <div className="min-w-0">
-            <h2 className="text-base font-semibold text-black dark:text-white truncate">
+            <h2 className="truncate text-base font-semibold text-neutral-800 dark:text-neutral-100">
               {item.notification.title}
             </h2>
-            <p className="text-[11px] text-black/60 dark:text-white/60">
-              {new Date(item.notification.createdAt).toLocaleString()}
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+              {formatDateTime(item.notification.createdAt)}
             </p>
           </div>
+
           <button
             type="button"
-            className="text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+            className="cursor-pointer rounded-md p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-neutral-100"
             onClick={onClose}
             aria-label="Fechar"
           >
@@ -40,8 +51,8 @@ export default function NotificationDetailsModal({ open, onClose, item }: Notifi
         </div>
 
         <div className="p-4">
-          <div className="rounded-lg border border-white/10 bg-black/5 dark:bg-white/5 p-3">
-            <p className="text-sm text-black/90 dark:text-white/90 whitespace-pre-line">
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 dark:border-white/10 dark:bg-white/5">
+            <p className="whitespace-pre-line text-sm text-neutral-700 dark:text-neutral-200">
               {item.notification.message}
             </p>
           </div>

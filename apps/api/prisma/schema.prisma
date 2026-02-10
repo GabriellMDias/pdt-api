@@ -12,6 +12,7 @@ model User {
   name      String
   email     String   @unique
   password  String
+  activeStatus Boolean @default(true)
   createdAt DateTime @default(now())
   notifyCostCenterType Boolean @default(false)
 

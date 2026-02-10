@@ -173,8 +173,8 @@ export default function RelatorioSPEDAnalises() {
       header: f.description || f.name,
       align: toAlign(f.dataType),
       cell: (row) => formatCell(row[f.name], f),
-      tdClassName: "border px-3 py-2",
-      thClassName: "border px-3 py-2",
+      tdClassName: "border border-neutral-200 px-3 py-2 dark:border-neutral-700",
+      thClassName: "border border-neutral-200 px-3 py-2 dark:border-neutral-700",
       resizable: true,
       overflow: 'wrap'
     }));
@@ -182,18 +182,18 @@ export default function RelatorioSPEDAnalises() {
 
   return (
     <Layout title="Detalhes do Relatório SPED">
-      <div className="p-6 space-y-8">
+      <div className="space-y-8 p-6 text-neutral-800 dark:text-neutral-100">
         {loading ? (
-          <p className="text-center">Carregando...</p>
+          <p className="text-center text-neutral-600 dark:text-neutral-400">Carregando...</p>
         ) : analises.length === 0 ? (
-          <p className="text-center">Nenhuma análise encontrada.</p>
+          <p className="text-center text-neutral-600 dark:text-neutral-400">Nenhuma análise encontrada.</p>
         ) : (
           Object.entries(analisesAgrupadas).map(([grupo, analisesGrupo]) => (
-            <div key={grupo} className="bg-white rounded-lg border border-gray-200 text-black shadow">
-              <div className="flex items-center justify-between bg-gray-100 p-3 rounded-t">
-                <h3 className="text-lg font-semibold">{grupo}</h3>
+            <div key={grupo} className="overflow-hidden rounded-xl border border-neutral-200 bg-white/90 text-neutral-800 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/35 dark:text-neutral-100">
+              <div className="flex flex-col gap-2 border-b border-neutral-200 bg-neutral-50/80 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-700 dark:bg-neutral-800/40">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{grupo}</h3>
                 {analisesGrupo[0] && (
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-neutral-600 dark:text-neutral-300">
                     <span className="mr-3">
                       Período:&nbsp;
                       {new Date(analisesGrupo[0].sourceStart).toLocaleDateString("pt-BR")} -{" "}
@@ -212,16 +212,21 @@ export default function RelatorioSPEDAnalises() {
                 data={analisesGrupo}
                 loading={false}
                 emptyMessage="Sem análises para o grupo."
-                tableClassName="w-full text-sm text-left"
+                tableClassName="w-full text-left text-sm text-neutral-800 dark:text-neutral-100"
+                headerWrapperClassName="bg-transparent"
+                headerRowClassName="text-left text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300"
+                headerCellClassName="border-b border-neutral-200 py-3 font-semibold dark:border-neutral-700"
+                bodyClassName="text-sm text-neutral-700 dark:text-neutral-100"
+                cellBaseClassName="border-b border-neutral-200/80 py-2.5 dark:border-neutral-700"
                 getRowKey={(row) => row.id}
                 rowClassName={() => {
-                  return "hover:bg-red-50 cursor-pointer";
+                  return "cursor-pointer transition-colors hover:bg-red-50 dark:hover:bg-red-950/30";
                 }}
                 onRowDoubleClick={(row) => {
                   setSelectedAnalise(row);
                 }}
               />
-              <p className="text-xs text-gray-500 px-4 pb-3">
+              <p className="px-4 pb-3 text-xs text-neutral-500 dark:text-neutral-400">
                 Dê <strong>duplo clique</strong> na linha (se houver erros) para ver os detalhes.
               </p>
             </div>
@@ -231,10 +236,10 @@ export default function RelatorioSPEDAnalises() {
 
       {/* Modal de erros */}
       {selectedAnalise && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/75 z-50 text-black">
-          <div className="bg-white w-11/12 max-w-5xl rounded-lg shadow-lg p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75">
+          <div className="relative w-11/12 max-w-5xl rounded-xl border border-neutral-200 bg-white p-6 text-neutral-800 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100">
             <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-black cursor-pointer"
+              className="absolute right-2 top-2 cursor-pointer text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
               onClick={() => setSelectedAnalise(null)}
               aria-label="Fechar"
               title="Fechar"
@@ -243,10 +248,10 @@ export default function RelatorioSPEDAnalises() {
             </button>
 
             <div className="mb-3">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Detalhes: {selectedAnalise.analysisType?.description}
               </h3>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">
                 Período:{" "}
                 {new Date(selectedAnalise.sourceStart).toLocaleDateString("pt-BR")} -{" "}
                 {new Date(selectedAnalise.sourceEnd).toLocaleDateString("pt-BR")} &middot; Computado:{" "}
@@ -254,15 +259,20 @@ export default function RelatorioSPEDAnalises() {
               </p>
             </div>
 
-            <div className="overflow-x-auto max-h-96">
+            <div className="max-h-96 overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
               <SimpleTable<ErrorRow>
                 columns={makeErrorColumns(selectedAnalise)}
                 data={selectedAnalise.data.errors}
                 loading={false}
                 emptyMessage="Sem linhas de erro para exibir."
-                tableClassName="w-full text-sm border"
+                tableClassName="w-full text-sm text-neutral-800 dark:text-neutral-100"
+                headerWrapperClassName="bg-neutral-50 dark:bg-neutral-800/40"
+                headerRowClassName="text-left text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300"
+                headerCellClassName="py-2.5 font-semibold"
+                bodyClassName="text-sm text-neutral-700 dark:text-neutral-100"
+                cellBaseClassName="py-2"
                 getRowKey={(_row, i) => i}
-                rowClassName={(_row) => "hover:bg-gray-50"}
+                rowClassName={() => "transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50"}
                 exportOptions={{
                   enabled: true,            // mostra toolbar
                   excel: true,
@@ -287,3 +297,4 @@ export default function RelatorioSPEDAnalises() {
     </Layout>
   );
 }
+

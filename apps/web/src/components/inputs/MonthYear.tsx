@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { fieldControlBaseClass, fieldLabelClass } from "./styles";
 
 export type YearMonth = string; // "YYYY-MM"
 
@@ -41,7 +42,7 @@ export default function MonthYear({
   label = "Mês",
 
   className,
-  inputClassName = "w-full rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-pilar-default-bg-dark p-2 outline-none focus:ring-2 focus:ring-pilar-green",
+  inputClassName = fieldControlBaseClass,
 
   required,
   disabled,
@@ -123,7 +124,7 @@ export default function MonthYear({
 
   return (
     <div className={className}>
-      <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
+      <label className={fieldLabelClass}>
         {label}
       </label>
       <input

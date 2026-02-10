@@ -70,7 +70,7 @@ function ModalShell({
 
   return (
     <div
-      className={`fixed inset-0 ${zIndexClass} flex items-center justify-center bg-black/60 backdrop-blur-sm px-4`}
+      className={`fixed inset-0 ${zIndexClass} flex items-center justify-center bg-neutral-900/45 backdrop-blur-sm px-4 dark:bg-black/60`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -78,18 +78,18 @@ function ModalShell({
       role="dialog"
     >
       <div
-        className={`w-full ${maxWidthClass} rounded-xl border border-white/10 bg-pilar-default-bg-dark shadow-2xl`}
+        className={`w-full ${maxWidthClass} rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-pilar-default-bg-dark`}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-white/10 p-4">
+        <div className="flex items-start justify-between gap-3 border-b border-neutral-200 p-4 dark:border-white/10">
           <div className="min-w-0">
-            <h2 className="text-base font-semibold text-white">{title}</h2>
+            <h2 className="text-base font-semibold text-neutral-800 dark:text-white">{title}</h2>
             {subtitle ? (
-              <p className="mt-1 text-xs text-white/70">{subtitle}</p>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-white/70">{subtitle}</p>
             ) : null}
           </div>
           <button
             type="button"
-            className="text-white/70 transition-colors hover:text-white"
+            className="text-neutral-500 transition-colors hover:text-neutral-700 dark:text-white/70 dark:hover:text-white"
             onClick={onClose}
             aria-label="Fechar"
           >
@@ -100,7 +100,7 @@ function ModalShell({
         <div className="max-h-[70vh] overflow-y-auto p-4">{children}</div>
 
         {footer ? (
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 p-4">
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-neutral-200 p-4 dark:border-white/10">
             {footer}
           </div>
         ) : null}
@@ -665,19 +665,19 @@ export default function BackupGoogleDrivePage() {
   }
 
   const content = (
-    <div className="space-y-5 p-6">
-      <section className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-5">
+    <div className="space-y-5 p-6 text-neutral-800 dark:text-neutral-100">
+      <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-100">
+          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
             Configuracao do Backup PostgreSQL no Google Drive
           </h2>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Centralize credenciais, selecao da pasta de destino e restauracao de
             backups.
           </p>
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             Redirect URI OAuth:{" "}
-            <span className="font-mono text-neutral-300">{redirectUri}</span>
+            <span className="font-mono text-neutral-700 dark:text-neutral-300">{redirectUri}</span>
           </p>
         </div>
 
@@ -751,13 +751,13 @@ export default function BackupGoogleDrivePage() {
       </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-5">
+        <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-100">
+              <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
                 Pasta de destino do backup
               </h3>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 Selecao da pasta com navegacao entre niveis.
               </p>
             </div>
@@ -770,15 +770,15 @@ export default function BackupGoogleDrivePage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-3">
-            <p className="text-xs text-neutral-400">Pasta selecionada</p>
-            <p className="mt-1 break-all text-sm text-neutral-100">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Pasta selecionada</p>
+            <p className="mt-1 break-all text-sm text-neutral-800 dark:text-neutral-100">
               {selectedFolder
                 ? `${selectedFolder.name} (${selectedFolder.id})`
                 : "Nenhuma pasta selecionada"}
             </p>
             {hasPendingFolderSelection ? (
-              <p className="mt-2 text-xs text-amber-300">
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
                 Existe alteracao nao salva. Clique em salvar configuracao para
                 persistir.
               </p>
@@ -809,29 +809,29 @@ export default function BackupGoogleDrivePage() {
           </div>
 
           {!canUseDriveApi ? (
-            <p className="text-xs text-amber-300">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
               Para escolher a pasta, configure Client ID/Client Secret e conclua
               o OAuth.
             </p>
           ) : null}
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/50 p-5">
+        <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
           <div>
-            <h3 className="text-sm font-semibold text-neutral-100">
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
               Restauracao de backup
             </h3>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Selecione o backup e confirme.
             </p>
           </div>
 
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-3">
-            <p className="text-xs text-neutral-400">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Retencao automatica ativa: somente os ultimos 5 backups sao
               mantidos.
             </p>
-            <p className="mt-2 text-xs text-amber-300">
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
               Restauracao altera o banco atual. Execute apenas em janela de
               manutencao.
             </p>
@@ -852,7 +852,7 @@ export default function BackupGoogleDrivePage() {
           </div>
 
           {!config?.folderId ? (
-            <p className="text-xs text-amber-300">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
               Defina e salve uma pasta de backup antes de restaurar.
             </p>
           ) : null}
@@ -879,9 +879,9 @@ export default function BackupGoogleDrivePage() {
         }
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-3">
-            <p className="text-xs text-neutral-400">Pasta marcada</p>
-            <p className="mt-1 break-all text-sm text-neutral-100">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/50">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Pasta marcada</p>
+            <p className="mt-1 break-all text-sm text-neutral-800 dark:text-neutral-100">
               {folderCandidate
                 ? `${folderCandidate.name} (${folderCandidate.id})`
                 : "Nenhuma pasta marcada"}
@@ -910,20 +910,20 @@ export default function BackupGoogleDrivePage() {
             </DefaultButton>
           </div>
 
-          <div className="text-xs text-neutral-400">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">
             Navegacao:{" "}
             {trail.length
               ? `Raiz / ${trail.map((f) => f.name).join(" / ")}`
               : "Raiz"}
           </div>
 
-          <div className="rounded-xl border border-neutral-800 divide-y divide-neutral-800">
+          <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-200 dark:border-neutral-700 dark:divide-neutral-700">
             {loadingFolders ? (
-              <div className="p-3 text-sm text-neutral-300">
+              <div className="p-3 text-sm text-neutral-600 dark:text-neutral-300">
                 Carregando pastas...
               </div>
             ) : folders.length === 0 ? (
-              <div className="p-3 text-sm text-neutral-400">
+              <div className="p-3 text-sm text-neutral-500 dark:text-neutral-400">
                 Nenhuma pasta encontrada neste nivel.
               </div>
             ) : (
@@ -931,12 +931,12 @@ export default function BackupGoogleDrivePage() {
                 <div
                   key={folder.id}
                   className={`flex items-center justify-between gap-3 p-3 ${
-                    activeFolderId === folder.id ? "bg-neutral-800/40" : ""
+                    activeFolderId === folder.id ? "bg-neutral-100 dark:bg-neutral-800/40" : ""
                   }`}
                 >
                   <button
                     type="button"
-                    className="text-left text-sm text-neutral-200 hover:text-white"
+                    className="text-left text-sm text-neutral-700 transition-colors hover:text-neutral-900 dark:text-neutral-200 dark:hover:text-white"
                     onClick={() => handleEnterFolder(folder)}
                   >
                     {folder.name}
@@ -985,22 +985,22 @@ export default function BackupGoogleDrivePage() {
         }
       >
         <div className="space-y-4">
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-            <p className="text-xs text-amber-200">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <p className="text-xs text-amber-700 dark:text-amber-200">
               Esta operacao sobrescreve objetos do banco atual com base no
               backup selecionado.
             </p>
           </div>
 
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-3">
-            <p className="text-xs text-neutral-400">Backup selecionado</p>
-            <p className="mt-1 break-all text-sm text-neutral-100">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/50">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Backup selecionado</p>
+            <p className="mt-1 break-all text-sm text-neutral-800 dark:text-neutral-100">
               {restoreCandidate
                 ? `${restoreCandidate.name} (${restoreCandidate.id})`
                 : "Nenhum backup selecionado"}
             </p>
             {restoreCandidate ? (
-              <p className="mt-1 text-xs text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 Criado em {formatDateTime(restoreCandidate.createdTime)} -{" "}
                 {formatBytes(restoreCandidate.sizeBytes)}
               </p>
@@ -1008,20 +1008,20 @@ export default function BackupGoogleDrivePage() {
           </div>
 
           {loadingBackups ? (
-            <div className="p-3 text-sm text-neutral-300">
+            <div className="p-3 text-sm text-neutral-600 dark:text-neutral-300">
               Carregando backups...
             </div>
           ) : backupFiles.length === 0 ? (
-            <div className="p-3 text-sm text-neutral-400">
+            <div className="p-3 text-sm text-neutral-500 dark:text-neutral-400">
               Nenhum backup encontrado na pasta selecionada.
             </div>
           ) : (
-            <div className="rounded-xl border border-neutral-800 divide-y divide-neutral-800">
+            <div className="rounded-xl border border-neutral-200 divide-y divide-neutral-200 dark:border-neutral-700 dark:divide-neutral-700">
               {backupFiles.map((file) => (
                 <div
                   key={file.id}
                   className={`flex flex-wrap items-center justify-between gap-3 p-3 ${
-                    restoreCandidate?.id === file.id ? "bg-neutral-800/40" : ""
+                    restoreCandidate?.id === file.id ? "bg-neutral-100 dark:bg-neutral-800/40" : ""
                   }`}
                 >
                   <button
@@ -1029,10 +1029,10 @@ export default function BackupGoogleDrivePage() {
                     className="min-w-0 text-left"
                     onClick={() => setRestoreCandidate(file)}
                   >
-                    <p className="break-all text-sm text-neutral-200">
+                    <p className="break-all text-sm text-neutral-700 dark:text-neutral-200">
                       {file.name}
                     </p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       Criado em {formatDateTime(file.createdTime)} -{" "}
                       {formatBytes(file.sizeBytes)}
                     </p>
@@ -1078,23 +1078,23 @@ export default function BackupGoogleDrivePage() {
         }
       >
         <div className="space-y-3">
-          <p className="text-sm text-neutral-200">
+          <p className="text-sm text-neutral-700 dark:text-neutral-200">
             A restauracao sera executada no banco atual usando o arquivo abaixo:
           </p>
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-3">
-            <p className="break-all text-sm text-neutral-100">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/60">
+            <p className="break-all text-sm text-neutral-800 dark:text-neutral-100">
               {restoreCandidate
                 ? restoreCandidate.name
                 : "Nenhum backup selecionado"}
             </p>
             {restoreCandidate ? (
-              <p className="mt-1 text-xs text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 Criado em {formatDateTime(restoreCandidate.createdTime)} -{" "}
                 {formatBytes(restoreCandidate.sizeBytes)}
               </p>
             ) : null}
           </div>
-          <p className="text-xs text-amber-300">
+          <p className="text-xs text-amber-700 dark:text-amber-300">
             Esta acao e irreversivel no banco de dados atual.
           </p>
         </div>

@@ -455,7 +455,7 @@ export class CostCentersService {
 
   private async notifyCostCenterTypeCreated(costCenterTypeId: number, costCenterTypeDesc: string) {
     const rows = await this.prisma.user.findMany({
-      where: { notifyCostCenterType: true },
+      where: { notifyCostCenterType: true, activeStatus: true },
       select: { id: true },
     });
 

@@ -588,7 +588,7 @@ export default function RestriExcTop() {
     }
 
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 dark:border-neutral-700 dark:bg-neutral-900/40 dark:text-neutral-300">
         Este tipo de restrição ainda não possui busca dedicada.
       </div>
     );
@@ -603,7 +603,7 @@ export default function RestriExcTop() {
   return (
   <Layout title="Restrições/Exceções da TOP">
     {/* padding inferior geral */}
-    <div className="relative pb-4">
+    <div className="relative pb-4 text-neutral-800 dark:text-neutral-100">
       <ContentLoader
         open={anyOverlay}
         label={draft?.saving ? "Salvando..." : "Carregando..."}
@@ -613,7 +613,7 @@ export default function RestriExcTop() {
       <div className="lg:h-[calc(100vh-80px)] lg:overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:h-full min-h-0">
           {/* Painel esquerda */}
-          <div className="bg-white rounded-lg border border-gray-200 p-3 text-black lg:col-span-1 flex flex-col lg:h-full min-h-0">
+          <div className="rounded-lg border border-gray-200 bg-white p-3 text-black lg:col-span-1 flex flex-col lg:h-full min-h-0 dark:border-neutral-700 dark:bg-neutral-900/35 dark:text-neutral-100">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="text-base font-semibold">Tipos de Operação</div>
             </div>
@@ -622,7 +622,7 @@ export default function RestriExcTop() {
               value={topQuery}
               onChange={(e) => setTopQuery(e.target.value)}
               placeholder="Buscar TOP por código ou descrição"
-              className="w-full bg-white border border-gray-200 text-black"
+              className="w-full"
             />
 
             {/* scroll só aqui */}
@@ -633,10 +633,10 @@ export default function RestriExcTop() {
                 <div className="space-y-4">
                   {groupedTops.map((g) => (
                     <div key={g.tipmov}>
-                      <div className="sticky top-0 z-10 bg-white pb-1">
+                      <div className="sticky top-0 z-10 bg-white pb-1 dark:bg-neutral-900/35">
                         <button
                           type="button"
-                          className="flex w-full items-center gap-1 rounded-md px-1 py-1 text-left text-xs text-gray-600 hover:bg-gray-50 cursor-pointer"
+                          className="flex w-full items-center gap-1 rounded-md px-1 py-1 text-left text-xs text-gray-600 hover:bg-gray-50 cursor-pointer dark:text-neutral-300 dark:hover:bg-neutral-800"
                           onClick={() =>
                             setTipMovCollapsed((prev) => ({
                               ...prev,
@@ -651,7 +651,7 @@ export default function RestriExcTop() {
                             <KeyboardArrowDownIcon fontSize="small" />
                           )}
                           <span className="font-semibold">{g.label}</span>
-                          <span className="ml-auto text-[11px] text-gray-400">{g.items.length}</span>
+                          <span className="ml-auto text-[11px] text-gray-400 dark:text-neutral-500">{g.items.length}</span>
                         </button>
                       </div>
 
@@ -666,16 +666,16 @@ export default function RestriExcTop() {
                                 className={
                                   "w-full text-left rounded-lg border px-2 py-2 transition cursor-pointer " +
                                   (selected
-                                    ? "border-pilar-green bg-pilar-green/10"
-                                    : "border-gray-200 hover:bg-gray-50")
+                                    ? "border-pilar-green bg-pilar-green/10 dark:bg-pilar-green/20"
+                                    : "border-gray-200 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-neutral-800")
                                 }
                                 onClick={() => setSelectedTop(t)}
                               >
                                 <div className="flex items-start gap-2">
-                                  <div className="w-16 shrink-0 font-mono text-xs text-gray-700">
+                                  <div className="w-16 shrink-0 font-mono text-xs text-gray-700 dark:text-neutral-300">
                                     {t.id}
                                   </div>
-                                  <div className="flex-1 text-sm text-gray-900">{t.descricao}</div>
+                                  <div className="flex-1 text-sm text-gray-900 dark:text-neutral-100">{t.descricao}</div>
                                 </div>
                               </button>
                             );
@@ -690,7 +690,7 @@ export default function RestriExcTop() {
           </div>
 
           {/* Painel direita */}
-          <div className="bg-white rounded-lg border border-gray-200 p-3 text-black lg:col-span-3 flex flex-col lg:h-full min-h-0">
+          <div className="rounded-lg border border-gray-200 bg-white p-3 text-black lg:col-span-3 flex flex-col lg:h-full min-h-0 dark:border-neutral-700 dark:bg-neutral-900/35 dark:text-neutral-100">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="text-base font-semibold">{titleRight}</div>
@@ -718,7 +718,7 @@ export default function RestriExcTop() {
             ) : (
               <div className="mt-4 flex-1 min-h-0 flex flex-col">
                 {/* Tabs fixas, sem scroll */}
-                <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+                <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 dark:border-neutral-700">
                   {tipoRestricao.map((t) => {
                     const active = t.id === activeTipoRestricaoId;
                     return (
@@ -728,7 +728,7 @@ export default function RestriExcTop() {
                           "rounded-full px-3 py-1 text-sm border cursor-pointer " +
                           (active
                             ? "bg-pilar-green text-white border-pilar-green"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50")
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-700 dark:hover:bg-neutral-800")
                         }
                         onClick={() => setActiveTipoRestricaoId(t.id)}
                       >
@@ -748,7 +748,7 @@ export default function RestriExcTop() {
                   ) : (
                     <div className="space-y-4">
                       {draft?.loading ? (
-                        <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600">
+                        <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 dark:border-neutral-700 dark:bg-neutral-900/30 dark:text-neutral-300">
                           Carregando configuração desta aba...
                         </div>
                       ) : (
@@ -781,7 +781,7 @@ export default function RestriExcTop() {
                               <div className="space-y-4">{renderLookupPicker()}</div>
 
                               <div className="space-y-2">
-                                <div className="text-sm font-semibold text-gray-800">Itens cadastrados</div>
+                                <div className="text-sm font-semibold text-gray-800 dark:text-neutral-100">Itens cadastrados</div>
 
                                 <div className="mt-3 flex items-center gap-3">
                                   <label className="inline-flex items-center gap-2 text-sm cursor-pointer font-bold">
@@ -810,11 +810,16 @@ export default function RestriExcTop() {
                                   </label>
                                 </div>
 
-                                <div className="bg-white rounded-lg border border-gray-200">
+                                <div className="rounded-lg border border-gray-200 bg-white dark:border-neutral-700 dark:bg-neutral-900/30">
                                   <SimpleTable
                                     columns={selectedColumns}
                                     data={selectedRows}
                                     emptyMessage="Nenhum item cadastrado."
+                                    tableClassName="w-full text-sm text-left text-neutral-800 dark:text-neutral-100"
+                                    headerWrapperClassName="bg-neutral-100 text-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200"
+                                    headerCellClassName="border-b border-gray-200 dark:border-neutral-700"
+                                    bodyClassName="text-sm text-neutral-700 dark:text-neutral-200"
+                                    cellBaseClassName="border-b border-gray-200/70 dark:border-neutral-700"
                                     getRowKey={(r) => r.id}
                                     stickyHeader
                                     wrapperClassName="max-h-[60vh] overflow-y-auto"
@@ -852,9 +857,9 @@ function SeriesEditor({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div className="rounded-lg border border-gray-200 p-3">
-          <div className="text-sm font-semibold text-gray-800">Séries</div>
-          <div className="text-xs text-gray-500 mt-1">
+        <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900/30">
+          <div className="text-sm font-semibold text-gray-800 dark:text-neutral-100">Séries</div>
+          <div className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
             Este tipo armazena um array de strings (sem lookup específico).
           </div>
 
@@ -863,7 +868,7 @@ function SeriesEditor({
               value={serie}
               onChange={(e) => setSerie(e.target.value)}
               placeholder="Digite a série e pressione Incluir"
-              className="flex-1 bg-white border border-gray-200 text-black"
+              className="flex-1"
             />
             <DefaultButton
               type="button"
@@ -879,18 +884,18 @@ function SeriesEditor({
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 p-3">
-          <div className="text-sm font-semibold text-gray-800">Itens cadastrados</div>
+        <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900/30">
+          <div className="text-sm font-semibold text-gray-800 dark:text-neutral-100">Itens cadastrados</div>
           <div className="mt-3 flex flex-wrap gap-2">
             {value.length === 0 ? (
-              <span className="text-sm text-gray-500">Nenhuma série cadastrada.</span>
+              <span className="text-sm text-gray-500 dark:text-neutral-400">Nenhuma série cadastrada.</span>
             ) : (
               value.map((s) => (
-                <Tag key={s} className="border-gray-300 text-gray-800">
+                <Tag key={s} className="border-gray-300 text-gray-800 dark:border-neutral-600 dark:text-neutral-200">
                   <span>{s}</span>
                   <button
                     type="button"
-                    className="ml-2 text-gray-500 hover:text-red-600 cursor-pointer"
+                    className="ml-2 cursor-pointer text-gray-500 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-400"
                     onClick={() => onRemove(s)}
                     title="Remover"
                   >

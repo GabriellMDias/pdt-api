@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
-import type { ParameterType } from '../types/parameters';
+import { useEffect, useState } from "react";
+import { fieldControlBaseClass } from "../../../../components/inputs/styles";
+import type { ParameterType } from "../types/parameters";
 
 export type EditorProps = {
   type: ParameterType;
@@ -11,59 +12,56 @@ export type EditorProps = {
 };
 
 function coerceBool(v: any): boolean {
-  if (typeof v === 'boolean') return v;
-  if (typeof v === 'number') return v !== 0;
-  if (typeof v === 'string') {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v !== 0;
+  if (typeof v === "string") {
     const s = v.trim().toLowerCase();
-    if (s === 'true' || s === '1') return true;
-    if (s === 'false' || s === '0' || s === '') return false;
+    if (s === "true" || s === "1") return true;
+    if (s === "false" || s === "0" || s === "") return false;
   }
   return !!v;
 }
 
 export function ValueEditor({ type, value, disabled, onChange }: EditorProps) {
-  if (type === 'BOOL') {
+  if (type === "BOOL") {
     const checked = coerceBool(value);
     return (
-      <label className="inline-flex items-center gap-2">
+      <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200">
         <input
           type="checkbox"
-          className="h-4 w-4"
+          className="h-4 w-4 accent-pilar-green"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
           disabled={disabled}
         />
-        <span className="text-sm">{checked ? 'Ativo' : 'Inativo'}</span>
+        <span>{checked ? "Ativo" : "Inativo"}</span>
       </label>
     );
   }
 
-  if (type === 'INT') {
+  if (type === "INT") {
     return (
       <input
         type="number"
-        className="w-full rounded-md border px-2 py-1 text-sm"
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        className={fieldControlBaseClass}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
         disabled={disabled}
       />
     );
   }
 
-  if (type === 'JSON') {
-    const [text, setText] = useState(
-      value == null ? '' : JSON.stringify(value, null, 2)
-    );
+  if (type === "JSON") {
+    const [text, setText] = useState(value == null ? "" : JSON.stringify(value, null, 2));
 
-    // atualiza texto quando o valor muda externamente
     useEffect(() => {
-      setText(value == null ? '' : JSON.stringify(value, null, 2));
+      setText(value == null ? "" : JSON.stringify(value, null, 2));
     }, [value]);
 
     return (
       <textarea
         rows={6}
-        className="w-full rounded-md border px-2 py-1 text-sm font-mono"
+        className={`${fieldControlBaseClass} min-h-[120px] font-mono text-xs`}
         value={text}
         onChange={(e) => {
           const raw = e.target.value;
@@ -72,7 +70,7 @@ export function ValueEditor({ type, value, disabled, onChange }: EditorProps) {
             const parsed = JSON.parse(raw);
             onChange(parsed);
           } catch {
-            // deixa o usuário digitar mesmo com JSON inválido
+            // Keeps partial/incomplete JSON while typing.
           }
         }}
         placeholder={'{\n  "key": "value"\n}'}
@@ -81,13 +79,12 @@ export function ValueEditor({ type, value, disabled, onChange }: EditorProps) {
     );
   }
 
-  // STRING (default)
   return (
     <input
       type="text"
-      className="w-full rounded-md border px-2 py-1 text-sm"
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
+      className={fieldControlBaseClass}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
       disabled={disabled}
     />
   );

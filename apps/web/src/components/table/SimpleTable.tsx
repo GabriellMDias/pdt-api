@@ -438,19 +438,19 @@ export default function SimpleTable<T>({
       {/* ===== MODAL DE PREVIEW ===== */}
       {preview && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/45 p-4 dark:bg-black/60"
           onClick={() => setPreview(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-5xl overflow-hidden rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl"
+            className="max-h-[85vh] w-full max-w-5xl overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-neutral-800 px-4 py-2">
-              <h3 className="text-base font-semibold text-neutral-100">{preview.title}</h3>
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-2 dark:border-neutral-700">
+              <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">{preview.title}</h3>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="rounded bg-neutral-700 px-2 py-1 text-xs text-white hover:bg-neutral-600 cursor-pointer"
+                  className="cursor-pointer rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs text-neutral-700 transition-colors hover:bg-neutral-200 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600"
                   onClick={() => navigator.clipboard.writeText(preview.content)}
                   title="Copiar"
                 >
@@ -458,7 +458,7 @@ export default function SimpleTable<T>({
                 </button>
                 <button
                   type="button"
-                  className="rounded bg-neutral-700 px-2 py-1 text-xs text-white hover:bg-neutral-600 cursor-pointer"
+                  className="cursor-pointer rounded border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs text-neutral-700 transition-colors hover:bg-neutral-200 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600"
                   onClick={() => setPreview(null)}
                   title="Fechar (Esc)"
                 >
@@ -466,8 +466,8 @@ export default function SimpleTable<T>({
                 </button>
               </div>
             </div>
-            <div className="max-h-[75vh] overflow-auto p-4">
-              <pre className="whitespace-pre-wrap break-words text-sm text-neutral-100">
+            <div className="max-h-[75vh] overflow-auto bg-neutral-50/80 p-4 dark:bg-neutral-900/30">
+              <pre className="whitespace-pre-wrap break-words font-mono text-sm text-neutral-800 dark:text-neutral-100">
                 {preview.content}
               </pre>
             </div>

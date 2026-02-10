@@ -5,6 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 import { IconButton } from "../../../../../components/crud/primitives";
+import { fieldControlBaseClass } from "../../../../../components/inputs/styles";
 import type { CostCenterTypeItem, CreateCostCenterTypePayload, UpdateCostCenterTypePayload } from "../types";
 import { api, authHeaders, API_BASE } from "../../../../../services/api";
 import { useAuth } from "../../../../../hooks/useAuth";
@@ -272,7 +273,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
 
   return (
     <form
-      className="mx-auto w-full max-w-[1400px] space-y-5"
+      className="mx-auto w-full max-w-[1400px] space-y-5 text-neutral-800 dark:text-neutral-100"
       autoComplete="off"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -301,7 +302,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
         await onSubmit(payload);
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900/40 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/35">
         <div className="flex items-center gap-3">
           <IconButton
             variant="default"
@@ -313,7 +314,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
             <ChevronLeftIcon />
           </IconButton>
           <button
-            className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-500 disabled:opacity-50 cursor-pointer"
+            className="cursor-pointer rounded-xl border border-pilar-green bg-pilar-green px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-pilar-green/90 disabled:cursor-not-allowed disabled:opacity-50"
             type="submit"
             disabled={disabled}
             title={isEdit ? "Salvar alteracoes" : "Cadastrar"}
@@ -322,31 +323,31 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full border border-neutral-700 px-3 py-1 text-neutral-200">
+          <span className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800/70 dark:text-neutral-200">
             {mode === "percentage" ? "Modo: Porcentagem" : "Modo: Participacao"}
           </span>
-          <span className="rounded-full border border-neutral-700 px-3 py-1 text-neutral-200">
+          <span className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800/70 dark:text-neutral-200">
             Itens: {items.length}
           </span>
-          <span className="rounded-full border border-neutral-700 px-3 py-1 text-neutral-200">
+          <span className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800/70 dark:text-neutral-200">
             Total: {roundedTotal.toFixed(2)}%
           </span>
         </div>
       </div>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 xl:col-span-2">
-          <h3 className="text-sm font-semibold text-neutral-200">Dados do tipo de centro de custo</h3>
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm xl:col-span-2 dark:border-neutral-700 dark:bg-neutral-900/30">
+          <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Dados do tipo de centro de custo</h3>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block sm:col-span-2">
-              <span className="text-xs text-neutral-400">Descricao</span>
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Descricao</span>
               {isEdit ? (
-                <p className="mt-1 rounded-lg border border-neutral-800 bg-neutral-950/60 px-3 py-2 text-sm text-neutral-100">
+                <p className="mt-1 rounded-lg border border-neutral-200 bg-neutral-50/80 px-3 py-2 text-sm text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900/55 dark:text-neutral-100">
                   {initial?.description ?? "-"}
                 </p>
               ) : (
                 <input
-                  className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                  className={`mt-1 ${fieldControlBaseClass}`}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descricao do tipo de centro de custo"
@@ -356,35 +357,37 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
 
             {isEdit && (
               <>
-                <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
-                  <span className="text-xs text-neutral-400">ID VR</span>
-                  <p className="mt-1 text-sm font-medium text-neutral-100">{initial?.id_costcentertype_vr ?? "-"}</p>
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/55">
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">ID VR</span>
+                  <p className="mt-1 text-sm font-medium text-neutral-800 dark:text-neutral-100">{initial?.id_costcentertype_vr ?? "-"}</p>
                 </div>
-                <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
-                  <span className="text-xs text-neutral-400">Codigo Sankhya</span>
-                  <p className="mt-1 text-sm font-medium text-neutral-100">{initial?.codcencus_sankhya ?? "-"}</p>
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/55">
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Codigo Sankhya</span>
+                  <p className="mt-1 text-sm font-medium text-neutral-800 dark:text-neutral-100">{initial?.codcencus_sankhya ?? "-"}</p>
                 </div>
               </>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
-          <h3 className="text-sm font-semibold text-neutral-200">Status e validacoes</h3>
+        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
+          <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Status e validacoes</h3>
           <div className="mt-3 space-y-3">
-            <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
-              <span className="text-xs text-neutral-400">Ativo</span>
-              <label className="mt-2 inline-flex items-center gap-2 text-sm text-neutral-200">
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/55">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Ativo</span>
+              <label className="mt-2 inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200">
                 <input
                   type="checkbox"
                   checked={activeStatus}
                   onChange={(e) => setActiveStatus(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-600 bg-neutral-900 text-blue-600 focus:ring-blue-600"
+                  className="h-4 w-4 rounded border-neutral-400 bg-white text-pilar-green accent-pilar-green focus:ring-pilar-green dark:border-neutral-600 dark:bg-pilar-default-bg-dark"
                 />
                 <span
                   className={[
                     "rounded-full px-2 py-1 text-xs",
-                    activeStatus ? "bg-emerald-900/50 text-emerald-200" : "bg-neutral-800 text-neutral-300",
+                    activeStatus
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
+                      : "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
                   ].join(" ")}
                 >
                   {activeStatus ? "Ativo" : "Inativo"}
@@ -393,7 +396,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
             </div>
 
             {(hasInvalidMode || hasMissingFields || hasNoItems) && (
-              <div className="rounded-lg border border-red-800/60 bg-red-900/20 p-3 text-xs text-red-300 space-y-1">
+              <div className="space-y-1 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
                 {hasInvalidMode && (
                   <p>
                     {mode === "percentage"
@@ -409,26 +412,26 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4">
+      <section className="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-neutral-200">Rateio</h3>
-            <p className="text-xs text-neutral-400">
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Rateio</h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Defina o modo de rateio e preencha os itens por centro de custo e loja.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 text-xs text-neutral-300">
+            <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300">
               <span>Modo:</span>
               <button
                 type="button"
                 onClick={() => handleModeChange("percentage")}
                 className={[
-                  "rounded-full px-3 py-1.5 border transition-colors",
+                  "rounded-full border px-3 py-1.5 transition-colors",
                   mode === "percentage"
-                    ? "border-blue-500 bg-blue-950/40 text-blue-200"
-                    : "border-neutral-700 text-neutral-400 hover:border-neutral-500",
+                    ? "border-pilar-green bg-pilar-green/10 text-pilar-green dark:bg-pilar-green/20"
+                    : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500",
                 ].join(" ")}
               >
                 Porcentagem
@@ -437,10 +440,10 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                 type="button"
                 onClick={() => handleModeChange("participation")}
                 className={[
-                  "rounded-full px-3 py-1.5 border transition-colors",
+                  "rounded-full border px-3 py-1.5 transition-colors",
                   mode === "participation"
-                    ? "border-blue-500 bg-blue-950/40 text-blue-200"
-                    : "border-neutral-700 text-neutral-400 hover:border-neutral-500",
+                    ? "border-pilar-green bg-pilar-green/10 text-pilar-green dark:bg-pilar-green/20"
+                    : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500",
                 ].join(" ")}
               >
                 Participacao
@@ -450,7 +453,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
             <button
               type="button"
               onClick={addRow}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm text-white hover:bg-green-500"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-pilar-green bg-pilar-green px-3 py-2 text-sm text-white transition-colors hover:bg-pilar-green/90"
               title="Adicionar linha"
             >
               <AddIcon fontSize="small" />
@@ -460,30 +463,30 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950/50 p-3">
-            <p className="text-xs text-neutral-400">Itens cadastrados</p>
-            <p className="mt-1 text-base font-semibold text-neutral-100">{items.length}</p>
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/55">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Itens cadastrados</p>
+            <p className="mt-1 text-base font-semibold text-neutral-800 dark:text-neutral-100">{items.length}</p>
           </div>
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950/50 p-3">
-            <p className="text-xs text-neutral-400">Total de percentual</p>
-            <p className="mt-1 text-base font-semibold text-neutral-100">{roundedTotal.toFixed(2)}%</p>
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/55">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Total de percentual</p>
+            <p className="mt-1 text-base font-semibold text-neutral-800 dark:text-neutral-100">{roundedTotal.toFixed(2)}%</p>
           </div>
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950/50 p-3">
-            <p className="text-xs text-neutral-400">Status do rateio</p>
-            <p className={["mt-1 text-sm font-semibold", disabled ? "text-amber-300" : "text-emerald-300"].join(" ")}>
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/55">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Status do rateio</p>
+            <p className={["mt-1 text-sm font-semibold", disabled ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300"].join(" ")}>
               {disabled ? "Pendente de ajustes" : "Pronto para salvar"}
             </p>
           </div>
         </div>
 
         {items.length === 0 ? (
-          <div className="rounded-lg border border-neutral-800 bg-neutral-950/40 p-4 text-sm text-neutral-400">
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-4 text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900/55 dark:text-neutral-400">
             Nenhum item de rateio disponivel.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-neutral-800">
-            <table className="w-full min-w-[930px] text-sm">
-              <thead className="bg-neutral-950 text-left text-xs uppercase tracking-wide text-neutral-400">
+          <div className="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
+            <table className="w-full min-w-[930px] text-sm text-neutral-700 dark:text-neutral-100">
+              <thead className="bg-neutral-100 text-left text-xs uppercase tracking-wide text-neutral-600 dark:bg-neutral-800/80 dark:text-neutral-300">
                 <tr>
                   <th className="px-3 py-2">Centro de custo</th>
                   <th className="px-3 py-2">Loja</th>
@@ -493,9 +496,9 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                   <th className="px-3 py-2">Acoes</th>
                 </tr>
               </thead>
-              <tbody className="text-neutral-100">
+              <tbody className="text-neutral-700 dark:text-neutral-100">
                 {items.map((item, index) => (
-                  <tr key={item.key} className="border-t border-neutral-800 hover:bg-neutral-900/40">
+                  <tr key={item.key} className="border-t border-neutral-200 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800/60">
                     <td className="px-3 py-2 align-top">
                       <div className="flex items-center gap-2">
                         <input
@@ -508,7 +511,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                               isNew: true,
                             })
                           }
-                          className="w-32 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                          className={`w-32 ${fieldControlBaseClass}`}
                           placeholder="ID"
                           disabled={!item.isNew && isEdit}
                         />
@@ -533,7 +536,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                               isNew: true,
                             })
                           }
-                          className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                          className={`w-24 ${fieldControlBaseClass}`}
                           placeholder="Loja"
                           disabled={!item.isNew && isEdit}
                         />
@@ -546,7 +549,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                         </IconButton>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-xs text-neutral-300 align-top">
+                    <td className="px-3 py-2 align-top text-xs text-neutral-600 dark:text-neutral-300">
                       <div>{costCenterLabel(item.costCenterId)}</div>
                       <div>{storeLabel(item.storeId)}</div>
                     </td>
@@ -559,13 +562,13 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                         onChange={(e) =>
                           handleChange(index, { percentage: e.target.value === "" ? null : Number(e.target.value) })
                         }
-                        className="w-32 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                        className={`w-32 ${fieldControlBaseClass}`}
                         placeholder="0,00"
                         disabled={mode !== "percentage"}
                       />
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <span className="text-xs text-neutral-300">
+                      <span className="text-xs text-neutral-600 dark:text-neutral-300">
                         {mode === "participation" ? "Participacao" : "Porcentagem"}
                       </span>
                     </td>
@@ -594,14 +597,14 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
           aria-modal="true"
           role="dialog"
         >
-          <div className="w-full max-w-3xl rounded-xl border border-neutral-800 bg-neutral-900 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-neutral-800 p-4">
-              <h2 className="text-lg font-semibold text-neutral-100">
+          <div className="w-full max-w-3xl rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="flex items-center justify-between border-b border-neutral-200 p-4 dark:border-neutral-700">
+              <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
                 {lookupType === "costCenter" ? "Selecionar centro de custo" : "Selecionar loja"}
               </h2>
               <button
                 type="button"
-                className="text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                className="cursor-pointer text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-white"
                 onClick={() => setLookupOpen(false)}
                 aria-label="Fechar"
               >
@@ -610,17 +613,17 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
             </div>
             <div className="p-4 space-y-4">
               <input
-                className="w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                className={fieldControlBaseClass}
                 placeholder="Buscar..."
                 value={lookupSearch}
                 onChange={(e) => setLookupSearch(e.target.value)}
               />
               {lookupLoading ? (
-                <div className="text-sm text-neutral-400">Carregando...</div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400">Carregando...</div>
               ) : (
-                <div className="max-h-[360px] overflow-y-auto rounded-xl border border-neutral-800">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-neutral-950 text-left text-neutral-300">
+                <div className="max-h-[360px] overflow-y-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <table className="min-w-full text-sm text-neutral-700 dark:text-neutral-100">
+                    <thead className="bg-neutral-100 text-left text-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
                       <tr>
                         <th className="p-3 w-28">ID</th>
                         <th className="p-3">Descrição</th>
@@ -630,16 +633,16 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                       {lookupRows.map((row) => (
                         <tr
                           key={row.id}
-                          className="border-t border-neutral-800 hover:bg-neutral-800/60 cursor-pointer"
+                          className="cursor-pointer border-t border-neutral-200 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800/60"
                           onClick={() => selectLookupValue(row.id)}
                         >
-                          <td className="p-3 text-neutral-100">{row.id}</td>
-                          <td className="p-3 text-neutral-200">{row.label}</td>
+                          <td className="p-3 text-neutral-700 dark:text-neutral-100">{row.id}</td>
+                          <td className="p-3 text-neutral-700 dark:text-neutral-200">{row.label}</td>
                         </tr>
                       ))}
                       {lookupRows.length === 0 && (
                         <tr>
-                          <td colSpan={2} className="p-4 text-center text-neutral-400">
+                          <td colSpan={2} className="p-4 text-center text-neutral-500 dark:text-neutral-400">
                             Nenhum resultado encontrado.
                           </td>
                         </tr>

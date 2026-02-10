@@ -1,72 +1,76 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { ParameterListItem, ParameterEffective } from '../types/parameters';
-import Tag from '../../../../components/Tag';
-import StoreSelect from '../../../../components/inputs/StoreSelect';
-import DefaultButton from '../../../../components/inputs/DefaultButton';
-import { ValueEditor } from './ValueEditors';
-import { patchParameter } from '../services/parametersApi';
-import SimpleTable, { type Column } from '../../../../components/table/SimpleTable';
+import { useEffect, useMemo, useState } from "react";
+import DefaultButton from "../../../../components/inputs/DefaultButton";
+import StoreSelect from "../../../../components/inputs/StoreSelect";
+import Tag from "../../../../components/Tag";
+import SimpleTable, { type Column } from "../../../../components/table/SimpleTable";
+import { patchParameter } from "../services/parametersApi";
+import type { ParameterEffective, ParameterListItem } from "../types/parameters";
+import { ValueEditor } from "./ValueEditors";
 
 type RowState = {
-  value: any;
+  value: unknown;
   saving: boolean;
   error: string | null;
 };
 
-// Normaliza o valor vindo do backend para o formato que o editor espera
-function normalizeForEditor(type: ParameterListItem['type'], value: any) {
+function normalizeForEditor(type: ParameterListItem["type"], value: unknown) {
   switch (type) {
-    case 'BOOL': {
-      if (typeof value === 'boolean') return value;
-      if (typeof value === 'number') return value !== 0;
-      if (typeof value === 'string') {
+    case "BOOL": {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") return value !== 0;
+      if (typeof value === "string") {
         const s = value.trim().toLowerCase();
-        if (s === 'true' || s === '1') return true;
-        if (s === 'false' || s === '0' || s === '') return false;
-        return s === 'true';
+        if (s === "true" || s === "1") return true;
+        if (s === "false" || s === "0" || s === "") return false;
       }
       return !!value;
     }
-    case 'INT': {
-      if (value === null || value === undefined || value === '') return null;
-      if (typeof value === 'number' && Number.isInteger(value)) return value;
+    case "INT": {
+      if (value === null || value === undefined || value === "") return null;
+      if (typeof value === "number" && Number.isInteger(value)) return value;
       const s = String(value).trim();
       return /^-?\d+$/.test(s) ? Number(s) : null;
     }
-    case 'JSON': {
-      if (value == null || value === '') return null;
-      if (typeof value === 'object') return value;
-      if (typeof value === 'string') {
-        try { return JSON.parse(value); } catch { return null; }
+    case "JSON": {
+      if (value == null || value === "") return null;
+      if (typeof value === "object") return value;
+      if (typeof value === "string") {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
       }
       return null;
     }
-    case 'STRING':
+    case "STRING":
     default:
-      return value == null ? '' : String(value);
+      return value == null ? "" : String(value);
   }
 }
 
-// Serializa para string (a API exige string)
-function toWireString(value: any, type: ParameterListItem['type']): string {
+function toWireString(value: unknown, type: ParameterListItem["type"]): string {
   switch (type) {
-    case 'STRING':
-      return value == null ? '' : String(value);
-    case 'INT': {
-      if (value == null || value === '') return '';
+    case "STRING":
+      return value == null ? "" : String(value);
+    case "INT": {
+      if (value == null || value === "") return "";
       const s = String(value).trim();
       if (/^-?\d+$/.test(s)) return s;
-      throw new Error('Valor inválido: esperado inteiro');
+      throw new Error("Valor invalido: esperado inteiro.");
     }
-    case 'BOOL':
-      return value ? 'true' : 'false';
-    case 'JSON': {
-      if (value == null || value === '') return '';
-      try { return JSON.stringify(value); }
-      catch { throw new Error('JSON inválido'); }
+    case "BOOL":
+      return value ? "true" : "false";
+    case "JSON": {
+      if (value == null || value === "") return "";
+      try {
+        return JSON.stringify(value);
+      } catch {
+        throw new Error("JSON invalido.");
+      }
     }
     default:
-      return String(value ?? '');
+      return String(value ?? "");
   }
 }
 
@@ -85,14 +89,8 @@ export default function ParameterTable({
   showStoreSelect: boolean;
   onOneSaved: (eff: ParameterEffective) => void;
 }) {
-  // Estado por linha, indexado por code (preserva edições locais)
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
 
-  /**
-   * 🔑 Reidratar/ressincronizar SEMPRE que `items` mudar
-   * (ou seja, quando a requisição com o storeId atual terminar).
-   * Evita “um passo atrás” ao trocar de loja.
-   */
   useEffect(() => {
     setRowState(() => {
       const next: Record<string, RowState> = {};
@@ -110,155 +108,181 @@ export default function ParameterTable({
   function updateRow(code: string, patch: Partial<RowState>) {
     setRowState((prev) => ({
       ...prev,
-      [code]: { ...(prev[code] || { value: undefined, saving: false, error: null }), ...patch },
+      [code]: {
+        ...(prev[code] || { value: undefined, saving: false, error: null }),
+        ...patch,
+      },
     }));
   }
 
   function isDisabled(it: ParameterListItem): boolean {
-    if (it.scope === 'GLOBAL') return false;
-    if (it.scope === 'STORE') return !selectedStoreId;
-    // BOTH: pode salvar global (sem loja) ou override (com loja)
+    if (it.scope === "GLOBAL") return false;
+    if (it.scope === "STORE") return !selectedStoreId;
     return false;
   }
 
   function helperText(it: ParameterListItem): string | undefined {
-    if (it.scope === 'STORE' && !selectedStoreId) return 'Selecione uma loja para salvar (escopo STORE).';
-    if (it.scope === 'BOTH' && !selectedStoreId) return 'Sem loja selecionada: salvará como GLOBAL.';
-    if (it.scope === 'BOTH' && selectedStoreId) return `Salvará override para a loja #${selectedStoreId}.`;
+    if (it.scope === "STORE" && !selectedStoreId) {
+      return "Selecione uma loja para salvar (escopo STORE).";
+    }
+    if (it.scope === "BOTH" && !selectedStoreId) {
+      return "Sem loja selecionada: sera salvo como GLOBAL.";
+    }
+    if (it.scope === "BOTH" && selectedStoreId) {
+      return `Sera salvo override para a loja #${selectedStoreId}.`;
+    }
     return undefined;
   }
 
   async function handleSave(it: ParameterListItem) {
     const st = rowState[it.code] || { value: it.value, saving: false, error: null };
-    const mustStore = it.scope === 'STORE';
-    const useStore = it.scope === 'STORE' || (it.scope === 'BOTH' && selectedStoreId != null);
+    const mustStore = it.scope === "STORE";
+    const useStore = it.scope === "STORE" || (it.scope === "BOTH" && selectedStoreId != null);
     const sid = useStore ? (selectedStoreId ?? undefined) : undefined;
 
     if (mustStore && !sid) {
-      updateRow(it.code, { error: 'Selecione uma loja para salvar este parâmetro.' });
+      updateRow(it.code, { error: "Selecione uma loja para salvar este parametro." });
       return;
     }
 
     let wire: string;
     try {
       wire = toWireString(st.value, it.type);
-    } catch (e: any) {
-      updateRow(it.code, { error: e?.message || 'Valor inválido' });
+    } catch (error) {
+      updateRow(it.code, {
+        error: error instanceof Error ? error.message : "Valor invalido.",
+      });
       return;
     }
 
     updateRow(it.code, { saving: true, error: null });
     try {
-      const eff = await patchParameter(token, it.code, wire, sid); // API recebe string
+      const eff = await patchParameter(token, it.code, wire, sid);
       onOneSaved(eff);
-    } catch (e: any) {
-      updateRow(it.code, { saving: false, error: e?.message || 'Erro ao salvar' });
+    } catch (error) {
+      updateRow(it.code, {
+        saving: false,
+        error: error instanceof Error ? error.message : "Erro ao salvar.",
+      });
       return;
     }
     updateRow(it.code, { saving: false });
   }
 
-  // Colunas do SimpleTable
-  const columns: Column<ParameterListItem>[] = useMemo(() => {
-    return [
+  const columns: Column<ParameterListItem>[] = useMemo(
+    () => [
       {
-        key: 'code',
-        header: 'Código',
+        key: "code",
+        header: "Codigo",
         width: 260,
         resizable: true,
         sortable: true,
         sortAccessor: (r) => r.code,
-        cell: (row) => <span className="font-mono text-xs">{row.code}</span>,
-        overflow: 'ellipsis',
+        cell: (row) => <span className="font-mono text-xs text-neutral-700 dark:text-neutral-300">{row.code}</span>,
+        overflow: "ellipsis",
       },
       {
-        key: 'description',
-        header: 'Descrição',
+        key: "description",
+        header: "Descricao",
         width: 360,
         resizable: true,
         sortable: true,
-        sortAccessor: (r) => r.description ?? '',
-        cell: (row) => <span className="text-sm">{row.description}</span>,
-        overflow: 'wrap',
+        sortAccessor: (r) => r.description ?? "",
+        cell: (row) => <span className="text-sm text-neutral-700 dark:text-neutral-200">{row.description}</span>,
+        overflow: "wrap",
       },
       {
-        key: 'type',
-        header: 'Tipo',
-        width: 120,
-        resizable: true,
-        cell: (row) => <Tag className="border-gray-300 text-gray-700">{row.type}</Tag>,
-        align: 'left',
-      },
-      {
-        key: 'source',
-        header: 'Fonte',
+        key: "type",
+        header: "Tipo",
         width: 120,
         resizable: true,
         cell: (row) => (
-          <Tag className={row.source === 'STORE' ? 'border-amber-400 text-amber-600' : 'border-sky-300 text-sky-700'}>
-            {row.source || '—'}
+          <Tag className="border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-white/15 dark:bg-white/10 dark:text-neutral-200">
+            {row.type}
           </Tag>
         ),
-        align: 'left',
+        align: "left",
       },
       {
-        key: 'value',
-        header: 'Valor',
+        key: "source",
+        header: "Fonte",
+        width: 130,
+        resizable: true,
+        cell: (row) => (
+          <Tag
+            className={
+              row.source === "STORE"
+                ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/35 dark:bg-amber-500/12 dark:text-amber-200"
+                : "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-500/35 dark:bg-sky-500/12 dark:text-sky-200"
+            }
+          >
+            {row.source || "-"}
+          </Tag>
+        ),
+        align: "left",
+      },
+      {
+        key: "value",
+        header: "Valor",
         width: 520,
         resizable: true,
         cell: (row) => {
           const st = rowState[row.code] || { value: row.value, saving: false, error: null };
           const disabled = isDisabled(row) || st.saving;
           const hint = helperText(row);
+
           return (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <ValueEditor
                 type={row.type}
                 value={st.value}
                 onChange={(v) => updateRow(row.code, { value: v })}
                 disabled={disabled}
               />
-              {!!hint && <p className="text-xs text-gray-500">{hint}</p>}
-              {!!st.error && <p className="text-xs text-red-600">{st.error}</p>}
+              {hint && <p className="text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
+              {st.error && <p className="text-xs text-red-600 dark:text-red-300">{st.error}</p>}
             </div>
           );
         },
-        overflow: 'wrap',
+        overflow: "wrap",
       },
       {
-        key: 'action',
-        header: 'Ação',
+        key: "action",
+        header: "Acao",
         width: 140,
         resizable: true,
         cell: (row) => {
           const st = rowState[row.code] || { value: row.value, saving: false, error: null };
           const disabled = isDisabled(row) || st.saving;
+
           return (
             <DefaultButton
               onClick={() => handleSave(row)}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-lg px-3 py-1.5 text-sm"
               disabled={disabled}
             >
-              {st.saving ? 'Salvando…' : 'Salvar'}
+              {st.saving ? "Salvando..." : "Salvar"}
             </DefaultButton>
           );
         },
-        align: 'left',
+        align: "left",
       },
-    ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowState, selectedStoreId]);
+    ],
+    [rowState, selectedStoreId],
+  );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {showStoreSelect && (
-        <div className="flex items-center justify-end gap-2">
-          <span className="text-xs text-gray-600">Loja (para visualizar/editar overrides por loja):</span>
-          <div className="min-w-[260px]">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-white/10 dark:bg-pilar-default-bg-dark/35">
+          <span className="text-xs text-neutral-600 dark:text-neutral-300">
+            Loja para visualizar/editar overrides por loja:
+          </span>
+          <div className="min-w-[260px] flex-1 sm:max-w-xs">
             <StoreSelect
               value={selectedStoreId}
               onChange={onChangeStoreId}
-              placeholder="Selecione a loja…"
+              placeholder="Selecione a loja..."
               syncUrl={false}
               onlyActive
             />
@@ -270,6 +294,17 @@ export default function ParameterTable({
         columns={columns}
         data={items}
         loading={false}
+        emptyMessage={
+          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+            Nenhum parametro encontrado para este grupo.
+          </span>
+        }
+        wrapperClassName="rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-white/10 dark:bg-pilar-default-bg-dark/30"
+        tableClassName="w-full text-left text-sm text-neutral-800 dark:text-neutral-100"
+        headerWrapperClassName="bg-neutral-100 text-neutral-700 dark:bg-pilar-default-bg2-dark dark:text-neutral-200"
+        headerCellClassName="font-semibold"
+        rowBaseClassName="border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50/80 dark:border-white/10 dark:hover:bg-white/5"
+        cellBaseClassName="align-top"
         stickyHeader={false}
         getRowKey={(r) => r.code}
       />

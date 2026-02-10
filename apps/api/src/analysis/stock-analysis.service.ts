@@ -19,6 +19,24 @@ export class StockAnalysisService {
     return String(d).slice(0, 10);
   }
 
+  private fmtDateTime(d: unknown): string {
+    if (!d) return '';
+    if (d instanceof Date) {
+      if (Number.isNaN(d.getTime())) return '';
+      return d.toISOString();
+    }
+
+    if (typeof d === 'string') {
+      const parsed = new Date(d);
+      if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+      return d;
+    }
+
+    const parsed = new Date(d as any);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+    return String(d);
+  }
+
   private isPastDay(dateISO: string) {
     const now = new Date();
     const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -122,7 +140,8 @@ export class StockAnalysisService {
     if (liveDays.length) {
       const live = await this.computeDailyFromPg(lojas, liveDays[0], liveDays[liveDays.length - 1]);
       for (const row of live) {
-        const data = row.data.slice(0, 10);
+        const data = this.fmtDate(row?.data);
+        if (!data) continue;
         const acc = map.get(data) || { data, custo_total_anterior: 0, custo_total_final: 0, dif_custo_total: 0 };
         acc.custo_total_anterior += Number(row.custo_total_anterior || 0);
         acc.custo_total_final    += Number(row.custo_total_final || 0);
@@ -176,7 +195,8 @@ export class StockAnalysisService {
 
     for (const r of cachedAll) {
       for (const p of ((r.data as any[]) || [])) {
-        const key = p.data;
+        const key = this.fmtDateTime(p?.data);
+        if (!key) continue;
         const acc = series.get(key) || { data: key, custo_total_anterior: 0, custo_total_final: 0, dif_custo_total: 0 };
         acc.custo_total_anterior += Number(p.custo_total_anterior || 0);
         acc.custo_total_final    += Number(p.custo_total_final || 0);
@@ -188,7 +208,8 @@ export class StockAnalysisService {
     if (!past) {
       const live = await this.computeTimelineFromPg(lojas, data);
       for (const p of live) {
-        const key = p.data;
+        const key = this.fmtDateTime(p?.data);
+        if (!key) continue;
         const acc = series.get(key) || { data: key, custo_total_anterior: 0, custo_total_final: 0, dif_custo_total: 0 };
         acc.custo_total_anterior += Number(p.custo_total_anterior || 0);
         acc.custo_total_final    += Number(p.custo_total_final || 0);

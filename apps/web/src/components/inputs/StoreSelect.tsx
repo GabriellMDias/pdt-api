@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { fieldControlInteractiveClass } from "./styles";
 
 type Store = {
   id: number;
@@ -44,11 +45,11 @@ type Props = {
   autoSelectIfSingle?: boolean;
 };
 
-const API_BASE = '';
+const API_BASE = "";
 
 function authHeaders(token?: string | null): Record<string, string> {
   return {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -57,13 +58,13 @@ export default function StoreSelect({
   permissionCode,
   value = null,
   onChange,
-  placeholder = 'Selecione a loja…',
+  placeholder = "Selecione a loja…",
   onlyActive = false,
   className,
   disabled,
   syncUrl = false,
-  urlParamKey = 'storeId',
-  legacyUrlKeys = ['loja'],
+  urlParamKey = "storeId",
+  legacyUrlKeys = ["loja"],
   replaceHistory = true,
   autoSelectIfSingle = true,
 }: Props) {
@@ -73,8 +74,8 @@ export default function StoreSelect({
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const [sp, setSearchParams] = useSearchParams();
-  const isAdmin = userId === 0 || String(userId) === '0';
-  const perms = (permissions as Permission[] | undefined) || [];
+  const isAdmin = userId === 0 || String(userId) === "0";
+  const perms = permissions as Permission[] | undefined;
   const permsReady = permissions !== undefined && permissions !== null;
 
   const didInitFromUrl = useRef(false);
@@ -84,10 +85,13 @@ export default function StoreSelect({
   useEffect(() => {
     if (!syncUrl || didInitFromUrl.current) return;
 
-    const raw = sp.get(urlParamKey) || legacyUrlKeys.map((k) => sp.get(k) || '').find(Boolean) || '';
+    const raw =
+      sp.get(urlParamKey) ||
+      legacyUrlKeys.map((k) => sp.get(k) || "").find(Boolean) ||
+      "";
     const id = Number(raw.trim());
 
-    if (id && (value === null || value === undefined || value === '')) {
+    if (id && (value === null || value === undefined || value === "")) {
       const parsed = Number.isNaN(Number(id)) ? id : Number(id);
       onChange(parsed);
     }
@@ -109,14 +113,17 @@ export default function StoreSelect({
     const ac = new AbortController();
     setLoading(true);
     setFetchError(null);
-    fetch(`${API_BASE}/api/stores`, { signal: ac.signal, headers: authHeaders(token) })
+    fetch(`${API_BASE}/api/stores`, {
+      signal: ac.signal,
+      headers: authHeaders(token),
+    })
       .then(async (r) => {
-        if (!r.ok) throw new Error('Falha ao carregar lojas');
+        if (!r.ok) throw new Error("Falha ao carregar lojas");
         return r.json();
       })
       .then((data: Store[]) => setStores(data.filter((s) => s.id !== 0)))
       .catch((e) => {
-        if (e.name !== 'AbortError') setFetchError(String(e.message || e));
+        if (e.name !== "AbortError") setFetchError(String(e.message || e));
       })
       .finally(() => setLoading(false));
     return () => ac.abort();
@@ -126,7 +133,9 @@ export default function StoreSelect({
   const allowedIds: number[] | null = useMemo(() => {
     if (isAdmin || !permissionCode) return null; // sem restrição
     if (!permsReady) return null;
-    const perm = perms.find((p) => (p as Permission).code === permissionCode) as Permission | undefined;
+    const perm = perms?.find(
+      (p) => (p as Permission).code === permissionCode,
+    ) as Permission | undefined;
     if (!perm) return [];
     if (!perm.useStorePermission) return null;
     if (perm.global) return null;
@@ -146,7 +155,10 @@ export default function StoreSelect({
     if (loading || !permsReady) return;
 
     const allowedSet = new Set(filteredStores.map((s) => String(s.id)));
-    const current = value === null || value === undefined || value === '' ? null : String(value);
+    const current =
+      value === null || value === undefined || value === ""
+        ? null
+        : String(value);
 
     // Se valor atual não é permitido, limpa
     if (current && !allowedSet.has(current)) {
@@ -157,14 +169,24 @@ export default function StoreSelect({
     if (!current && autoSelectIfSingle && filteredStores.length === 1) {
       onChange(filteredStores[0].id);
     }
-  }, [filteredStores, value, onChange, autoSelectIfSingle, loading, permsReady]);
+  }, [
+    filteredStores,
+    value,
+    onChange,
+    autoSelectIfSingle,
+    loading,
+    permsReady,
+  ]);
 
   // 6) Escreve na URL quando seleção muda
   useEffect(() => {
     if (!syncUrl || !didInitFromUrl.current) return;
 
-    const current = value === null || value === undefined || value === '' ? '' : String(value);
-    const currentInUrl = sp.get(urlParamKey) || '';
+    const current =
+      value === null || value === undefined || value === ""
+        ? ""
+        : String(value);
+    const currentInUrl = sp.get(urlParamKey) || "";
 
     if (current === currentInUrl) {
       lastUrlValueRef.current = current;
@@ -186,33 +208,43 @@ export default function StoreSelect({
     () =>
       filteredStores.map((s) => ({
         value: s.id,
-        label: `${s.description || s.storeName} (#${s.id})`,
+        label: `${s.storeName} (#${s.id})`,
       })),
-    [filteredStores]
+    [filteredStores],
   );
 
-  const isDisabled = disabled || loading || !!fetchError || options.length === 0;
-  const selectValue = value === null || value === undefined ? '' : String(value);
+  const isDisabled =
+    disabled || loading || !!fetchError || options.length === 0;
+  const selectValue =
+    value === null || value === undefined ? "" : String(value);
 
   return (
     <div className={className}>
       <select
-        className={`w-full rounded-md border px-3 py-2 text-sm bg-pilar-default-bg-dark cursor-pointer ${className || ''}`}
+        className={fieldControlInteractiveClass}
         value={selectValue}
         onChange={(e) => {
           const v = e.target.value;
-          onChange(v === '' ? null : Number(v));
+          onChange(v === "" ? null : Number(v));
         }}
         disabled={isDisabled}
       >
-        <option value="">{loading ? 'Carregando lojas…' : fetchError ? 'Erro ao carregar lojas' : placeholder}</option>
+        <option value="">
+          {loading
+            ? "Carregando lojas…"
+            : fetchError
+              ? "Erro ao carregar lojas"
+              : placeholder}
+        </option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
       </select>
-      {fetchError && <p className="mt-1 text-xs text-red-600">Erro: {fetchError}</p>}
+      {fetchError && (
+        <p className="mt-1 text-xs text-red-600">Erro: {fetchError}</p>
+      )}
     </div>
   );
 }

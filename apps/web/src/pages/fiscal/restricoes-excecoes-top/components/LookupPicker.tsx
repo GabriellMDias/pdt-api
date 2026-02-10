@@ -124,12 +124,12 @@ export default function LookupPicker<T>({
 return (
   <div className="space-y-2 flex flex-col min-h-0">
     <div className="flex flex-col gap-2 shrink-0">
-      <div className="text-sm font-semibold text-neutral-700">{title}</div>
+      <div className="text-sm font-semibold text-neutral-700 dark:text-neutral-100">{title}</div>
       <DefaultInput
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-white border border-gray-200 text-black"
+        className="w-full"
       />
     </div>
 
@@ -148,8 +148,8 @@ return (
           setLimit(next);
           setPage(1);
         }}
-        className="border border-gray-200"
-        tableClassName="w-full text-sm text-left"
+        className="border border-gray-200 dark:border-neutral-700 dark:bg-neutral-900/35 dark:text-neutral-100"
+        tableClassName="w-full text-sm text-left text-neutral-800 dark:text-neutral-100"
         getRowKey={(row, idx) => {
           const item = mapRow(row);
           return item?.id ?? idx;

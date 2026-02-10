@@ -2,6 +2,11 @@
 import { useEffect, useMemo, useRef, useCallback } from "react";
 import type { SelectHTMLAttributes, ReactNode, ChangeEventHandler } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  fieldControlInteractiveClass,
+  fieldHintClass,
+  fieldLabelClass,
+} from "./styles";
 
 type Option = { value: string | number; label: ReactNode; disabled?: boolean };
 type Value = string | number | "";
@@ -154,7 +159,7 @@ export default function DefaultSelect({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-xs text-neutral-600 dark:text-neutral-300 mb-1">
+        <label className={fieldLabelClass}>
           {label}
         </label>
       )}
@@ -162,9 +167,7 @@ export default function DefaultSelect({
         value={value === undefined || value === null ? "" : String(value)}
         onChange={handleChange}
         className={`
-          w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm
-          dark:bg-pilar-default-bg-dark dark:border-neutral-700
-          focus:outline-none focus:ring-2 focus:ring-pilar-green cursor-pointer
+          ${fieldControlInteractiveClass}
           ${className}
         `}
         {...rest}
@@ -175,7 +178,7 @@ export default function DefaultSelect({
           </option>
         ))}
       </select>
-      {hint && <p className="mt-1 text-xs text-neutral-500">{hint}</p>}
+      {hint && <p className={fieldHintClass}>{hint}</p>}
     </div>
   );
 }

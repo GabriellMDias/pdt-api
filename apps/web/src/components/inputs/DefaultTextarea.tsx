@@ -1,4 +1,5 @@
 import type { TextareaHTMLAttributes } from "react";
+import { fieldControlBaseClass, fieldHintClass, fieldLabelClass } from "./styles";
 
 type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label?: string;
@@ -14,17 +15,16 @@ export default function DefaultTextarea({
   return (
     <label className="block">
       {label && (
-        <span className="mb-1 block text-sm text-neutral-300">{label}</span>
+        <span className={fieldLabelClass}>{label}</span>
       )}
       <textarea
         className={`
-          w-full rounded-xl border border-neutral-700 bg-neutral-900 p-3
-          text-sm outline-none focus:ring-2 focus:ring-pilar-green
+          ${fieldControlBaseClass} p-3
           ${className}
         `}
         {...rest}
       />
-      {hint && <span className="mt-1 block text-xs text-neutral-400">{hint}</span>}
+      {hint && <span className={fieldHintClass}>{hint}</span>}
     </label>
   );
 }

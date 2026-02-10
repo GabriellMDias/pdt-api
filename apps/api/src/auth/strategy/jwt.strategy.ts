@@ -1,12 +1,15 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/config/users/users.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor(private configService: ConfigService, private usersService: UsersService) {
+  constructor(
+    private configService: ConfigService,
+    private usersService: UsersService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -17,23 +20,27 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: { userId: number }) {
-    const userWithPermissions = await this.usersService.findUserWithPermissions(payload.userId)
-
-     // ✅ Se for o super admin, libera tudo
-    const isSuperAdmin = userWithPermissions.id === 0;
-
-    const permissions = isSuperAdmin
-      ? ['*'] // o guard pode interpretar isso como "acesso total"
-      : userWithPermissions.UserPermission.map((p) => p.permission.code);
+    const userWithPermissions = await this.usersService.findUserWithPermissions(
+      payload.userId,
+    );
 
     if (!userWithPermissions) {
       throw new UnauthorizedException();
     }
 
+    if (!userWithPermissions.activeStatus) {
+      throw new UnauthorizedException('Usuario inativo');
+    }
+
+    const isSuperAdmin = userWithPermissions.id === 0;
+    const permissions = isSuperAdmin
+      ? ['*']
+      : userWithPermissions.UserPermission.map((p) => p.permission.code);
+
     return {
       id: userWithPermissions.id,
       email: userWithPermissions.email,
-      permissions, // ['users:consultar', 'users:incluir', ...]
+      permissions,
     };
   }
 }

@@ -91,14 +91,17 @@ export default function JobsForm({
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-4 text-neutral-800 dark:text-neutral-100" onSubmit={handleSubmit}>
       {/* Barra de ações fixa */}
-      <div className="
-        sticky top-2 z-10
-        flex items-center justify-between
-        rounded-xl border border-neutral-800 bg-neutral-900/70 backdrop-blur
-        px-2 py-1
-      ">
+      <div
+        className="
+          sticky top-2 z-10
+          flex items-center justify-between
+          rounded-xl border border-neutral-200 bg-white/95 shadow-sm backdrop-blur
+          px-2 py-1
+          dark:border-neutral-700 dark:bg-neutral-900/70
+        "
+      >
         <IconButton onClick={onCancel}><ChevronLeftIcon /></IconButton>
         <DefaultButton type="submit" disabled={submitting || !maySubmit || !canSubmitLocal()}>
           {submitting ? "Salvando..." : isEdit ? "Salvar" : "Criar"}
@@ -110,8 +113,8 @@ export default function JobsForm({
         {/* Coluna esquerda */}
         <div className="lg:col-span-5 space-y-6">
           {/* Seção: Dados básicos */}
-          <section className="rounded-2xl border border-neutral-800 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-200">Dados do job</h3>
+          <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-800 dark:text-neutral-100">Dados do job</h3>
 
             <div className="gap-4">
               <DefaultInput
@@ -150,8 +153,8 @@ export default function JobsForm({
           </section>
 
           {/* Seção: Agendamento (dinâmico) */}
-          <section className="rounded-2xl border border-neutral-800 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-neutral-200">Agendamento</h3>
+          <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/30">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-800 dark:text-neutral-100">Agendamento</h3>
 
             {scheduleType === "CRON" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -1,6 +1,11 @@
 // src/components/inputs/MultiSelect.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
+import {
+  fieldControlBaseClass,
+  fieldControlInteractiveClass,
+  fieldMenuSurfaceClass,
+} from './styles';
 
 export type Option = { value: string | number; label: string; disabled?: boolean };
 
@@ -120,10 +125,8 @@ export default function MultiSelect({
       <button
         type="button"
         className={clsx(
-          'w-full inline-flex items-center justify-between rounded-xl px-3 py-2',
-          'border border-neutral-300 dark:border-neutral-600',
-          'bg-white dark:bg-pilar-default-bg-dark text-sm',
-          'focus:outline-none focus:ring-2 focus:ring-pilar-green cursor-pointer',
+          fieldControlInteractiveClass,
+          'inline-flex items-center justify-between',
           disabled && 'opacity-60 cursor-not-allowed'
         )}
         onClick={() => !disabled && setOpen((o) => !o)}
@@ -133,7 +136,14 @@ export default function MultiSelect({
         disabled={disabled}
         title={Array.isArray(value) && value.length ? value.join(', ') : undefined}
       >
-        <span className="truncate">{buttonLabel}</span>
+        <span
+          className={clsx(
+            'truncate',
+            !value.length && 'text-neutral-500 dark:text-neutral-400'
+          )}
+        >
+          {buttonLabel}
+        </span>
         <svg width="18" height="18" viewBox="0 0 20 20" className="ml-2 opacity-80">
           <path
             d="M6 8l4 4 4-4"
@@ -149,9 +159,8 @@ export default function MultiSelect({
       {open && (
         <div
           className={clsx(
-            'absolute z-20 mt-2 w-full rounded-xl shadow-lg',
-            'bg-white dark:bg-pilar-default-bg-dark',
-            'border border-neutral-200 dark:border-neutral-700'
+            fieldMenuSurfaceClass,
+            'absolute z-20 mt-2 w-full'
           )}
           onKeyDown={onMenuKeyDown}
           role="listbox"
@@ -162,7 +171,7 @@ export default function MultiSelect({
             {showSelectAll ? (
               <button
                 type="button"
-                className="flex items-center gap-2 text-sm px-2 py-1 rounded hover:bg-pilar-default-bg-light/60 dark:hover:bg-neutral-700/50 cursor-pointer"
+                className="flex items-center gap-2 text-sm px-2 py-1 rounded text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-700/50 cursor-pointer"
                 onClick={() => (allSelected ? clearAll() : selectAll())}
               >
                 <span
@@ -180,7 +189,7 @@ export default function MultiSelect({
             {clearable && (
               <button
                 type="button"
-                className="p-1 rounded hover:bg-pilar-default-bg-light/60 dark:hover:bg-neutral-700/50"
+                className="p-1 rounded text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700/50"
                 title="Limpar seleção"
                 onClick={clearAll}
               >
@@ -205,9 +214,8 @@ export default function MultiSelect({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar..."
                 className={clsx(
-                  'w-full mb-2 rounded-lg px-3 py-2 text-sm',
-                  'border border-neutral-300 dark:border-neutral-600',
-                  'bg-white dark:bg-pilar-default-bg2-dark'
+                  fieldControlBaseClass,
+                  'mb-2 rounded-lg'
                 )}
               />
             </div>
@@ -231,9 +239,9 @@ export default function MultiSelect({
                   onMouseEnter={() => setActiveIndex(idx)}
                   onClick={() => toggle(opt.value)}
                   className={clsx(
-                    'w-full flex items-center gap-3 px-3 py-2 text-left text-sm',
-                    'hover:bg-pilar-default-bg-light/60 dark:hover:bg-neutral-700/50 cursor-pointer',
-                    activeIndex === idx && 'bg-pilar-default-bg-light/60 dark:bg-neutral-700/40',
+                    'w-full flex items-center gap-3 px-3 py-2 text-left text-sm text-neutral-800 dark:text-neutral-100',
+                    'hover:bg-neutral-100 dark:hover:bg-neutral-700/50 cursor-pointer',
+                    activeIndex === idx && 'bg-neutral-100 dark:bg-neutral-700/40',
                     opt.disabled && 'opacity-50 cursor-not-allowed'
                   )}
                   role="option"

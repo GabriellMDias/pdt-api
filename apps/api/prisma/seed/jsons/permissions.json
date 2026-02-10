@@ -28,5 +28,6 @@
   {"code": "accounting-reconc:consultar", "label": "Consultar Conciliação Contábil", "useStorePermission": true},
   {"code": "top-restrictions:consultar", "label": "Consultar Restrições da TOP"},
   {"code": "top-restrictions:editar", "label": "Editar Restrições da TOP"},
-  {"code": "ruptura:atualizar-prateleira", "label": "Atualizar Prateleiras", "useStorePermission": true}
+  {"code": "ruptura:atualizar-prateleira", "label": "Atualizar Prateleiras", "useStorePermission": true},
+  {"code": "venda-dia-d:consultar", "label": "Consultar Relatorio Venda Dia D", "useStorePermission": true}
 ]

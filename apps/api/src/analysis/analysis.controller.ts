@@ -28,7 +28,7 @@ export class AnalysisController {
     private readonly stockService: StockAnalysisService,
     private readonly spedService: SpedService,
     private readonly accountingReconcService: AccountingReconcService,
-    private readonly analysisService: AnalysisService
+    private readonly analysisService: AnalysisService,
   ) {}
 
   @Get('types')

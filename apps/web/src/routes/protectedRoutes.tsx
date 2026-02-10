@@ -39,6 +39,7 @@ import CostCenterTypesPage from '../pages/configuracoes/cadastro/cost-center-typ
 import StoresPage from '../pages/configuracoes/cadastro/stores/StoresPage';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsPage from '../pages/configuracoes/notifications/NotificationsPage';
+import VendaDiaDPage from '../pages/administrativo/venda-dia-d/VendaDiaDPage';
 
 
 export interface ProtectedRoute {
@@ -80,6 +81,14 @@ export const protectedRoutes: ProtectedRoute[] = [
         element: <GestaoaVistaPage />,
         showInSidebar: true,
         requiredPermissions: ["cost-center-comparative:consultar"]
+      },
+      {
+        path: '/adm/venda-dia-d',
+        label: 'Venda Dia D',
+        icon: <BackupTableIcon />,
+        element: <VendaDiaDPage />,
+        showInSidebar: true,
+        requiredPermissions: ["venda-dia-d:consultar"]
       },
       {
         label: 'Ruptura Interna',

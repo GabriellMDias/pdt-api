@@ -24,6 +24,7 @@ import { CostCenterComparativeModule } from './adm/cost-center-comparative/cost-
 import { TopModule } from './fiscal/top/top.module';
 import { RupturaModule } from './adm/ruptura/ruptura.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { VendaDiaDModule } from './adm/venda-dia-d/venda-dia-d.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     CostCenterComparativeModule,
     TopModule,
     RupturaModule,
+    VendaDiaDModule,
     NotificationsModule,
   ],
   controllers: [AppController],

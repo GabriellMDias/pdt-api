@@ -51,6 +51,57 @@ npm run version:set -- 1.4.0
 3. Commit das alteracoes de versao.
 4. Gere tag/release no seu fluxo de Git.
 
+## Tag e Release no GitHub
+
+Convencao recomendada de tag: `vX.Y.Z` (ex.: `v1.4.0`).
+
+### Passo a passo
+
+1. Atualize a versao com os scripts do projeto.
+```bash
+npm run version:bump -- patch
+```
+ou
+```bash
+npm run version:set -- 1.4.0
+```
+
+2. Valide o estado do repositorio e rode os testes/builds necessarios.
+```bash
+git status
+npm run build
+```
+
+3. Faça commit da release.
+```bash
+git add package.json apps/api/package.json apps/web/package.json
+git commit -m "chore(release): v1.4.0"
+```
+
+4. Crie uma tag anotada.
+```bash
+git tag -a v1.4.0 -m "Release v1.4.0"
+```
+
+5. Envie branch e tag para o remoto.
+```bash
+git push origin main --follow-tags
+```
+
+6. Publique a release no GitHub.
+- Opcao A (UI): abra a aba Releases no repositório, selecione a tag `v1.4.0`, preencha titulo/notas e publique.
+- Opcao B (GitHub CLI):
+```bash
+gh release create v1.4.0 --title "v1.4.0" --generate-notes
+```
+
+### Verificacao rapida
+
+```bash
+git tag -l "v1.4.0"
+git ls-remote --tags origin
+```
+
 ## Exibicao da versao no frontend
 
 - A Web injeta a versao da raiz via `apps/web/vite.config.ts` em `import.meta.env.VITE_APP_VERSION`.

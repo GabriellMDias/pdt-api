@@ -4,9 +4,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { UserEntity } from './entities/user.entity';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Permissions, PermissionsAny } from 'src/auth/decorators/permissions.decorator';
-import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
+import { VrMasterUserEntity } from './entities/vrmaster-user.entity';
+import { MobileSyncUsersPayloadEntity } from './entities/mobile-sync-user.entity';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Permissions, PermissionsAny } from '../../auth/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
@@ -28,6 +30,20 @@ export class UsersController {
   async findAll() {
     const users = await this.usersService.findAll();
     return users.map((user) => new UserEntity(user))
+  }
+
+  @Get('vrmaster')
+  @PermissionsAny('users:consultar', 'permissions:consultar')
+  @ApiOkResponse({ type: VrMasterUserEntity, isArray: true })
+  async findVrMasterUsers() {
+    const users = await this.usersService.findVrMasterUsers();
+    return users.map((user) => new VrMasterUserEntity(user));
+  }
+
+  @Get('mobile-sync')
+  @ApiOkResponse({ type: MobileSyncUsersPayloadEntity })
+  async findUsersForMobileSync() {
+    return this.usersService.findUsersForMobileSync();
   }
 
   @Get(':id')

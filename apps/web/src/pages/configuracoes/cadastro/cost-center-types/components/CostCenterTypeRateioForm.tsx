@@ -2,10 +2,9 @@ import React from "react";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
 import { IconButton } from "../../../../../components/crud/primitives";
 import { fieldControlBaseClass } from "../../../../../components/inputs/styles";
+import CodeDescriptionLookup from "../../../../../components/lookup/CodeDescriptionLookup";
 import type { CostCenterTypeItem, CreateCostCenterTypePayload, UpdateCostCenterTypePayload } from "../types";
 import { api, authHeaders, API_BASE } from "../../../../../services/api";
 import { useAuth } from "../../../../../hooks/useAuth";
@@ -37,11 +36,7 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
   const [mode, setMode] = React.useState<RateioMode>("percentage");
   const [costCenters, setCostCenters] = React.useState<CostCenterOption[]>([]);
   const [stores, setStores] = React.useState<StoreOption[]>([]);
-  const [lookupOpen, setLookupOpen] = React.useState(false);
-  const [lookupType, setLookupType] = React.useState<"costCenter" | "store">("costCenter");
-  const [lookupRowIndex, setLookupRowIndex] = React.useState<number | null>(null);
-  const [lookupSearch, setLookupSearch] = React.useState("");
-  const [lookupLoading, setLookupLoading] = React.useState(false);
+  const [, setLookupLoading] = React.useState(false);
 
   React.useEffect(() => {
     setDescription(initial?.description ?? "");
@@ -160,94 +155,23 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
 
   const disabled = submitting || !maySubmit || hasMissingFields || hasInvalidMode || hasNoItems || (!isEdit && !description.trim());
 
-  const filteredCostCenters = React.useMemo(() => {
-    if (!lookupSearch.trim()) return costCenters;
-    const q = lookupSearch.toLowerCase();
-    return costCenters.filter((cc) => `${cc.id} ${cc.description}`.toLowerCase().includes(q));
-  }, [costCenters, lookupSearch]);
-
-  const filteredStores = React.useMemo(() => {
-    if (!lookupSearch.trim()) return stores;
-    const q = lookupSearch.toLowerCase();
-    return stores.filter((store) =>
-      `${store.id} ${store.storeName ?? ""} ${store.description ?? ""}`.toLowerCase().includes(q)
-    );
-  }, [stores, lookupSearch]);
-
-  const lookupRows = React.useMemo(
+  const costCenterOptions = React.useMemo(
     () =>
-      lookupType === "costCenter"
-        ? filteredCostCenters.map((row) => ({
-            id: row.id,
-            label: row.description || "-",
-          }))
-        : filteredStores.map((row) => ({
-            id: row.id,
-            label: row.description ?? row.storeName ?? "-",
-          })),
-    [lookupType, filteredCostCenters, filteredStores]
+      costCenters.map((row) => ({
+        code: row.id,
+        description: row.description || "-",
+      })),
+    [costCenters],
   );
 
-  const openLookup = async (type: "costCenter" | "store", rowIndex: number) => {
-    setLookupType(type);
-    setLookupRowIndex(rowIndex);
-    setLookupSearch("");
-    setLookupOpen(true);
-    if (type === "costCenter" && costCenters.length === 0) {
-      await loadCostCenters();
-    }
-    if (type === "store" && stores.length === 0) {
-      await loadStores();
-    }
-  };
-
-  const loadCostCenters = async () => {
-    setLookupLoading(true);
-    try {
-      const data = await api<CostCenterOption[]>(`${API_BASE}/api/cost-centers`, {
-        headers: authHeaders(token),
-      });
-      setCostCenters(data);
-    } finally {
-      setLookupLoading(false);
-    }
-  };
-
-  const loadStores = async () => {
-    setLookupLoading(true);
-    try {
-      const data = await api<StoreOption[]>(`${API_BASE}/api/stores`, {
-        headers: authHeaders(token),
-      });
-      setStores(data);
-    } finally {
-      setLookupLoading(false);
-    }
-  };
-
-  const selectLookupValue = (id: number) => {
-    if (lookupRowIndex === null) return;
-    if (lookupType === "costCenter") {
-      handleChange(lookupRowIndex, { costCenterId: id, isNew: true });
-    } else {
-      handleChange(lookupRowIndex, { storeId: id, isNew: true });
-    }
-    setLookupOpen(false);
-  };
-
-  const costCenterLabel = (id?: number | null) => {
-    if (!id) return "-";
-    const match = costCenters.find((cc) => cc.id === id);
-    return match ? `${match.id} - ${match.description}` : String(id);
-  };
-
-  const storeLabel = (id?: number | null) => {
-    if (!id) return "-";
-    const match = stores.find((store) => store.id === id);
-    if (!match) return String(id);
-    const label = match.storeName || match.description || "-";
-    return `${match.id} - ${label}`;
-  };
+  const storeOptions = React.useMemo(
+    () =>
+      stores.map((row) => ({
+        code: row.id,
+        description: row.description ?? row.storeName ?? "-",
+      })),
+    [stores],
+  );
 
   React.useEffect(() => {
     if (!token) return;
@@ -485,12 +409,11 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
-            <table className="w-full min-w-[930px] text-sm text-neutral-700 dark:text-neutral-100">
+            <table className="w-full min-w-[1200px] text-sm text-neutral-700 dark:text-neutral-100">
               <thead className="bg-neutral-100 text-left text-xs uppercase tracking-wide text-neutral-600 dark:bg-neutral-800/80 dark:text-neutral-300">
                 <tr>
                   <th className="px-3 py-2">Centro de custo</th>
                   <th className="px-3 py-2">Loja</th>
-                  <th className="px-3 py-2">Descricao</th>
                   <th className="px-3 py-2">Percentual</th>
                   <th className="px-3 py-2">Tipo</th>
                   <th className="px-3 py-2">Acoes</th>
@@ -500,58 +423,34 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
                 {items.map((item, index) => (
                   <tr key={item.key} className="border-t border-neutral-200 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800/60">
                     <td className="px-3 py-2 align-top">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          value={item.costCenterId ?? ""}
-                          onChange={(e) =>
-                            handleChange(index, {
-                              costCenterId: e.target.value === "" ? null : Number(e.target.value),
-                              isNew: true,
-                            })
-                          }
-                          className={`w-32 ${fieldControlBaseClass}`}
-                          placeholder="ID"
-                          disabled={!item.isNew && isEdit}
-                        />
-                        <IconButton
-                          onClick={() => openLookup("costCenter", index)}
-                          variant="default"
-                          title="Buscar centro de custo"
-                        >
-                          <SearchIcon />
-                        </IconButton>
-                      </div>
+                      <CodeDescriptionLookup
+                        code={item.costCenterId ?? null}
+                        options={costCenterOptions}
+                        onCodeChange={(selectedCode) =>
+                          handleChange(index, { costCenterId: selectedCode, isNew: true })
+                        }
+                        disabled={!item.isNew && isEdit}
+                        codePlaceholder="ID"
+                        descriptionPlaceholder="Centro de custo"
+                        invalidCodeMessage="Centro de custo invalido."
+                        modalTitle="Selecionar centro de custo"
+                        modalLabelHeader="Descricao"
+                      />
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          value={item.storeId ?? ""}
-                          onChange={(e) =>
-                            handleChange(index, {
-                              storeId: e.target.value === "" ? null : Number(e.target.value),
-                              isNew: true,
-                            })
-                          }
-                          className={`w-24 ${fieldControlBaseClass}`}
-                          placeholder="Loja"
-                          disabled={!item.isNew && isEdit}
-                        />
-                        <IconButton
-                          onClick={() => openLookup("store", index)}
-                          variant="default"
-                          title="Buscar loja"
-                        >
-                          <SearchIcon />
-                        </IconButton>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 align-top text-xs text-neutral-600 dark:text-neutral-300">
-                      <div>{costCenterLabel(item.costCenterId)}</div>
-                      <div>{storeLabel(item.storeId)}</div>
+                      <CodeDescriptionLookup
+                        code={item.storeId ?? null}
+                        options={storeOptions}
+                        onCodeChange={(selectedCode) =>
+                          handleChange(index, { storeId: selectedCode, isNew: true })
+                        }
+                        disabled={!item.isNew && isEdit}
+                        codePlaceholder="ID"
+                        descriptionPlaceholder="Loja"
+                        invalidCodeMessage="Loja invalida."
+                        modalTitle="Selecionar loja"
+                        modalLabelHeader="Descricao"
+                      />
                     </td>
                     <td className="px-3 py-2 align-top">
                       <input
@@ -588,73 +487,6 @@ export default function CostCenterTypeRateioForm({ initial, onCancel, onSubmit, 
           </div>
         )}
       </section>
-      {lookupOpen && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setLookupOpen(false);
-          }}
-          aria-modal="true"
-          role="dialog"
-        >
-          <div className="w-full max-w-3xl rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
-            <div className="flex items-center justify-between border-b border-neutral-200 p-4 dark:border-neutral-700">
-              <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-                {lookupType === "costCenter" ? "Selecionar centro de custo" : "Selecionar loja"}
-              </h2>
-              <button
-                type="button"
-                className="cursor-pointer text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-white"
-                onClick={() => setLookupOpen(false)}
-                aria-label="Fechar"
-              >
-                <CloseIcon fontSize="small" />
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              <input
-                className={fieldControlBaseClass}
-                placeholder="Buscar..."
-                value={lookupSearch}
-                onChange={(e) => setLookupSearch(e.target.value)}
-              />
-              {lookupLoading ? (
-                <div className="text-sm text-neutral-500 dark:text-neutral-400">Carregando...</div>
-              ) : (
-                <div className="max-h-[360px] overflow-y-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <table className="min-w-full text-sm text-neutral-700 dark:text-neutral-100">
-                    <thead className="bg-neutral-100 text-left text-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
-                      <tr>
-                        <th className="p-3 w-28">ID</th>
-                        <th className="p-3">Descrição</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lookupRows.map((row) => (
-                        <tr
-                          key={row.id}
-                          className="cursor-pointer border-t border-neutral-200 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800/60"
-                          onClick={() => selectLookupValue(row.id)}
-                        >
-                          <td className="p-3 text-neutral-700 dark:text-neutral-100">{row.id}</td>
-                          <td className="p-3 text-neutral-700 dark:text-neutral-200">{row.label}</td>
-                        </tr>
-                      ))}
-                      {lookupRows.length === 0 && (
-                        <tr>
-                          <td colSpan={2} className="p-4 text-center text-neutral-500 dark:text-neutral-400">
-                            Nenhum resultado encontrado.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </form>
   );
 }

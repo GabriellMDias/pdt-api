@@ -5,6 +5,27 @@ import { Response } from 'express';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaClientExceptionFilter extends BaseExceptionFilter {
+  private getUniqueConstraintMessage(
+    exception: Prisma.PrismaClientKnownRequestError,
+  ) {
+    const target = exception.meta?.target;
+    const fields = Array.isArray(target)
+      ? target.map(String)
+      : target != null
+        ? [String(target)]
+        : [];
+
+    if (fields.includes('codigoUsuarioVrMaster')) {
+      return 'O codigo de usuario VRMaster informado ja esta vinculado a outro usuario.';
+    }
+
+    if (fields.includes('email')) {
+      return 'Ja existe um usuario cadastrado com este e-mail.';
+    }
+
+    return 'Ja existe um registro com os mesmos dados unicos.';
+  }
+
   catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
     console.error(exception.message);
     const ctx = host.switchToHttp();
@@ -16,7 +37,7 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
         const status = HttpStatus.CONFLICT;
         response.status(status).json({
           statusCode: status,
-          message: message,
+          message: this.getUniqueConstraintMessage(exception),
         });
         break;
       }

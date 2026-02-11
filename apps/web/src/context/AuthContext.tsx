@@ -14,7 +14,7 @@ export interface UserProfile {
 
 interface AuthContextType {
   isAuthenticated: boolean
-  loginUser: (email: string, password: string) => Promise<void>
+  loginUser: (identifier: string, password: string) => Promise<void>
   logout: () => void
   userId: number | null
   user: UserProfile | null

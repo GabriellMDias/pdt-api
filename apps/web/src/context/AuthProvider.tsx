@@ -68,8 +68,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) return <p>Carregando...</p>;
 
-  const loginUser = async (email: string, password: string) => {
-    const response = await login(email, password);
+  const loginUser = async (identifier: string, password: string) => {
+    const response = await login(identifier, password);
     localStorage.setItem("accessToken", response.accessToken);
     setToken(response.accessToken);
 

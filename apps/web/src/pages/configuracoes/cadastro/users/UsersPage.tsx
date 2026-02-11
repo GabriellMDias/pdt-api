@@ -13,12 +13,17 @@ export default function UsersPage() {
   const { token, permissions, userId } = useAuth();
   const perms = useMemo(() => (permissions ?? []) as PermissionBag, [permissions]);
 
-  const { fetchAll, createItem, updateItem, deleteItem } = useUsersCrud(token);
+  const { fetchAll, createItem, updateItem, deleteItem, fetchVrMasterUsers } = useUsersCrud(token);
 
   const columns: Column<User>[] = [
     { key: "id", header: "ID" },
     { key: "name", header: "Nome" },
     { key: "email", header: "E-mail" },
+    {
+      key: "codigoUsuarioVrMaster",
+      header: "Codigo Usuario VRMaster",
+      render: (row) => row.codigoUsuarioVrMaster ?? "-",
+    },
     {
       key: "activeStatus",
       header: "Status",
@@ -50,7 +55,7 @@ export default function UsersPage() {
       createItem={(data) => createItem(data)}
       updateItem={(id: Id, data) => updateItem(id, data)}
       deleteItem={(id: Id) => deleteItem(id)}
-      renderForm={(p) => <UserForm {...p} />}
+      renderForm={(p) => <UserForm {...p} fetchVrMasterUsers={fetchVrMasterUsers} />}
       searchPlaceholder="Buscar por nome ou e-mail..."
       canCreate={canCreate}
       canEdit={canEdit}

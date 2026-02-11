@@ -5,12 +5,14 @@ import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from 'src/db/prisma/prisma.module';
+import { PgModule } from 'src/db/pg/pg.module';
 import { UsersModule } from 'src/config/users/users.module';
 import { JwtStrategy } from './strategy/jwt.strategy';
 
 @Module({
   imports: [
     PrismaModule,
+    PgModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

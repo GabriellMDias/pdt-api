@@ -12,6 +12,7 @@ model User {
   name      String
   email     String   @unique
   password  String
+  codigoUsuarioVrMaster Int? @unique
   activeStatus Boolean @default(true)
   createdAt DateTime @default(now())
   notifyCostCenterType Boolean @default(false)

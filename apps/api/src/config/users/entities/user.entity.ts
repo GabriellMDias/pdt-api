@@ -25,6 +25,9 @@ export class UserEntity implements User{
     @ApiProperty()
     activeStatus: boolean;
 
+    @ApiProperty({ required: false, nullable: true })
+    codigoUsuarioVrMaster: number | null;
+
     @ApiProperty()
     createdAt: Date;
 }

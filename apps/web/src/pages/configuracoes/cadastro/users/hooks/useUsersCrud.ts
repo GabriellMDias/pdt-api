@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { api, authHeaders, API_BASE } from "../../../../../services/api";
-import type { ApiUserPayload, User } from "../types";
+import type { ApiUserPayload, User, VrMasterUser } from "../types";
 import type { Id } from "../../../../../components/crud/GridForm";
 
 export function useUsersCrud(token?: string | null) {
@@ -31,5 +31,11 @@ export function useUsersCrud(token?: string | null) {
     });
   }, [token]);
 
-  return { fetchAll, createItem, updateItem, deleteItem } as const;
+  const fetchVrMasterUsers = useCallback(async () => {
+    return api<VrMasterUser[]>(`${API_BASE}/api/users/vrmaster`, {
+      headers: authHeaders(token),
+    });
+  }, [token]);
+
+  return { fetchAll, createItem, updateItem, deleteItem, fetchVrMasterUsers } as const;
 }

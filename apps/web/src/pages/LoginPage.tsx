@@ -7,7 +7,7 @@ import ThemeSwitch from '../components/ThemeSwitch'
 import { toast } from 'react-toastify'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const { loginUser, isAuthenticated } = useAuth()
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await loginUser(email, password)
+      await loginUser(identifier, password)
       navigate('/home')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -55,11 +55,11 @@ export default function LoginPage() {
         </h2>
         <form onSubmit={handleLogin} className="space-y-4">
           <DefaultInput
-            type="email"
-            label="Email"
-            placeholder='Email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            label="E-mail ou Login VRMaster"
+            placeholder='E-mail ou login'
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             required
           />
           <DefaultInput

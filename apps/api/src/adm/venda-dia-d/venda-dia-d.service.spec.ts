@@ -46,6 +46,23 @@ describe("VendaDiaDService", () => {
     expect(pg.query).toHaveBeenCalledTimes(1);
   });
 
+  it("executa consulta mensal quando viewType for mensal", async () => {
+    prisma.userPermission.findMany.mockResolvedValue([{ storeId: null }]);
+    pg.query.mockResolvedValue({
+      rows: [{ mes: "2026-01-01", qtd_cupom: 10, qtd_cliente: 8, total_venda: 1000, total_desconto: 120 }],
+    });
+
+    const rows = await service.run(1, {
+      storeId: [1, 5],
+      initialDate: "2026-01-01",
+      finalDate: "2026-01-31",
+      viewType: VendaDiaDViewType.Mensal,
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(pg.query).toHaveBeenCalledTimes(1);
+  });
+
   it("bloqueia lojas sem permissao", async () => {
     prisma.userPermission.findMany.mockResolvedValue([{ storeId: 1 }]);
 

@@ -5,6 +5,7 @@ import { ArrayNotEmpty, IsArray, IsDateString, IsEnum, IsInt, Min } from "class-
 export enum VendaDiaDViewType {
   Total = "total",
   Diario = "diario",
+  Mensal = "mensal",
   Periodo = "periodo",
 }
 

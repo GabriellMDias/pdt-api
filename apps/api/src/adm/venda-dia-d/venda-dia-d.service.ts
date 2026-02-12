@@ -17,6 +17,7 @@ type VendaDiaDBaseRow = {
 
 type VendaDiaDTotalRow = VendaDiaDBaseRow;
 type VendaDiaDDailyRow = VendaDiaDBaseRow & { data: string };
+type VendaDiaDMonthlyRow = VendaDiaDBaseRow & { mes: string };
 type VendaDiaDPeriodRow = VendaDiaDBaseRow & { periodo: string };
 
 const PERMISSION_CODE = "venda-dia-d:consultar";
@@ -78,6 +79,37 @@ WHERE v.cancelado = false
   AND v.id_loja = ANY($3::int[])
 GROUP BY v.data::date
 ORDER BY v.data::date;
+`;
+
+const MONTHLY_QUERY = `
+WITH proms AS (
+  SELECT p.id
+  FROM promocao p
+  JOIN promocaotipoclubevantagem ptcv
+    ON ptcv.id_promocao = p.id
+  WHERE p.somenteclubevantagens = true
+    AND ptcv.id_tipoclubevantagem IN (1)
+)
+SELECT
+  DATE_TRUNC('month', v.data)::date AS mes,
+  COUNT(DISTINCT v.id) AS qtd_cupom,
+  COUNT(DISTINCT v.id_clientepreferencial) AS qtd_cliente,
+  COALESCE(SUM(vi.valortotal), 0) AS total_venda,
+  COALESCE(SUM(vi.valordesconto), 0) AS total_desconto
+FROM pdv.venda v
+JOIN pdv.vendaitem vi
+  ON vi.id_venda = v.id
+JOIN pdv.vendapromocao vp
+  ON vp.id_venda = v.id
+JOIN proms p
+  ON p.id = vp.id_promocao
+WHERE v.cancelado = false
+  AND vi.cancelado = false
+  AND v.data >= $1::date
+  AND v.data < ($2::date + INTERVAL '1 day')
+  AND v.id_loja = ANY($3::int[])
+GROUP BY DATE_TRUNC('month', v.data)::date
+ORDER BY DATE_TRUNC('month', v.data)::date;
 `;
 
 const PERIOD_QUERY = `
@@ -165,6 +197,14 @@ export class VendaDiaDService {
       if (dto.viewType === VendaDiaDViewType.Diario) {
         const { rows } = await this.pg.query<VendaDiaDDailyRow, [string, string, number[]]>(
           DAILY_QUERY,
+          params,
+        );
+        return rows;
+      }
+
+      if (dto.viewType === VendaDiaDViewType.Mensal) {
+        const { rows } = await this.pg.query<VendaDiaDMonthlyRow, [string, string, number[]]>(
+          MONTHLY_QUERY,
           params,
         );
         return rows;

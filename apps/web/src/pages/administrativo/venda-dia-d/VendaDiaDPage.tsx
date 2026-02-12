@@ -37,6 +37,14 @@ function formatDate(value: unknown) {
   return `${d}/${m}/${y}`;
 }
 
+function formatMonth(value: unknown) {
+  if (value == null || value === "") return "";
+  const raw = String(value).slice(0, 10);
+  const [y, m] = raw.split("-");
+  if (!y || !m) return String(value);
+  return `${m}/${y}`;
+}
+
 export default function VendaDiaDPage() {
   const { token } = useAuth();
   const [sp, setSearchParams] = useSearchParams();
@@ -126,6 +134,25 @@ export default function VendaDiaDPage() {
             const [start = ""] = periodo.split(" a ");
             const [d = "", m = "", y = ""] = start.split("/");
             const dt = new Date(`${y}-${m}-${d}`);
+            return Number.isNaN(dt.getTime()) ? 0 : dt.getTime();
+          },
+          sortable: true,
+          overflow: "wrap",
+        },
+        ...baseCols,
+      ];
+    }
+
+    if (appliedViewType === "mensal") {
+      return [
+        {
+          key: "mes",
+          header: "Mes",
+          align: "left",
+          cell: (row) => formatMonth((row as { mes?: string }).mes),
+          sortAccessor: (row) => {
+            const raw = (row as { mes?: string }).mes ?? "";
+            const dt = new Date(raw);
             return Number.isNaN(dt.getTime()) ? 0 : dt.getTime();
           },
           sortable: true,
@@ -227,9 +254,10 @@ export default function VendaDiaDPage() {
             </label>
             <DefaultSelect
               options={[
-                { value: "total", label: "Total" },
                 { value: "diario", label: "Diario" },
+                { value: "mensal", label: "Mensal" },
                 { value: "periodo", label: "Periodo" },
+                { value: "total", label: "Total" },
               ]}
               value={viewType}
               onChangeValue={(v) => setViewType((v as VendaDiaDViewType) || "total")}

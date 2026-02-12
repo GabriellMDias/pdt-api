@@ -1,4 +1,4 @@
-export type VendaDiaDViewType = "total" | "diario" | "periodo";
+export type VendaDiaDViewType = "diario" | "mensal" | "periodo" | "total";
 
 export type VendaDiaDBaseRow = {
   qtd_cupom: number;
@@ -15,7 +15,15 @@ export type VendaDiaDPeriodoRow = VendaDiaDBaseRow & {
   periodo: string;
 };
 
-export type VendaDiaDRow = VendaDiaDBaseRow | VendaDiaDDiarioRow | VendaDiaDPeriodoRow;
+export type VendaDiaDMensalRow = VendaDiaDBaseRow & {
+  mes: string;
+};
+
+export type VendaDiaDRow =
+  | VendaDiaDBaseRow
+  | VendaDiaDDiarioRow
+  | VendaDiaDMensalRow
+  | VendaDiaDPeriodoRow;
 
 export type GetVendaDiaDParams = {
   storeId: number[] | string[];

@@ -7,10 +7,16 @@ import DefaultButton from "../../../components/inputs/DefaultButton";
 import DefaultSelect from "../../../components/inputs/DefaultSelect";
 import StoreMultiSelect from "../../../components/inputs/StoreMultiSelect";
 import ContentLoader from "../../../components/loading/ContentLoader";
-import SimpleTable, { type Column } from "../../../components/table/SimpleTable";
+import SimpleTable, {
+  type Column,
+} from "../../../components/table/SimpleTable";
 import { useAuth } from "../../../hooks/useAuth";
 import { useVendaDiaD } from "./hooks/useVendaDiaD";
-import type { GetVendaDiaDParams, VendaDiaDRow, VendaDiaDViewType } from "./types";
+import type {
+  GetVendaDiaDParams,
+  VendaDiaDRow,
+  VendaDiaDViewType,
+} from "./types";
 
 function formatInteger(value: unknown) {
   if (value == null || value === "") return "0";
@@ -53,8 +59,9 @@ export default function VendaDiaDPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [initialDate, setInitialDate] = useState<string>("");
   const [finalDate, setFinalDate] = useState<string>("");
-  const [viewType, setViewType] = useState<VendaDiaDViewType>("total");
-  const [appliedViewType, setAppliedViewType] = useState<VendaDiaDViewType>("total");
+  const [viewType, setViewType] = useState<VendaDiaDViewType>("diario");
+  const [appliedViewType, setAppliedViewType] =
+    useState<VendaDiaDViewType>("diario");
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<VendaDiaDRow[]>([]);
@@ -97,8 +104,12 @@ export default function VendaDiaDPage() {
         key: "total_liquido",
         header: "Total Liquido",
         align: "right",
-        cell: (row) => formatDecimal(Number(row.total_venda ?? 0) - Number(row.total_desconto ?? 0)),
-        sortAccessor: (row) => Number(row.total_venda ?? 0) - Number(row.total_desconto ?? 0),
+        cell: (row) =>
+          formatDecimal(
+            Number(row.total_venda ?? 0) - Number(row.total_desconto ?? 0),
+          ),
+        sortAccessor: (row) =>
+          Number(row.total_venda ?? 0) - Number(row.total_desconto ?? 0),
         sortable: true,
       },
     ];
@@ -191,7 +202,10 @@ export default function VendaDiaDPage() {
       setAppliedViewType(viewType);
       setHasSearched(true);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Erro ao consultar Venda Dia D.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Erro ao consultar Venda Dia D.";
       toast.error(message, {
         position: "top-right",
         autoClose: 5000,
@@ -260,7 +274,9 @@ export default function VendaDiaDPage() {
                 { value: "total", label: "Total" },
               ]}
               value={viewType}
-              onChangeValue={(v) => setViewType((v as VendaDiaDViewType) || "total")}
+              onChangeValue={(v) =>
+                setViewType((v as VendaDiaDViewType) || "total")
+              }
               syncUrl
               paramKey="viewType"
               legacyKeys={["tipoVisualizacao"]}
@@ -285,7 +301,9 @@ export default function VendaDiaDPage() {
         (rows.length > 0 ? (
           <div className="rounded-lg border dark:border-neutral-700 bg-white dark:bg-pilar-default-bg2-dark text-neutral-900 dark:text-neutral-100 shadow">
             <div className="px-4 py-3 border-b dark:border-neutral-700">
-              <h3 className="text-lg font-semibold">Venda Dia D ({appliedViewType})</h3>
+              <h3 className="text-lg font-semibold">
+                Venda Dia D ({appliedViewType})
+              </h3>
             </div>
 
             <SimpleTable<VendaDiaDRow>

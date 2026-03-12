@@ -10,6 +10,8 @@ import { DiferencaDiarioQueryDto } from './dto/diferenca-diario.query.dto';
 import { DiferencaNoDiaQueryDto } from './dto/diferenca-no-dia.query.dto';
 import { DiferencaDiarioEntity } from './entities/diferenca-diario.entity';
 import { DiferencaNoDiaEntity } from './entities/diferenca-no-dia.entity';
+import { DiferencaCustoMedioxUltimoDiarioEntity } from './entities/diferenca-custo-medioxultimo-diario.entity';
+import { DiferencaCustoMedioxUltimoNoDiaEntity } from './entities/diferenca-custo-medioxultimo-no-dia.entity';
 import { ArquivoAnaliseEntity } from './entities/arquivo-analise.entity';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { Permissions } from 'src/auth/decorators/permissions.decorator';
@@ -55,10 +57,25 @@ export class AnalysisController {
     return this.stockService.diferencaProducaoTransformadoNoDia(q.storeIds, q.date);
   }
 
-  /*@Get('stock/diferenca-custo-medioxultimo')
+  @Get('stock/diferenca-custo-medioxultimo/diario')
   @Permissions('stock-analysis:consultar')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOkResponse({type: })*/
+  @ApiOkResponse({ type: [DiferencaCustoMedioxUltimoDiarioEntity] })
+  async stockCustoMedioUltimoDiario(
+    @Query() q: DiferencaDiarioQueryDto,
+  ): Promise<DiferencaCustoMedioxUltimoDiarioEntity[]> {
+    return this.stockService.diferencaCustoMedioxUltimoDiario(q.storeIds, q.initialDate, q.finalDate);
+  }
+
+  @Get('stock/diferenca-custo-medioxultimo/no-dia')
+  @Permissions('stock-analysis:consultar')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOkResponse({ type: [DiferencaCustoMedioxUltimoNoDiaEntity] })
+  async stockCustoMedioUltimoNoDia(
+    @Query() q: DiferencaNoDiaQueryDto,
+  ): Promise<DiferencaCustoMedioxUltimoNoDiaEntity[]> {
+    return this.stockService.diferencaCustoMedioxUltimoNoDia(q.storeIds, q.date);
+  }
 
   @Post('sped/upload')
   @Permissions('sped:upload')

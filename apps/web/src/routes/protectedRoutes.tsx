@@ -22,6 +22,8 @@ import RelatorioICMS from '../pages/fiscal/obrigacoes/RelatorioSPEDUpload';
 import RelatorioSPEDAnalises from '../pages/fiscal/obrigacoes/RelatorioSPEDAnalises';
 import AnaliseEstoquePage from '../pages/estoque/analise/AnaliseEstoquePage';
 import AnaliseEstoqueDiaPage from '../pages/estoque/analise/AnaliseEstoqueDiaPage';
+import AnaliseEstoqueCustoMedioPage from '../pages/estoque/analise/AnaliseEstoqueCustoMedioPage';
+import AnaliseEstoqueCustoMedioDiaPage from '../pages/estoque/analise/AnaliseEstoqueCustoMedioDiaPage';
 import DbScriptsPage from '../pages/configuracoes/acoes-agendadas/db-scripts/DbScriptsPage';
 import DbScriptRunsPage from '../pages/configuracoes/acoes-agendadas/db-scripts/DbScriptRunsPage';
 import ParametersPage from '../pages/configuracoes/parameters/ParametersPage';
@@ -124,6 +126,21 @@ export const protectedRoutes: ProtectedRoute[] = [
         label: 'Análise por dia',
         requiredPermissions: ["stock-analysis:consultar"],
         element: <AnaliseEstoqueDiaPage />,
+        showInSidebar: false
+      },
+      {
+        path: '/estoque/analises/custo-medioxultimo/mes',
+        label: 'Dif. Custo Medio x Ultimo',
+        icon: <SsidChartIcon />,
+        showInSidebar: true,
+        requiredPermissions: ["stock-analysis:consultar"],
+        element: <AnaliseEstoqueCustoMedioPage />
+      },
+      {
+        path: '/estoque/analises/custo-medioxultimo/dia',
+        label: 'Dif. Custo Medio x Ultimo por dia',
+        requiredPermissions: ["stock-analysis:consultar"],
+        element: <AnaliseEstoqueCustoMedioDiaPage />,
         showInSidebar: false
       }
     ]

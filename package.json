@@ -1,7 +1,7 @@
 {
   "name": "pdt-monorepo",
   "private": true,
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "Monorepo com API NestJS, web React e app mobile Expo",
   "scripts": {
     "setup": "npm --prefix apps/api install && npm --prefix apps/web install && npm --prefix apps/mobile install",

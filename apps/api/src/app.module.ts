@@ -22,9 +22,15 @@ import { SnkApiModule } from './snk-api/snk-api.module';
 import { CodeJobsModule } from './config/code-jobs/code-jobs.module';
 import { CostCenterComparativeModule } from './adm/cost-center-comparative/cost-center-comparative.module';
 import { TopModule } from './fiscal/top/top.module';
+import { ConsumoModule } from './adm/consumo/consumo.module';
+import { BalancoModule } from './adm/balanco/balanco.module';
+import { ProducaoModule } from './adm/producao/producao.module';
 import { RupturaModule } from './adm/ruptura/ruptura.module';
+import { TrocaModule } from './adm/troca/troca.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { VendaDiaDModule } from './adm/venda-dia-d/venda-dia-d.module';
+import { MobileSyncModule } from './mobile-sync/mobile-sync.module';
+import { MobileUpdatesModule } from './mobile-updates/mobile-updates.module';
 
 @Module({
   imports: [
@@ -57,9 +63,15 @@ import { VendaDiaDModule } from './adm/venda-dia-d/venda-dia-d.module';
     CodeJobsModule,
     CostCenterComparativeModule,
     TopModule,
+    BalancoModule,
+    ConsumoModule,
+    ProducaoModule,
     RupturaModule,
+    TrocaModule,
     VendaDiaDModule,
     NotificationsModule,
+    MobileSyncModule,
+    MobileUpdatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

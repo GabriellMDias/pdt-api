@@ -1,50 +1,59 @@
-# Welcome to your Expo app 👋
+# PDT Connect Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile novo do projeto, em Expo SDK 54, destinado a substituir o legado operacional que hoje vive em `apps/mobile_old/mobile_front`.
 
-## Get started
+## Principios do projeto
+- consumir exclusivamente a API principal em `apps/api`
+- funcionar em modo `offline-first`
+- usar SQLite local com SQL manual + migrator
+- preservar o login novo ja implementado, salvo erro real
+- manter paridade visual com `apps/web` seguindo `guides/Identidade-Visual-Mobile.md`
+- evitar mudancas invasivas no banco do VRMaster
 
-1. Install dependencies
+## Estado atual
+O app novo ja entrega a fundacao de autenticacao:
+- login online via API principal
+- bootstrap de sessao local
+- sincronizacao de usuarios para login offline
+- armazenamento local de usuarios e sessao em SQLite
+- tema inicial alinhado aos tokens visuais do projeto
 
-   ```bash
-   npm install
-   ```
+Ainda nao foram migradas para o app novo as rotinas operacionais do legado:
+- ruptura
+- balanco
+- consumo
+- producao
+- troca
 
-2. Start the app
+## Estrutura principal
+- `app/`: rotas do Expo Router
+- `src/database/`: acesso ao SQLite e migracoes
+- `src/features/auth/`: fluxo de login, sincronizacao de usuarios e sessao offline
+- `src/theme/`: tokens visuais compartilhados no app
+- `src/services/`: cliente HTTP da API
 
-   ```bash
-   npx expo start
-   ```
+## Documentacao relacionada
+- `guides/Identidade-Visual-Mobile.md`
+- `guides/Migracao-Mobile-Incremental.md`
 
-In the output, you'll find options to open the app in a
+## Fluxo de trabalho recomendado
+1. Revisar o legado antes de iniciar qualquer nova feature mobile.
+2. Migrar por entregas pequenas, com checklist de aceitacao.
+3. Priorizar fundacao offline, catalogos por loja e fila de transmissao antes de telas operacionais maiores.
+4. Manter a API nova como unica integracao de backend.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Execucao local
+Instalar dependencias:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Subir o app:
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Observacao importante
+Este app esta em migracao incremental. Evite rewrite desnecessario e prefira evoluir por extensao da base atual.

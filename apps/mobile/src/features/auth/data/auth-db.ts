@@ -1,10 +1,26 @@
-import { ensureDatabaseSchema } from '@/src/database/migrations';
-import { getDatabase } from '@/src/database/client';
+import {
+  getAppMeta,
+  setAppMeta,
+  clearAuthSession,
+  getAuthSessionRow,
+  getAuthUserRowById,
+  getAuthUserRowByIdentifier,
+  replaceAuthUsersFromSync,
+  touchAuthUserLastLogin,
+  upsertAuthSession,
+  upsertAuthUser,
+} from '@/src/database/repositories';
 import {
   USERS_LAST_SYNCED_AT_META_KEY,
   USERS_SYNCED_META_KEY,
   USERS_SYNC_VERSION_META_KEY,
 } from '@/src/features/auth/constants';
+import type {
+  AuthSessionRow,
+  AuthSessionUpsertInput,
+  AuthUserRow,
+  AuthUserUpsertInput,
+} from '@/src/database/types';
 import type {
   BasicPermission,
   LocalAuthSession,
@@ -14,29 +30,6 @@ import type {
   SessionMode,
   UsersSyncState,
 } from '@/src/features/auth/types';
-
-type LocalAuthUserRow = {
-  id: number;
-  name: string;
-  email: string | null;
-  login: string;
-  login_normalized: string;
-  password_hash: string;
-  permissions_json: string;
-  updated_at: string;
-  synced_at: string;
-  last_login_at: string | null;
-};
-
-type LocalAuthSessionRow = {
-  user_id: number;
-  token: string | null;
-  token_expires_at: string | null;
-  mode: SessionMode;
-  last_login_at: string;
-  created_at: string;
-  updated_at: string;
-};
 
 function normalizeIdentifier(value: string): string {
   return value.trim().toLowerCase();
@@ -54,7 +47,7 @@ function parsePermissions(raw: string): BasicPermission[] {
   }
 }
 
-function mapUserRow(row: LocalAuthUserRow): LocalAuthUser {
+function mapUserRow(row: AuthUserRow): LocalAuthUser {
   return {
     id: row.id,
     name: row.name,
@@ -69,7 +62,7 @@ function mapUserRow(row: LocalAuthUserRow): LocalAuthUser {
   };
 }
 
-function mapSessionRow(row: LocalAuthSessionRow): LocalAuthSession {
+function mapSessionRow(row: AuthSessionRow): LocalAuthSession {
   return {
     userId: row.user_id,
     token: row.token,
@@ -81,32 +74,38 @@ function mapSessionRow(row: LocalAuthSessionRow): LocalAuthSession {
   };
 }
 
-async function getReadyDatabase() {
-  const db = await getDatabase();
-  await ensureDatabaseSchema(db);
-  return db;
-}
-
 async function setMeta(key: string, value: string): Promise<void> {
-  const db = await getReadyDatabase();
-  const now = new Date().toISOString();
-  await db.runAsync(
-    `
-      INSERT INTO app_meta (key, value, updated_at)
-      VALUES (?, ?, ?)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-    `,
-    [key, value, now],
-  );
+  await setAppMeta(key, value, new Date().toISOString());
 }
 
 async function getMeta(key: string): Promise<string | null> {
-  const db = await getReadyDatabase();
-  const row = await db.getFirstAsync<{ value: string }>(
-    'SELECT value FROM app_meta WHERE key = ? LIMIT 1',
-    [key],
-  );
+  const row = await getAppMeta(key);
   return row?.value ?? null;
+}
+
+function buildAuthUserUpsertInput(
+  payload: {
+    id: number;
+    name: string;
+    email: string | null;
+    login: string;
+    passwordHash: string;
+    permissions: BasicPermission[];
+    updatedAt: string;
+    syncedAt: string;
+  },
+): AuthUserUpsertInput {
+  return {
+    id: payload.id,
+    name: payload.name,
+    email: payload.email,
+    login: payload.login,
+    loginNormalized: normalizeIdentifier(payload.login),
+    passwordHash: payload.passwordHash,
+    permissionsJson: JSON.stringify(payload.permissions ?? []),
+    updatedAt: payload.updatedAt,
+    syncedAt: payload.syncedAt,
+  };
 }
 
 export async function getUsersSyncState(): Promise<UsersSyncState> {
@@ -134,76 +133,26 @@ export async function markUsersSynced(version: number, syncedAt: string): Promis
   ]);
 }
 
-export async function upsertUsersFromSync(users: RemoteSyncUser[], syncedAt: string): Promise<void> {
-  const db = await getReadyDatabase();
-  const syncedUserIds = users.map((user) => user.id);
+export async function upsertUsersFromSync(
+  users: RemoteSyncUser[],
+  syncedAt: string,
+): Promise<void> {
+  const upsertInputs = users.map((user) => {
+    const login = user.login?.trim() || user.email?.trim() || String(user.id);
 
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
-    for (const user of users) {
-      const login = user.login?.trim() || user.email?.trim() || String(user.id);
-      const loginNormalized = normalizeIdentifier(login);
-      const permissionsJson = JSON.stringify(user.permissions ?? []);
-      const updatedAt = user.updatedAt || syncedAt;
+    return buildAuthUserUpsertInput({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      login,
+      passwordHash: user.passwordHash,
+      permissions: user.permissions ?? [],
+      updatedAt: user.updatedAt || syncedAt,
+      syncedAt,
+    });
+  });
 
-      await db.runAsync(
-        `
-          INSERT INTO auth_users (
-            id,
-            name,
-            email,
-            login,
-            login_normalized,
-            password_hash,
-            permissions_json,
-            updated_at,
-            synced_at,
-            last_login_at
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(
-            (SELECT last_login_at FROM auth_users WHERE id = ?),
-            NULL
-          ))
-          ON CONFLICT(id) DO UPDATE SET
-            name = excluded.name,
-            email = excluded.email,
-            login = excluded.login,
-            login_normalized = excluded.login_normalized,
-            password_hash = excluded.password_hash,
-            permissions_json = excluded.permissions_json,
-            updated_at = excluded.updated_at,
-            synced_at = excluded.synced_at
-        `,
-        [
-          user.id,
-          user.name,
-          user.email,
-          login,
-          loginNormalized,
-          user.passwordHash,
-          permissionsJson,
-          updatedAt,
-          syncedAt,
-          user.id,
-        ],
-      );
-    }
-
-    if (syncedUserIds.length > 0) {
-      const placeholders = syncedUserIds.map(() => '?').join(', ');
-      await db.runAsync(
-        `DELETE FROM auth_users WHERE id NOT IN (${placeholders})`,
-        syncedUserIds,
-      );
-    } else {
-      await db.runAsync('DELETE FROM auth_users');
-    }
-
-    await db.execAsync('COMMIT');
-  } catch (error) {
-    await db.execAsync('ROLLBACK');
-    throw error;
-  }
+  await replaceAuthUsersFromSync(upsertInputs);
 }
 
 export async function upsertSingleUser(payload: {
@@ -216,103 +165,16 @@ export async function upsertSingleUser(payload: {
   updatedAt: string;
   syncedAt: string;
 }): Promise<void> {
-  const db = await getReadyDatabase();
-  const loginNormalized = normalizeIdentifier(payload.login);
-  const permissionsJson = JSON.stringify(payload.permissions ?? []);
-
-  await db.runAsync(
-    `
-      INSERT INTO auth_users (
-        id,
-        name,
-        email,
-        login,
-        login_normalized,
-        password_hash,
-        permissions_json,
-        updated_at,
-        synced_at,
-        last_login_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(
-        (SELECT last_login_at FROM auth_users WHERE id = ?),
-        NULL
-      ))
-      ON CONFLICT(id) DO UPDATE SET
-        name = excluded.name,
-        email = excluded.email,
-        login = excluded.login,
-        login_normalized = excluded.login_normalized,
-        password_hash = excluded.password_hash,
-        permissions_json = excluded.permissions_json,
-        updated_at = excluded.updated_at,
-        synced_at = excluded.synced_at
-    `,
-    [
-      payload.id,
-      payload.name,
-      payload.email,
-      payload.login,
-      loginNormalized,
-      payload.passwordHash,
-      permissionsJson,
-      payload.updatedAt,
-      payload.syncedAt,
-      payload.id,
-    ],
-  );
+  await upsertAuthUser(buildAuthUserUpsertInput(payload));
 }
 
 export async function getUserById(userId: number): Promise<LocalAuthUser | null> {
-  const db = await getReadyDatabase();
-  const row = await db.getFirstAsync<LocalAuthUserRow>(
-    `
-      SELECT
-        id,
-        name,
-        email,
-        login,
-        login_normalized,
-        password_hash,
-        permissions_json,
-        updated_at,
-        synced_at,
-        last_login_at
-      FROM auth_users
-      WHERE id = ?
-      LIMIT 1
-    `,
-    [userId],
-  );
-
+  const row = await getAuthUserRowById(userId);
   return row ? mapUserRow(row) : null;
 }
 
 export async function getUserByIdentifier(identifier: string): Promise<LocalAuthUser | null> {
-  const db = await getReadyDatabase();
-  const normalized = normalizeIdentifier(identifier);
-
-  const row = await db.getFirstAsync<LocalAuthUserRow>(
-    `
-      SELECT
-        id,
-        name,
-        email,
-        login,
-        login_normalized,
-        password_hash,
-        permissions_json,
-        updated_at,
-        synced_at,
-        last_login_at
-      FROM auth_users
-      WHERE login_normalized = ?
-         OR lower(COALESCE(email, '')) = ?
-      LIMIT 1
-    `,
-    [normalized, normalized],
-  );
-
+  const row = await getAuthUserRowByIdentifier(normalizeIdentifier(identifier));
   return row ? mapUserRow(row) : null;
 }
 
@@ -323,84 +185,34 @@ export async function saveSession(payload: {
   mode: SessionMode;
   lastLoginAt: string;
 }): Promise<void> {
-  const db = await getReadyDatabase();
-  const now = new Date().toISOString();
+  const sessionInput: AuthSessionUpsertInput = {
+    userId: payload.userId,
+    token: payload.token,
+    tokenExpiresAt: payload.tokenExpiresAt,
+    mode: payload.mode,
+    lastLoginAt: payload.lastLoginAt,
+  };
 
-  await db.runAsync(
-    `
-      INSERT INTO auth_sessions (
-        id,
-        user_id,
-        token,
-        token_expires_at,
-        mode,
-        last_login_at,
-        created_at,
-        updated_at
-      )
-      VALUES (1, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        user_id = excluded.user_id,
-        token = excluded.token,
-        token_expires_at = excluded.token_expires_at,
-        mode = excluded.mode,
-        last_login_at = excluded.last_login_at,
-        updated_at = excluded.updated_at
-    `,
-    [
-      payload.userId,
-      payload.token,
-      payload.tokenExpiresAt,
-      payload.mode,
-      payload.lastLoginAt,
-      now,
-      now,
-    ],
-  );
+  await upsertAuthSession(sessionInput);
 }
 
 export async function clearSession(): Promise<void> {
-  const db = await getReadyDatabase();
-  await db.runAsync('DELETE FROM auth_sessions WHERE id = 1');
+  await clearAuthSession();
 }
 
 export async function getSessionWithUser(): Promise<LocalSessionWithUser | null> {
-  const db = await getReadyDatabase();
-  const session = await db.getFirstAsync<LocalAuthSessionRow>(
-    `
-      SELECT
-        user_id,
-        token,
-        token_expires_at,
-        mode,
-        last_login_at,
-        created_at,
-        updated_at
-      FROM auth_sessions
-      WHERE id = 1
-      LIMIT 1
-    `,
-  );
-
+  const session = await getAuthSessionRow();
   if (!session) return null;
 
-  const user = await getUserById(session.user_id);
+  const user = await getAuthUserRowById(session.user_id);
   if (!user) return null;
 
   return {
     session: mapSessionRow(session),
-    user,
+    user: mapUserRow(user),
   };
 }
 
 export async function touchUserLastLogin(userId: number, lastLoginAt: string): Promise<void> {
-  const db = await getReadyDatabase();
-  await db.runAsync(
-    `
-      UPDATE auth_users
-      SET last_login_at = ?
-      WHERE id = ?
-    `,
-    [lastLoginAt, userId],
-  );
+  await touchAuthUserLastLogin(userId, lastLoginAt);
 }

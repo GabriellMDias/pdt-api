@@ -1,12 +1,13 @@
 {
   "name": "pdt-api",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build && copyfiles -u 1 '*.sql' dist",
+    "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "start": "nest start",
@@ -91,6 +92,9 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

@@ -165,6 +165,76 @@ export class PdtConnectBootstrapService implements OnApplicationBootstrap {
         ON CONFLICT (id) DO UPDATE
           SET descricao = EXCLUDED.descricao;
       `);
+      await c.query(`
+        CREATE TABLE IF NOT EXISTS pdtconnect.mobile_event_receipts (
+          receipt_id TEXT PRIMARY KEY,
+          event_id UUID NOT NULL,
+          event_type VARCHAR(120) NOT NULL,
+          aggregate_type VARCHAR(120) NULL,
+          aggregate_key VARCHAR(255) NULL,
+          store_id INTEGER NULL,
+          user_id INTEGER NOT NULL,
+          device_id VARCHAR(120) NULL,
+          schema_version INTEGER NOT NULL,
+          payload_hash VARCHAR(64) NOT NULL,
+          request_payload_json JSONB NOT NULL,
+          response_payload_json JSONB NULL,
+          status VARCHAR(32) NOT NULL,
+          error_code VARCHAR(120) NULL,
+          error_message TEXT NULL,
+          processed_at TIMESTAMPTZ NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+      `);
+
+      await c.query(`
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS aggregate_type VARCHAR(120);
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS aggregate_key VARCHAR(255);
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS store_id INTEGER;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS user_id INTEGER;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS device_id VARCHAR(120);
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS schema_version INTEGER;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS payload_hash VARCHAR(64);
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS request_payload_json JSONB;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS response_payload_json JSONB;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS status VARCHAR(32);
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS error_code VARCHAR(120);
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS error_message TEXT;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
+        ALTER TABLE pdtconnect.mobile_event_receipts
+          ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+      `);
+
+      await c.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_mobile_event_receipts_event_id
+        ON pdtconnect.mobile_event_receipts (event_id);
+      `);
+
+      await c.query(`
+        CREATE INDEX IF NOT EXISTS idx_mobile_event_receipts_status
+        ON pdtconnect.mobile_event_receipts (status, updated_at DESC);
+      `);
+
+      await c.query(`
+        CREATE INDEX IF NOT EXISTS idx_mobile_event_receipts_user_store
+        ON pdtconnect.mobile_event_receipts (user_id, store_id, created_at DESC);
+      `);
     });
 
     this.logger.log('Schema pdtconnect garantido e seed aplicado com sucesso.');

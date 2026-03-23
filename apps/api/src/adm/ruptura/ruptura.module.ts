@@ -9,6 +9,7 @@ import { RupturaService } from "./ruptura.service";
 @Module({
     controllers: [RupturaController],
     providers: [RupturaService],
-    imports: [PgModule, PermissionsModule, PrismaModule]
+    imports: [PgModule, PermissionsModule, PrismaModule],
+    exports: [RupturaService],
 })
 export class RupturaModule {}

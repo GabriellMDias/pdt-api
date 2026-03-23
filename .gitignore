@@ -146,3 +146,6 @@ dist
 # Ignora tudo dentro de uploads/
 uploads/*
 apps/api/uploads/*
+
+# Ignora versão legacy do app mobile
+apps/mobile_old

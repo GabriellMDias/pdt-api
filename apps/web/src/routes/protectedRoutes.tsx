@@ -42,6 +42,8 @@ import StoresPage from '../pages/configuracoes/cadastro/stores/StoresPage';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsPage from '../pages/configuracoes/notifications/NotificationsPage';
 import VendaDiaDPage from '../pages/administrativo/venda-dia-d/VendaDiaDPage';
+import AndroidIcon from '@mui/icons-material/Android';
+import MobileReleasesPage from '../pages/configuracoes/mobile-releases/MobileReleasesPage';
 
 
 export interface ProtectedRoute {
@@ -294,6 +296,18 @@ export const protectedRoutes: ProtectedRoute[] = [
         showInSidebar: true,
         icon: <NotificationsIcon />,
         element: <NotificationsPage />,
+      },
+      {
+        path: '/configuracoes/mobile/releases',
+        label: "Versoes Mobile",
+        showInSidebar: true,
+        icon: <AndroidIcon />,
+        element: <MobileReleasesPage />,
+        requiredPermissions: [
+          'mobile-releases:consultar',
+          'mobile-releases:publicar',
+          'mobile-releases:baixar',
+        ],
       }
     ],
   },

@@ -1,231 +1,241 @@
-import { useMemo, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { ENV } from '@/src/config/env';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button, Card, Input } from '@/src/components/ui';
 import { useAuthStore } from '@/src/features/auth/store/use-auth-store';
-import { colors } from '@/src/theme/tokens';
+import {
+  StoreSelectorModal,
+  getSelectableSyncStores,
+} from '@/src/features/sync/components/store-selector-modal';
+import type { LocalMasterStore } from '@/src/features/bootstrap/types';
+import { layout, spacing, typography } from '@/src/theme/tokens';
+import { useThemedStyles, type AppTheme } from '@/src/theme/theme-provider';
 
-function formatEnvironmentLabel() {
-  return ENV.IS_PRODUCTION ? 'Producao' : 'Desenvolvimento';
-}
+const WEB_LOGIN_LOGO = require('../../../../assets/images/web-login-logo.png');
 
 export function LoginScreen() {
+  const styles = useThemedStyles(createStyles);
   const login = useAuthStore((state) => state.login);
   const isLoggingIn = useAuthStore((state) => state.isLoggingIn);
+  const isSyncingApp = useAuthStore((state) => state.isSyncingApp);
   const errorMessage = useAuthStore((state) => state.errorMessage);
-  const connectivityStatus = useAuthStore((state) => state.connectivityStatus);
+  const syncProgressScope = useAuthStore((state) => state.syncProgressScope);
+  const syncProgressLabel = useAuthStore((state) => state.syncProgressLabel);
+  const syncProgressDetail = useAuthStore((state) => state.syncProgressDetail);
   const usersSynced = useAuthStore((state) => state.usersSynced);
-  const usersSyncVersion = useAuthStore((state) => state.usersSyncVersion);
   const usersLastSyncedAt = useAuthStore((state) => state.usersLastSyncedAt);
+  const loadLoginSyncStores = useAuthStore((state) => state.loadLoginSyncStores);
+  const syncFromLogin = useAuthStore((state) => state.syncFromLogin);
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [syncStoreOptions, setSyncStoreOptions] = useState<LocalMasterStore[]>([]);
+  const [selectedSyncStoreId, setSelectedSyncStoreId] = useState<number | null>(null);
+  const [syncModalVisible, setSyncModalVisible] = useState(false);
+  const passwordInputRef = useRef<TextInput>(null);
 
-  const offlineHint = useMemo(() => {
-    if (connectivityStatus !== 'offline') return null;
-    if (usersSynced) {
-      return 'Sem internet. Login offline disponivel para usuarios sincronizados.';
+  const syncLabel = usersSynced
+    ? `Ultima sincronizacao: ${usersLastSyncedAt ? new Date(usersLastSyncedAt).toLocaleString('pt-BR') : 'concluida'}`
+    : 'Ultima sincronizacao: ainda nao realizada';
+
+  const isBusy = isLoggingIn || isSyncingApp;
+  const shouldUseKeyboardAvoidingView = Platform.OS === 'ios';
+
+  async function handleSubmitLogin() {
+    await login(identifier, password);
+
+    const nextState = useAuthStore.getState();
+    if (nextState.status !== 'authenticated' && nextState.errorMessage) {
+      Alert.alert('Nao foi possivel entrar', nextState.errorMessage);
     }
-    return 'É necessário conexão com a internet para sincronização inicial dos usuários.';
-  }, [connectivityStatus, usersSynced]);
+  }
 
-  const syncLabel = useMemo(() => {
-    if (!usersSynced) return 'Usuarios ainda nao sincronizados';
-    if (!usersLastSyncedAt) return `Usuarios sincronizados (versao ${usersSyncVersion})`;
-    return `Usuarios sincronizados em ${new Date(usersLastSyncedAt).toLocaleString()}`;
-  }, [usersLastSyncedAt, usersSynced, usersSyncVersion]);
+  async function handlePrepareSync() {
+    try {
+      const preview = await loadLoginSyncStores(identifier, password);
+      const selectableStores = getSelectableSyncStores(preview.stores);
+      if (selectableStores.length === 0) {
+        Alert.alert(
+          'Nenhuma loja disponivel',
+          'Nao foi possivel carregar as lojas para a sincronizacao inicial.',
+        );
+        return;
+      }
+      setSyncStoreOptions(selectableStores);
+      setSelectedSyncStoreId(
+        selectableStores.some((store) => store.id === preview.preferredStoreId)
+          ? preview.preferredStoreId
+          : selectableStores[0]?.id ?? null,
+      );
+      setSyncModalVisible(true);
+    } catch {
+      const message =
+        useAuthStore.getState().errorMessage ??
+        'Nao foi possivel carregar as lojas para a sincronizacao inicial.';
+      Alert.alert('Nao foi possivel sincronizar', message);
+    }
+  }
 
-  const isBusy = isLoggingIn;
+  async function handleConfirmSync() {
+    if (!selectedSyncStoreId) {
+      return;
+    }
+
+    const synced = await syncFromLogin(identifier, password, selectedSyncStoreId);
+    if (!synced) {
+      return;
+    }
+
+    setSyncModalVisible(false);
+  }
+
+  const content = (
+    <Card style={styles.card}>
+      <View style={styles.brandBlock}>
+        <Image resizeMode="contain" source={WEB_LOGIN_LOGO} style={styles.logo} />
+        <Text style={styles.brandTitle}>PdT Connect</Text>
+      </View>
+
+      <View style={styles.formBlock}>
+        <Input
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoFocus
+          autoComplete="username"
+          editable={!isBusy}
+          label="Login"
+          placeholder="E-mail ou login"
+          returnKeyType="next"
+          value={identifier}
+          blurOnSubmit={false}
+          onChangeText={setIdentifier}
+          onSubmitEditing={() => {
+            passwordInputRef.current?.focus();
+          }}
+        />
+
+        <Input
+          autoComplete="current-password"
+          editable={!isBusy}
+          label="Senha"
+          placeholder="Senha"
+          ref={passwordInputRef}
+          returnKeyType="done"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          onSubmitEditing={() => {
+            void handleSubmitLogin();
+          }}
+        />
+
+        <Button
+          block
+          label="Entrar"
+          loading={isLoggingIn}
+          onPress={() => {
+            void handleSubmitLogin();
+          }}
+        />
+
+        <Button
+          block
+          label="Sincronizar"
+          loading={isSyncingApp}
+          variant="ghost"
+          onPress={() => {
+            void handlePrepareSync();
+          }}
+        />
+
+        <Text style={styles.syncInfo}>{syncLabel}</Text>
+      </View>
+    </Card>
+  );
 
   return (
-    <View style={styles.screen}>
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined })}
-        style={styles.keyboardContainer}
-      >
-        <View style={styles.header}>
-          <Text style={styles.brandTitle}>PdT Connect</Text>
-          <Text style={styles.environmentLabel}>Ambiente: {formatEnvironmentLabel()}</Text>
-          <Text style={styles.apiLabel}>{ENV.API_URL}</Text>
+    <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={styles.safeArea}>
+      {shouldUseKeyboardAvoidingView ? (
+        <KeyboardAvoidingView behavior="padding" style={styles.screen}>
+          <View style={styles.keyboardContainer}>{content}</View>
+        </KeyboardAvoidingView>
+      ) : (
+        <View style={styles.screen}>
+          <View style={styles.keyboardContainer}>{content}</View>
         </View>
+      )}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Login</Text>
-          <Text style={styles.cardSubtitle}>
-            Entre com email/login e senha para autenticar online ou offline.
-          </Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Email ou login</Text>
-            <TextInput
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!isBusy}
-              keyboardType="email-address"
-              placeholder="usuario@empresa.com"
-              placeholderTextColor="rgba(255, 255, 255, 0.45)"
-              style={styles.input}
-              value={identifier}
-              onChangeText={setIdentifier}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Senha</Text>
-            <TextInput
-              editable={!isBusy}
-              placeholder="Digite sua senha"
-              placeholderTextColor="rgba(255, 255, 255, 0.45)"
-              secureTextEntry
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-
-          <Pressable
-            disabled={isBusy}
-            onPress={() => {
-              void login(identifier, password);
-            }}
-            style={({ pressed }) => [
-              styles.loginButton,
-              (pressed || isBusy) && styles.loginButtonPressed,
-            ]}
-          >
-            {isLoggingIn ? (
-              <ActivityIndicator color={colors.pilarGreen} />
-            ) : (
-              <Text style={styles.loginButtonLabel}>Entrar</Text>
-            )}
-          </Pressable>
-
-          <Text style={styles.syncInfo}>{syncLabel}</Text>
-
-          {offlineHint ? <Text style={styles.warningMessage}>{offlineHint}</Text> : null}
-          {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
-        </View>
-      </KeyboardAvoidingView>
-    </View>
+      <StoreSelectorModal
+        confirmLabel="Sincronizar"
+        description="Escolha a loja que deve virar o contexto atual do app apos a sincronizacao inicial."
+        errorMessage={errorMessage}
+        loading={isSyncingApp}
+        progressScope={syncProgressScope}
+        progressDetail={syncProgressDetail}
+        progressLabel={syncProgressLabel}
+        selectedStoreId={selectedSyncStoreId}
+        stores={syncStoreOptions}
+        title="Selecionar loja"
+        visible={syncModalVisible}
+        onClose={() => {
+          setSyncModalVisible(false);
+        }}
+        onConfirm={() => {
+          void handleConfirmSync();
+        }}
+        onSelectStore={setSelectedSyncStoreId}
+      />
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background.shell,
+  },
   screen: {
     flex: 1,
-    backgroundColor: colors.bgDark,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPaddingHorizontal,
+    paddingVertical: layout.screenPaddingVertical,
   },
   keyboardContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 24,
-  },
-  header: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  brandTitle: {
-    color: colors.textDark,
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  environmentLabel: {
-    color: colors.textMutedDark,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  apiLabel: {
-    color: 'rgba(255,255,255,0.65)',
-    fontSize: 11,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
   },
   card: {
-    borderRadius: 18,
-    backgroundColor: colors.pilarGreen,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    padding: 20,
-    gap: 14,
+    gap: spacing.xl,
   },
-  cardTitle: {
-    color: colors.surfaceLight,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  cardSubtitle: {
-    color: 'rgba(255,255,255,0.84)',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  fieldLabel: {
-    color: colors.surfaceLight,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    color: colors.surfaceLight,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    fontSize: 15,
-  },
-  loginButton: {
-    borderRadius: 12,
-    backgroundColor: colors.surfaceLight,
-    minHeight: 46,
-    justifyContent: 'center',
+  brandBlock: {
     alignItems: 'center',
-    marginTop: 4,
+    gap: spacing.md,
   },
-  loginButtonPressed: {
-    opacity: 0.85,
+  logo: {
+    width: '100%',
+    maxWidth: 220,
+    height: 96,
   },
-  loginButtonLabel: {
-    color: colors.pilarGreen,
-    fontSize: 15,
-    fontWeight: '700',
+  brandTitle: {
+    ...typography.textStyles.title,
+    color: theme.colors.text.primary,
+  },
+  formBlock: {
+    gap: spacing.md,
   },
   syncInfo: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  warningMessage: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(217, 119, 6, 0.45)',
-    backgroundColor: 'rgba(217, 119, 6, 0.18)',
-    color: '#FFD9A6',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  errorMessage: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.45)',
-    backgroundColor: 'rgba(220, 38, 38, 0.18)',
-    color: '#FFD4D4',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 12,
-    lineHeight: 17,
+    ...typography.textStyles.caption,
+    color: theme.colors.text.muted,
+    textAlign: 'center',
   },
 });

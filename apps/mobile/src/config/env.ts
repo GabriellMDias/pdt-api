@@ -6,6 +6,9 @@ type ExpoExtra = {
   APP_ENV?: string;
   API_URL?: string;
   PROD_API_URL?: string;
+  APP_VERSION_NAME?: string;
+  APP_BUILD_NUMBER?: number | string;
+  ANDROID_PACKAGE?: string;
 };
 
 const PROD_API_URL = "https://connect.pilardaterra.com.br/api";
@@ -39,6 +42,13 @@ export const ENV = Object.freeze({
   API_URL: resolveApiUrl(extra, appEnv),
   PROD_API_URL: normalizeBaseUrl(extra.PROD_API_URL ?? PROD_API_URL),
   IS_PRODUCTION: appEnv === "production",
+  APP_VERSION_NAME: String(
+    extra.APP_VERSION_NAME ?? Constants.expoConfig?.version ?? "0.0.0",
+  ),
+  APP_BUILD_NUMBER: Number(
+    extra.APP_BUILD_NUMBER ?? Constants.expoConfig?.android?.versionCode ?? 0,
+  ),
+  ANDROID_PACKAGE: String(extra.ANDROID_PACKAGE ?? ""),
 });
 
 export type Environment = typeof ENV;

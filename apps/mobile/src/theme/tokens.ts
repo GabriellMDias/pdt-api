@@ -1,18 +1,27 @@
-export const colors = {
-  pilarGreen: '#00553B',
-  pilarOrange: '#B54828',
-  bgDark: '#282825',
-  bgDarkAlt: '#33332F',
-  bgDarkShell: '#1f1f1c',
-  bgLight: '#E3E3E3',
-  surfaceLight: '#FFFFFF',
-  borderLight: '#E5E5E5',
-  textLight: '#111827',
-  textMutedLight: '#6B7280',
-  textDark: '#F5F5F5',
-  textMutedDark: '#D4D4D4',
-  success: '#16A34A',
-  warning: '#D97706',
-  error: '#DC2626',
-  info: '#0284C7',
+import { colors, resolveThemeColors, type AppThemeMode } from './colors';
+import { layout, radii, spacing } from './spacing';
+import { typography } from './typography';
+
+export { colors } from './colors';
+export { layout, radii, spacing } from './spacing';
+export { typography } from './typography';
+
+export const tokens = {
+  colors,
+  spacing,
+  radii,
+  layout,
+  typography,
 } as const;
+
+export function buildTokens(mode: AppThemeMode) {
+  return {
+    colors: resolveThemeColors(mode),
+    spacing,
+    radii,
+    layout,
+    typography,
+  } as const;
+}
+
+export type AppThemeTokens = ReturnType<typeof buildTokens>;

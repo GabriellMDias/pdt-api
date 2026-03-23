@@ -1,110 +1,169 @@
 # Guia de Versionamento
 
-Este projeto agora usa um versionamento centralizado e sincronizado entre monorepo e frontend.
+Este monorepo agora usa versionamento centralizado para `API`, `Web` e `Mobile`.
 
-## Objetivo
+## Fonte oficial
 
-- Manter uma unica versao oficial do produto.
-- Garantir que `package.json` da raiz, API e Web fiquem iguais.
-- Exibir automaticamente a versao atual no menu lateral do frontend.
+A fonte oficial da versao funcional do produto fica em:
 
-## Fonte oficial da versao
+- [package.json](/c:/Users/Gabriel/Workspace/pdt-api/package.json)
 
-A versao oficial fica em:
+O mobile tambem possui um contador Android monotonicamente crescente no mesmo arquivo:
 
-- `package.json` (raiz do monorepo)
+```json
+{
+  "version": "1.2.0",
+  "mobile": {
+    "androidVersionCode": 10200
+  }
+}
+```
 
-Os arquivos abaixo sao sincronizados automaticamente:
+## O que cada campo significa
 
-- `apps/api/package.json`
-- `apps/web/package.json`
+- `version`
+  - versao funcional exibida para usuarios e usada por `API`, `Web` e `Mobile`
+  - segue SemVer, por exemplo `1.2.0`
+- `mobile.androidVersionCode`
+  - inteiro crescente exigido pelo Android para upgrades reais de APK
+  - e o valor usado pelo app mobile para decidir se existe update disponivel
+
+## Arquivos sincronizados
+
+O script de sincronizacao atualiza:
+
+- [package.json](/c:/Users/Gabriel/Workspace/pdt-api/package.json)
+- [apps/api/package.json](/c:/Users/Gabriel/Workspace/pdt-api/apps/api/package.json)
+- [apps/web/package.json](/c:/Users/Gabriel/Workspace/pdt-api/apps/web/package.json)
+- [apps/mobile/package.json](/c:/Users/Gabriel/Workspace/pdt-api/apps/mobile/package.json)
+
+No mobile, a configuracao nativa final vem de:
+
+- [app.config.ts](/c:/Users/Gabriel/Workspace/pdt-api/apps/mobile/app.config.ts)
+
+Ela injeta:
+
+- `expo.version = package.json.version`
+- `android.versionCode = package.json.mobile.androidVersionCode`
+- `android.package = com.gabrielmdias.pdtmobile`
 
 ## Comandos disponiveis
 
-No `package.json` raiz foram adicionados:
+Na raiz do monorepo:
 
 ```bash
+npm run db:migrate:api
 npm run version:sync
 npm run version:set -- 1.2.3
 npm run version:bump -- patch
 npm run version:bump -- minor
 npm run version:bump -- major
+npm run mobile:buildcode:bump
 ```
 
 ### O que cada comando faz
 
-- `version:sync`: copia a versao atual da raiz para API e Web.
-- `version:set -- X.Y.Z`: define uma versao especifica e sincroniza todos os `package.json`.
-- `version:bump -- patch|minor|major`: incrementa a versao da raiz e sincroniza todos os `package.json`.
+- `db:migrate:api`
+  - aplica as migrations pendentes da API no banco atual
+- `version:sync`
+  - copia a versao da raiz para API, Web e Mobile
+- `version:set -- X.Y.Z`
+  - define uma versao especifica e sincroniza os `package.json`
+- `version:bump -- patch|minor|major`
+  - incrementa a versao SemVer da raiz e sincroniza API, Web e Mobile
+- `mobile:buildcode:bump`
+  - incrementa em `+1` o `mobile.androidVersionCode` na raiz
 
-## Fluxo recomendado para release
+## Regras praticas de evolucao
 
-1. Atualize a versao:
+### API
+
+- acompanha `package.json.version`
+- nova release funcional da API costuma pedir novo `version`
+
+### Web
+
+- acompanha `package.json.version`
+- a versao aparece automaticamente no menu lateral via `VITE_APP_VERSION`
+
+### Mobile
+
+- `versionName`
+  - acompanha `package.json.version`
+- `buildNumber`
+  - acompanha `package.json.mobile.androidVersionCode`
+  - precisa subir toda vez que uma nova APK Android for publicada
+
+## Quando gerar nova APK
+
+Gere uma nova APK sempre que houver:
+
+- correcao ou feature mobile que precise chegar ao aparelho
+- alteracao nativa/configuracional do app mobile
+- nova release Android a ser distribuida fora da Play Store
+
+## Fluxo recomendado para release com Mobile
+
+### Quando a release muda a versao funcional
+
+1. Atualize a versao SemVer:
+
 ```bash
 npm run version:bump -- patch
 ```
-ou
-```bash
-npm run version:set -- 1.4.0
-```
-2. Rode build/tests do projeto.
-3. Commit das alteracoes de versao.
-4. Gere tag/release no seu fluxo de Git.
 
-## Tag e Release no GitHub
-
-Convencao recomendada de tag: `vX.Y.Z` (ex.: `v1.4.0`).
-
-### Passo a passo
-
-1. Atualize a versao com os scripts do projeto.
-```bash
-npm run version:bump -- patch
-```
-ou
-```bash
-npm run version:set -- 1.4.0
-```
-
-2. Valide o estado do repositorio e rode os testes/builds necessarios.
-```bash
-git status
-npm run build
-```
-
-3. Faça commit da release.
-```bash
-git add package.json apps/api/package.json apps/web/package.json
-git commit -m "chore(release): v1.4.0"
-```
-
-4. Crie uma tag anotada.
-```bash
-git tag -a v1.4.0 -m "Release v1.4.0"
-```
-
-5. Envie branch e tag para o remoto.
-```bash
-git push origin main --follow-tags
-```
-
-6. Publique a release no GitHub.
-- Opcao A (UI): abra a aba Releases no repositório, selecione a tag `v1.4.0`, preencha titulo/notas e publique.
-- Opcao B (GitHub CLI):
-```bash
-gh release create v1.4.0 --title "v1.4.0" --generate-notes
-```
-
-### Verificacao rapida
+2. Incremente o build Android:
 
 ```bash
-git tag -l "v1.4.0"
-git ls-remote --tags origin
+npm run mobile:buildcode:bump
 ```
 
-## Exibicao da versao no frontend
+3. Rode as validacoes necessarias.
+4. Se o backend recebeu mudancas de schema, aplique as migrations:
 
-- A Web injeta a versao da raiz via `apps/web/vite.config.ts` em `import.meta.env.VITE_APP_VERSION`.
-- O menu lateral exibe essa versao em `apps/web/src/components/Sidebar/Sidebar.tsx`.
+```bash
+npm run db:migrate:api
+```
 
-Com isso, toda nova release refletida no `package.json` passa a aparecer automaticamente no menu lateral apos novo build/deploy do frontend.
+### Quando a release muda so a APK Android
+
+1. Mantenha `version` se fizer sentido.
+2. Incremente o build Android:
+
+```bash
+npm run mobile:buildcode:bump
+```
+
+3. Gere e publique a nova APK.
+4. Se houver alteracao de schema no backend, aplique as migrations antes de usar a tela de versoes mobile.
+
+## Changelog
+
+Cada APK publicada deve registrar changelog na tela administrativa do Web:
+
+- [MobileReleasesPage.tsx](/c:/Users/Gabriel/Workspace/pdt-api/apps/web/src/pages/configuracoes/mobile-releases/MobileReleasesPage.tsx)
+
+O changelog fica salvo no backend junto da release e e exibido no modal de update do mobile.
+
+## Build Android
+
+O fluxo principal esta pronto para EAS APK:
+
+- [eas.json](/c:/Users/Gabriel/Workspace/pdt-api/apps/mobile/eas.json)
+- [apps/mobile/package.json](/c:/Users/Gabriel/Workspace/pdt-api/apps/mobile/package.json)
+
+Comando:
+
+```bash
+cd apps/mobile
+npm run build:android:apk
+```
+
+## Observacao critica sobre continuidade com o app antigo
+
+Para atualizar por cima do app legado instalado no aparelho, o app novo precisa manter:
+
+- `android.package = com.gabrielmdias.pdtmobile`
+- a mesma assinatura Android da release antiga
+
+Sem isso, o Android nao reconhece a APK nova como upgrade do app anterior.

@@ -1,13 +1,18 @@
 {
   "name": "pdt-monorepo",
   "private": true,
-  "version": "1.2.0",
+  "version": "2.0.0",
+  "mobile": {
+    "androidVersionCode": 10201
+  },
   "description": "Monorepo com API NestJS, web React e app mobile Expo",
   "scripts": {
     "setup": "npm --prefix apps/api install && npm --prefix apps/web install && npm --prefix apps/mobile install",
+    "db:migrate:api": "npm --prefix apps/api run db:migrate:deploy",
     "version:sync": "node scripts/version-manager.mjs sync",
     "version:set": "node scripts/version-manager.mjs set",
     "version:bump": "node scripts/version-manager.mjs bump",
+    "mobile:buildcode:bump": "node scripts/version-manager.mjs mobile-buildcode:bump",
     "dev:api": "npm --prefix apps/api run start:dev",
     "dev:web": "npm --prefix apps/web run dev",
     "dev:mobile": "npm --prefix apps/mobile run start",

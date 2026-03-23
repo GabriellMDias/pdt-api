@@ -10,6 +10,7 @@ const packagePaths = [
   'package.json',
   'apps/api/package.json',
   'apps/web/package.json',
+  'apps/mobile/package.json',
 ]
 
 const semverRegex =
@@ -84,6 +85,17 @@ function printResult(targetVersion, changes) {
   }
 }
 
+function bumpMobileBuildCode(currentValue) {
+  const value = Number(currentValue)
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(
+      `androidVersionCode invalido: "${currentValue}". Defina um inteiro positivo em package.json > mobile.androidVersionCode.`,
+    )
+  }
+
+  return value + 1
+}
+
 function run() {
   const [command, arg] = process.argv.slice(2)
   const rootPackage = readJson('package.json')
@@ -122,7 +134,20 @@ function run() {
     return
   }
 
-  throw new Error(`Comando invalido: "${command}". Use sync, set ou bump.`)
+  if (command === 'mobile-buildcode:bump') {
+    const nextRootPackage = readJson('package.json')
+    const currentBuildCode = nextRootPackage.mobile?.androidVersionCode
+    const nextBuildCode = bumpMobileBuildCode(currentBuildCode)
+    nextRootPackage.mobile = {
+      ...(nextRootPackage.mobile ?? {}),
+      androidVersionCode: nextBuildCode,
+    }
+    writeJson('package.json', nextRootPackage)
+    console.log(`androidVersionCode atualizado: ${currentBuildCode} -> ${nextBuildCode}`)
+    return
+  }
+
+  throw new Error(`Comando invalido: "${command}". Use sync, set, bump ou mobile-buildcode:bump.`)
 }
 
 try {

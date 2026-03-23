@@ -2,7 +2,7 @@
   "expo": {
     "name": "pdt-mobile",
     "slug": "pdt-mobile",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pdtmobile",
@@ -12,12 +12,14 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.gabrielmdias.pdtmobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "versionCode": 10200,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -39,11 +41,30 @@
           }
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permita que o PDT Mobile acesse a camera para ler codigos de barras.",
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "APP_ENV": "development",
+      "API_URL": "http://192.168.110.30:4495/api",
+      "PROD_API_URL": "https://connect.pilardaterra.com.br/api",
+      "APP_VERSION_NAME": "1.2.0",
+      "APP_BUILD_NUMBER": 10200,
+      "ANDROID_PACKAGE": "com.gabrielmdias.pdtmobile",
+      "router": {},
+      "eas": {
+        "projectId": "8639577c-431b-4d69-8484-92a517b33524"
+      }
     }
   }
 }

@@ -5,6 +5,8 @@ import {
 } from "@nestjs/common";
 import { PoolClient } from "pg";
 import { PgService } from "src/db/pg/pg.service";
+import { StockMovementService } from "src/stock-movement/stock-movement.service";
+import { TransactionLogService } from "src/stock-movement/transaction-log.service";
 
 export type MobileConsumptionReasonItem = {
   id: number;
@@ -53,7 +55,11 @@ type ConsumptionProductRow = {
 
 @Injectable()
 export class ConsumoService {
-  constructor(private readonly pg: PgService) {}
+  constructor(
+    private readonly pg: PgService,
+    private readonly stockMovementService: StockMovementService,
+    private readonly transactionLogService: TransactionLogService,
+  ) {}
 
   async listReasonsForMobile(
     client: QueryExecutor = this.pg,
@@ -184,99 +190,30 @@ export class ConsumoService {
 
     const movementType = input.signedQuantity > 0 ? "add" : "remove";
     const absoluteQuantity = Math.abs(input.signedQuantity);
-    const currentStock = Number(product.stock_quantity ?? 0);
-    const nextStock = currentStock - input.signedQuantity;
-
-    await client.query(
-      `
-        INSERT INTO logestoque (
-          id_loja,
-          id_produto,
-          quantidade,
-          id_tipomovimentacao,
-          datahora,
-          id_usuario,
-          observacao,
-          estoqueanterior,
-          estoqueatual,
-          id_tipoentradasaida,
-          custosemimposto,
-          custocomimposto,
-          datamovimento,
-          customediocomimposto,
-          customediosemimposto,
-          id_venda
-        )
-        VALUES (
-          $1,
-          $2,
-          $3,
-          11,
-          NOW(),
-          $4,
-          'PDT MOBILE CONSUMO',
-          $5,
-          $6,
-          $7,
-          $8,
-          $9,
-          CURRENT_DATE,
-          $10,
-          $11,
-          NULL
-        )
-      `,
-      [
-        input.storeId,
-        input.productId,
-        absoluteQuantity,
-        input.userId,
-        currentStock,
-        nextStock,
-        movementType === "add" ? 1 : 0,
-        product.cost_without_tax != null ? Number(product.cost_without_tax) : 0,
-        product.cost_with_tax != null ? Number(product.cost_with_tax) : 0,
-        product.average_cost_with_tax != null
-          ? Number(product.average_cost_with_tax)
-          : 0,
-        product.average_cost_without_tax != null
-          ? Number(product.average_cost_without_tax)
-          : 0,
-      ],
+    await this.stockMovementService.applyMovement(
+      {
+        storeId: input.storeId,
+        originalProductId: input.productId,
+        userId: input.userId,
+        movementTypeId: 11,
+        quantity: absoluteQuantity,
+        stockEntryType: movementType === "add" ? 1 : 0,
+        updateCost: false,
+        stockObservation: "PDT MOBILE CONSUMO",
+      },
+      client,
     );
 
-    await client.query(
-      `
-        INSERT INTO logtransacao (
-          id_loja,
-          referencia,
-          id_formulario,
-          id_tipotransacao,
-          observacao,
-          datahora,
-          id_usuario,
-          datamovimento,
-          ipterminal,
-          versao,
-          id_referencia,
-          alteracao
-        )
-        VALUES (
-          $1,
-          $2,
-          9,
-          1,
-          'ALTERA ESTOQUE',
-          NOW(),
-          $3,
-          CURRENT_DATE,
-          '/MOBILE-SYNC',
-          COALESCE((SELECT versao FROM versao WHERE id_programa = 0 LIMIT 1), 'MOBILE'),
-          $2,
-          ''
-        )
-      `,
-      [input.storeId, input.productId, input.userId],
+    await this.transactionLogService.register(
+      {
+        storeId: input.storeId,
+        productId: input.productId,
+        formId: 9,
+        transactionTypeId: 1,
+        userId: input.userId,
+        ipTerminal: "MOBILE-SYNC",
+      },
+      client,
     );
 
     const existingConsumption = await client.query<{ quantity: number | null }>(
@@ -429,16 +366,6 @@ export class ConsumoService {
         ],
       );
     }
-
-    await client.query(
-      `
-        UPDATE produtocomplemento
-        SET estoque = $3
-        WHERE id_loja = $1
-          AND id_produto = $2
-      `,
-      [input.storeId, input.productId, nextStock],
-    );
 
     return {
       productId: input.productId,

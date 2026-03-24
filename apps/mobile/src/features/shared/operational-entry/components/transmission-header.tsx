@@ -1,7 +1,7 @@
 import { Entypo } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/ui';
-import { useThemedStyles, type AppTheme } from '@/src/theme/theme-provider';
+import { useAppTheme, useThemedStyles, type AppTheme } from '@/src/theme/theme-provider';
 
 type TransmissionHeaderProps = {
   lastSyncedAt: string | null;
@@ -9,7 +9,10 @@ type TransmissionHeaderProps = {
   transmitButtonLabel?: string;
   transmitButtonDisabled?: boolean;
   transmitButtonLoading?: boolean;
+  exportButtonDisabled?: boolean;
+  exportButtonLoading?: boolean;
   onTransmit: () => void;
+  onExport?: (() => void) | null;
 };
 
 export function TransmissionHeader({
@@ -18,8 +21,12 @@ export function TransmissionHeader({
   transmitButtonLabel = 'Transmitir',
   transmitButtonDisabled = false,
   transmitButtonLoading = false,
+  exportButtonDisabled = false,
+  exportButtonLoading = false,
   onTransmit,
+  onExport = null,
 }: TransmissionHeaderProps) {
+  const theme = useAppTheme();
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.headerContent}>
@@ -32,15 +39,31 @@ export function TransmissionHeader({
           <Text style={styles.syncStore}>{currentStoreLabel}</Text>
         </View>
 
-        <Button
-          disabled={transmitButtonDisabled}
-          label={transmitButtonLabel}
-          labelStyle={styles.transmitButtonLabel}
-          leftSlot={<Entypo color="white" name="paper-plane" size={24} />}
-          loading={transmitButtonLoading}
-          style={styles.transmitButton}
-          onPress={onTransmit}
-        />
+        <View style={styles.actionsRow}>
+          {onExport ? (
+            <Button
+              accessibilityLabel="Exportar TXT"
+              disabled={exportButtonDisabled}
+              loading={exportButtonLoading}
+              size="lg"
+              style={styles.exportButton}
+              variant="secondary"
+              onPress={onExport}
+            >
+              <Entypo name="export" size={22} color={theme.colors.brand.primaryStrong} />
+            </Button>
+          ) : null}
+
+          <Button
+            disabled={transmitButtonDisabled}
+            label={transmitButtonLabel}
+            labelStyle={styles.transmitButtonLabel}
+            leftSlot={<Entypo color="white" name="paper-plane" size={24} />}
+            loading={transmitButtonLoading}
+            style={styles.transmitButton}
+            onPress={onTransmit}
+          />
+        </View>
       </View>
     </View>
   );
@@ -55,6 +78,11 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     gap: 12,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   syncInfo: {
     flex: 1,
@@ -76,6 +104,12 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     marginTop: 4,
+  },
+  exportButton: {
+    minHeight: 50,
+    width: 54,
+    paddingHorizontal: 0,
+    borderRadius: 10,
   },
   transmitButton: {
     position: 'relative',

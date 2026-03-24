@@ -2,9 +2,13 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { PoolClient } from 'pg';
-import { PgService } from 'src/db/pg/pg.service';
+} from "@nestjs/common";
+import { PoolClient } from "pg";
+import { PgService } from "src/db/pg/pg.service";
+import { calculateCostWithoutTaxFromProducedProductTaxes } from "src/stock-movement/stock-movement-formulas";
+import { StockMovementService } from "src/stock-movement/stock-movement.service";
+import { TransactionLogService } from "src/stock-movement/transaction-log.service";
+import { AppliedCostUpdate } from "src/stock-movement/stock-movement.types";
 
 export type MobileProductionRecipeOutputItem = {
   recipeOutputId: number;
@@ -37,7 +41,7 @@ export type RegisterMobileProductionEntryInput = {
   userId: number;
 };
 
-type QueryExecutor = Pick<PoolClient, 'query'> | PgService;
+type QueryExecutor = Pick<PoolClient, "query"> | PgService;
 
 type ProductionRecipeHeaderRow = {
   id: number;
@@ -74,31 +78,29 @@ type ProductionIngredientRow = {
   product_id: number;
   quantity_used: number | null;
   cost_with_tax_used: number | null;
-  cost_without_tax_used: number | null;
-  stock_quantity: number | null;
-  cost_without_tax: number | null;
-  cost_with_tax: number | null;
-  average_cost_without_tax: number | null;
-  average_cost_with_tax: number | null;
 };
 
 type ProductionProductRow = {
   id: number;
   description: string;
   active_status: boolean;
-  stock_quantity: number | null;
   cost_without_tax: number | null;
   cost_with_tax: number | null;
   average_cost_without_tax: number | null;
   average_cost_with_tax: number | null;
   credit_tax_id: number | null;
   debit_tax_id: number | null;
-  pis_cofins_value: number | null;
+  pis_cofins_rate: number | null;
+  consumer_tax_rate: number | null;
 };
 
 @Injectable()
 export class ProducaoService {
-  constructor(private readonly pg: PgService) {}
+  constructor(
+    private readonly pg: PgService,
+    private readonly stockMovementService: StockMovementService,
+    private readonly transactionLogService: TransactionLogService,
+  ) {}
 
   async listRecipesForMobile(
     storeId: number,
@@ -172,13 +174,17 @@ export class ProducaoService {
       ORDER BY r.id ASC, ri.id_produto ASC, ri.id ASC
     `;
 
-    const [recipesResponse, outputsResponse, inputsResponse] = await Promise.all([
-      client.query<ProductionRecipeHeaderRow>(recipesQuery, [storeId]),
-      client.query<ProductionRecipeOutputCatalogRow>(outputsQuery, [storeId]),
-      client.query<ProductionRecipeInputCatalogRow>(inputsQuery, [storeId]),
-    ]);
+    const [recipesResponse, outputsResponse, inputsResponse] =
+      await Promise.all([
+        client.query<ProductionRecipeHeaderRow>(recipesQuery, [storeId]),
+        client.query<ProductionRecipeOutputCatalogRow>(outputsQuery, [storeId]),
+        client.query<ProductionRecipeInputCatalogRow>(inputsQuery, [storeId]),
+      ]);
 
-    const outputsByRecipe = new Map<number, MobileProductionRecipeOutputItem[]>();
+    const outputsByRecipe = new Map<
+      number,
+      MobileProductionRecipeOutputItem[]
+    >();
     for (const row of outputsResponse.rows) {
       const recipeId = Number(row.recipe_id);
       const items = outputsByRecipe.get(recipeId) ?? [];
@@ -186,7 +192,8 @@ export class ProducaoService {
         recipeOutputId: Number(row.recipe_output_id),
         productId: Number(row.product_id),
         yieldQuantity:
-          row.yield_quantity != null && Number.isFinite(Number(row.yield_quantity))
+          row.yield_quantity != null &&
+          Number.isFinite(Number(row.yield_quantity))
             ? Number(row.yield_quantity)
             : null,
       });
@@ -212,7 +219,8 @@ export class ProducaoService {
             : null,
         deductStock: Boolean(row.deduct_stock),
         conversionFactor:
-          row.conversion_factor != null && Number.isFinite(Number(row.conversion_factor))
+          row.conversion_factor != null &&
+          Number.isFinite(Number(row.conversion_factor))
             ? Number(row.conversion_factor)
             : null,
       });
@@ -241,7 +249,7 @@ export class ProducaoService {
     quantityInput: number;
   }> {
     if (!Number.isFinite(input.quantityInput) || input.quantityInput <= 0) {
-      throw new BadRequestException('Quantidade invalida para a producao.');
+      throw new BadRequestException("Quantidade invalida para a producao.");
     }
 
     const recipeResponse = await client.query<ProductionRecipeRow>(
@@ -274,7 +282,7 @@ export class ProducaoService {
 
     if (Number(recipe.product_id) !== input.productId) {
       throw new BadRequestException(
-        'Produto informado nao corresponde a receita enviada pelo mobile.',
+        "Produto informado nao corresponde a receita enviada pelo mobile.",
       );
     }
 
@@ -284,26 +292,28 @@ export class ProducaoService {
           p.id,
           p.descricaocompleta AS description,
           (pc.id_situacaocadastro = 1) AS active_status,
-          pc.estoque AS stock_quantity,
           pc.custosemimposto AS cost_without_tax,
           pc.custocomimposto AS cost_with_tax,
           pc.customediosemimposto AS average_cost_without_tax,
           pc.customediocomimposto AS average_cost_with_tax,
           pa.id_aliquotacredito AS credit_tax_id,
           pa.id_aliquotadebito AS debit_tax_id,
-          ((tpc.valorpis + tpc.valorcofins) * $3 * pc.custocomimposto / 100)::numeric(11,2) AS pis_cofins_value
+          (tpc.valorpis + tpc.valorcofins)::numeric(11,2) AS pis_cofins_rate,
+          a_consumidor.porcentagemfinal::numeric(11,2) AS consumer_tax_rate
         FROM produto p
         JOIN produtocomplemento pc
           ON pc.id_produto = p.id
          AND pc.id_loja = $2
         JOIN produtoaliquota pa
           ON pa.id_produto = p.id
-        JOIN tipopiscofins tpc
+        LEFT JOIN aliquota a_consumidor
+          ON a_consumidor.id = pa.id_aliquotaconsumidor
+        LEFT JOIN tipopiscofins tpc
           ON tpc.id = p.id_tipopiscofins
         WHERE p.id = $1
         LIMIT 1
       `,
-      [input.productId, input.storeId, input.quantityInput],
+      [input.productId, input.storeId],
     );
     const producedProduct = producedProductResponse.rows[0];
 
@@ -312,6 +322,17 @@ export class ProducaoService {
         `Produto produzido ${input.productId} nao encontrado ou inativo para a loja ${input.storeId}.`,
       );
     }
+
+    const producedProductPisCofinsRate = this.getRequiredTaxRate(
+      producedProduct.pis_cofins_rate,
+      "tipopiscofins.valorpis + valorcofins",
+      input.productId,
+    );
+    const producedProductConsumerTaxRate = this.getRequiredTaxRate(
+      producedProduct.consumer_tax_rate,
+      "aliquota.porcentagemfinal (id_aliquotaconsumidor)",
+      input.productId,
+    );
 
     const recipeYield = Number(recipe.yield_quantity ?? 0);
     const normalizedRecipeYield =
@@ -322,13 +343,7 @@ export class ProducaoService {
         SELECT
           ri.id_produto AS product_id,
           (((ri.qtdembalagemreceita::numeric(12,3) / NULLIF(ri.qtdembalagemproduto::numeric(12,3), 0)) * $1) / $2)::numeric(12,3) AS quantity_used,
-          ((pc.customediocomimposto * ((ri.qtdembalagemreceita::numeric(12,3) / NULLIF(ri.qtdembalagemproduto::numeric(12,3), 0)) * $1) / $2))::numeric(12,4) AS cost_with_tax_used,
-          ((pc.customediosemimposto * ((ri.qtdembalagemreceita::numeric(12,3) / NULLIF(ri.qtdembalagemproduto::numeric(12,3), 0)) * $1) / $2))::numeric(12,4) AS cost_without_tax_used,
-          pc.estoque AS stock_quantity,
-          pc.custosemimposto AS cost_without_tax,
-          pc.custocomimposto AS cost_with_tax,
-          pc.customediosemimposto AS average_cost_without_tax,
-          pc.customediocomimposto AS average_cost_with_tax
+          ((pc.customediocomimposto * ((ri.qtdembalagemreceita::numeric(12,3) / NULLIF(ri.qtdembalagemproduto::numeric(12,3), 0)) * $1) / $2))::numeric(12,4) AS cost_with_tax_used
         FROM receitaitem ri
         JOIN produtocomplemento pc
           ON pc.id_produto = ri.id_produto
@@ -336,12 +351,16 @@ export class ProducaoService {
         WHERE ri.id_receita = $4
           AND ri.baixaestoque = true
       `,
-      [input.quantityInput, normalizedRecipeYield, input.storeId, input.recipeId],
+      [
+        input.quantityInput,
+        normalizedRecipeYield,
+        input.storeId,
+        input.recipeId,
+      ],
     );
     const ingredients = ingredientResponse.rows;
 
     let totalCostWithTax = 0;
-    let totalCostWithoutTax = 0;
 
     for (const ingredient of ingredients) {
       const quantityUsed = Number(ingredient.quantity_used ?? 0);
@@ -350,168 +369,67 @@ export class ProducaoService {
       }
 
       totalCostWithTax += Number(ingredient.cost_with_tax_used ?? 0);
-      totalCostWithoutTax += Number(ingredient.cost_without_tax_used ?? 0);
 
-      const currentStock = Number(ingredient.stock_quantity ?? 0);
-      const nextStock = currentStock - quantityUsed;
-
-      await client.query(
-        `
-          INSERT INTO logestoque (
-            id_loja,
-            id_produto,
-            quantidade,
-            id_tipomovimentacao,
-            datahora,
-            id_usuario,
-            observacao,
-            estoqueanterior,
-            estoqueatual,
-            id_tipoentradasaida,
-            custosemimposto,
-            custocomimposto,
-            datamovimento,
-            customediocomimposto,
-            customediosemimposto,
-            id_venda
-          )
-          VALUES (
-            $1,
-            $2,
-            $3,
-            23,
-            NOW(),
-            $4,
-            'PDT MOBILE PRODUCAO',
-            $5,
-            $6,
-            1,
-            $7,
-            $8,
-            CURRENT_DATE,
-            $9,
-            $10,
-            NULL
-          )
-        `,
-        [
-          input.storeId,
-          ingredient.product_id,
-          quantityUsed,
-          input.userId,
-          currentStock,
-          nextStock,
-          ingredient.cost_without_tax != null ? Number(ingredient.cost_without_tax) : 0,
-          ingredient.cost_with_tax != null ? Number(ingredient.cost_with_tax) : 0,
-          ingredient.average_cost_with_tax != null ? Number(ingredient.average_cost_with_tax) : 0,
-          ingredient.average_cost_without_tax != null ? Number(ingredient.average_cost_without_tax) : 0,
-        ],
-      );
-
-      await client.query(
-        `
-          UPDATE produtocomplemento
-          SET estoque = $3
-          WHERE id_loja = $1
-            AND id_produto = $2
-        `,
-        [input.storeId, ingredient.product_id, nextStock],
+      await this.stockMovementService.applyMovement(
+        {
+          storeId: input.storeId,
+          originalProductId: Number(ingredient.product_id),
+          userId: input.userId,
+          movementTypeId: 23,
+          quantity: quantityUsed,
+          stockEntryType: 1,
+          updateCost: false,
+          stockObservation: "PDT MOBILE PRODUCAO",
+        },
+        client,
       );
     }
 
-    const currentProducedStock = Number(producedProduct.stock_quantity ?? 0);
-    const nextProducedStock = currentProducedStock + input.quantityInput;
     const unitCostWithTax =
-      input.quantityInput > 0 ? Number((totalCostWithTax / input.quantityInput).toFixed(4)) : 0;
-    const unitCostWithoutTax =
-      input.quantityInput > 0 ? Number((totalCostWithoutTax / input.quantityInput).toFixed(4)) : 0;
+      input.quantityInput > 0
+        ? Number((totalCostWithTax / input.quantityInput).toFixed(4))
+        : 0;
+    const unitCostWithoutTax = this.calculateProducedCostWithoutTax({
+      unitCostWithTax,
+      pisCofinsRate: producedProductPisCofinsRate,
+      consumerTaxRate: producedProductConsumerTaxRate,
+      productId: input.productId,
+    });
 
-    await client.query(
-      `
-        INSERT INTO logestoque (
-          id_loja,
-          id_produto,
-          quantidade,
-          id_tipomovimentacao,
-          datahora,
-          id_usuario,
-          observacao,
-          estoqueanterior,
-          estoqueatual,
-          id_tipoentradasaida,
-          custosemimposto,
-          custocomimposto,
-          datamovimento,
-          customediocomimposto,
-          customediosemimposto,
-          id_venda
-        )
-        VALUES (
-          $1,
-          $2,
-          $3,
-          23,
-          NOW(),
-          $4,
-          'PDT MOBILE PRODUCAO',
-          $5,
-          $6,
-          0,
-          $7,
-          $8,
-          CURRENT_DATE,
-          $9,
-          $10,
-          NULL
-        )
-      `,
-      [
-        input.storeId,
-        input.productId,
-        input.quantityInput,
-        input.userId,
-        currentProducedStock,
-        nextProducedStock,
-        unitCostWithoutTax,
-        unitCostWithTax,
-        unitCostWithTax,
-        unitCostWithoutTax,
-      ],
+    const producedMovement = await this.stockMovementService.applyMovement(
+      {
+        storeId: input.storeId,
+        originalProductId: input.productId,
+        userId: input.userId,
+        movementTypeId: 23,
+        quantity: input.quantityInput,
+        stockEntryType: 0,
+        updateCost: true,
+        costs: {
+          costWithoutTax: unitCostWithoutTax,
+          costWithTax: unitCostWithTax,
+        },
+        stockObservation: "PDT MOBILE PRODUCAO",
+        costObservation: "PRODUCAO 0",
+      },
+      client,
     );
 
-    await client.query(
-      `
-        INSERT INTO logtransacao (
-          id_loja,
-          referencia,
-          id_formulario,
-          id_tipotransacao,
-          observacao,
-          datahora,
-          id_usuario,
-          datamovimento,
-          ipterminal,
-          versao,
-          id_referencia,
-          alteracao
-        )
-        VALUES (
-          $1,
-          $2,
-          85,
-          0,
-          'ALTERA ESTOQUE',
-          NOW(),
-          $3,
-          CURRENT_DATE,
-          '/MOBILE-SYNC',
-          COALESCE((SELECT versao FROM versao WHERE id_programa = 0 LIMIT 1), 'MOBILE'),
-          $2,
-          ''
-        )
-      `,
-      [input.storeId, input.productId, input.userId],
+    await this.transactionLogService.register(
+      {
+        storeId: input.storeId,
+        productId: input.productId,
+        formId: 85,
+        transactionTypeId: 0,
+        userId: input.userId,
+        ipTerminal: "MOBILE-SYNC",
+      },
+      client,
     );
+
+    const appliedCost =
+      producedMovement.baseCostUpdate ??
+      this.buildFallbackCostUpdate(producedProduct);
 
     const productionInsert = await client.query<{ id: number }>(
       `
@@ -543,13 +461,14 @@ export class ProducaoService {
         input.storeId,
         input.productId,
         input.quantityInput,
-        producedProduct.cost_with_tax != null ? Number(producedProduct.cost_with_tax) : 0,
+        appliedCost.nextCostWithTax,
         producedProduct.credit_tax_id,
         producedProduct.debit_tax_id,
-        producedProduct.pis_cofins_value != null ? Number(producedProduct.pis_cofins_value) : 0,
-        producedProduct.average_cost_with_tax != null
-          ? Number(producedProduct.average_cost_with_tax)
-          : 0,
+        (Number(producedProduct.pis_cofins_rate ?? 0) *
+          input.quantityInput *
+          appliedCost.nextCostWithTax) /
+          100,
+        appliedCost.nextAverageCostWithTax,
       ],
     );
 
@@ -576,35 +495,70 @@ export class ProducaoService {
         [productionId, input.recipeId],
       );
     }
-
-    await client.query(
-      `
-        UPDATE produtocomplemento
-        SET
-          estoque = $3,
-          custosemimposto = $4,
-          custocomimposto = $5,
-          customediosemimposto = $6,
-          customediocomimposto = $7
-        WHERE id_loja = $1
-          AND id_produto = $2
-      `,
-      [
-        input.storeId,
-        input.productId,
-        nextProducedStock,
-        unitCostWithoutTax,
-        unitCostWithTax,
-        unitCostWithoutTax,
-        unitCostWithTax,
-      ],
-    );
-
     return {
       recipeId: input.recipeId,
       productId: input.productId,
       description: producedProduct.description,
       quantityInput: input.quantityInput,
     };
+  }
+
+  private buildFallbackCostUpdate(
+    product: ProductionProductRow,
+  ): AppliedCostUpdate {
+    const costWithoutTax = Number(product.cost_without_tax ?? 0);
+    const costWithTax = Number(product.cost_with_tax ?? 0);
+    const averageCostWithoutTax = Number(product.average_cost_without_tax ?? 0);
+    const averageCostWithTax = Number(product.average_cost_with_tax ?? 0);
+
+    return {
+      productId: Number(product.id),
+      previousCostWithoutTax: costWithoutTax,
+      nextCostWithoutTax: costWithoutTax,
+      previousCostWithTax: costWithTax,
+      nextCostWithTax: costWithTax,
+      previousAverageCostWithoutTax: averageCostWithoutTax,
+      nextAverageCostWithoutTax: averageCostWithoutTax,
+      previousAverageCostWithTax: averageCostWithTax,
+      nextAverageCostWithTax: averageCostWithTax,
+      propagatedFromProductId: null,
+    };
+  }
+
+  private getRequiredTaxRate(
+    value: number | null,
+    sourceDescription: string,
+    productId: number,
+  ): number {
+    if (value == null || !Number.isFinite(Number(value))) {
+      throw new BadRequestException(
+        `Produto produzido ${productId} nao possui configuracao tributaria valida em ${sourceDescription}.`,
+      );
+    }
+
+    return Number(value);
+  }
+
+  private calculateProducedCostWithoutTax(payload: {
+    unitCostWithTax: number;
+    pisCofinsRate: number;
+    consumerTaxRate: number;
+    productId: number;
+  }): number {
+    try {
+      return calculateCostWithoutTaxFromProducedProductTaxes({
+        costWithTax: payload.unitCostWithTax,
+        pisCofinsRate: payload.pisCofinsRate,
+        consumerTaxRate: payload.consumerTaxRate,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Falha ao calcular custosemimposto da producao.";
+      throw new BadRequestException(
+        `Nao foi possivel calcular custosemimposto do produto produzido ${payload.productId}: ${message}`,
+      );
+    }
   }
 }

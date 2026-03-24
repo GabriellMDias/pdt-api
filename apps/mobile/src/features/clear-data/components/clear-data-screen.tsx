@@ -1,16 +1,20 @@
-import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { Button, Card } from '@/src/components/ui';
-import { useAuthStore } from '@/src/features/auth/store/use-auth-store';
-import { clearDataRoutineDefinitions } from '@/src/features/clear-data/config';
-import { clearSelectedOperationalData } from '@/src/features/clear-data/services/clear-data.service';
-import type { ClearDataRoutineDefinition } from '@/src/features/clear-data/types';
-import type { ClearDataRoutineKey } from '@/src/database/repositories';
-import { FeatureScreenLayout } from '@/src/features/shared/components/feature-screen-layout';
-import { spacing, typography } from '@/src/theme/tokens';
-import { useAppTheme, useThemedStyles, type AppTheme } from '@/src/theme/theme-provider';
+import { AntDesign, Feather, MaterialIcons } from "@expo/vector-icons";
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import { Button, Card } from "@/src/components/ui";
+import { useAuthStore } from "@/src/features/auth/store/use-auth-store";
+import { clearDataRoutineDefinitions } from "@/src/features/clear-data/config";
+import { clearSelectedOperationalData } from "@/src/features/clear-data/services/clear-data.service";
+import type { ClearDataRoutineDefinition } from "@/src/features/clear-data/types";
+import type { ClearDataRoutineKey } from "@/src/database/repositories";
+import { FeatureScreenLayout } from "@/src/features/shared/components/feature-screen-layout";
+import { spacing, typography } from "@/src/theme/tokens";
+import {
+  useAppTheme,
+  useThemedStyles,
+  type AppTheme,
+} from "@/src/theme/theme-provider";
 
 function toggleRoutineKey(
   currentKeys: readonly ClearDataRoutineKey[],
@@ -30,13 +34,13 @@ function buildConfirmationMessage(payload: {
 }) {
   return [
     `As rotinas selecionadas serao limpas para ${payload.userLabel} na loja ${payload.storeLabel}.`,
-    '',
-    `Rotinas: ${payload.selectedLabels.join(', ')}`,
-    '',
-    'Serao removidos os lancamentos locais pendentes e transmitidos dessas rotinas, junto com os eventos correspondentes da fila de transmissao.',
-    '',
-    'Nao serao apagados catalogos, sessao, loja atual, favoritos, tema ou outras configuracoes do app.',
-  ].join('\n');
+    "",
+    `Rotinas: ${payload.selectedLabels.join(", ")}`,
+    "",
+    "Serao removidos os lancamentos locais pendentes e transmitidos dessas rotinas, junto com os eventos correspondentes da fila de transmissao.",
+    "",
+    "Nao serao apagados catalogos, sessao, loja atual, favoritos, tema ou outras configuracoes do app.",
+  ].join("\n");
 }
 
 export function ClearDataScreen() {
@@ -47,13 +51,15 @@ export function ClearDataScreen() {
   const currentStoreId = useAuthStore((state) => state.currentStoreId);
   const currentUserContext = useAuthStore((state) => state.currentUserContext);
   const availableStores = useAuthStore((state) => state.availableStores);
-  const [selectedRoutineKeys, setSelectedRoutineKeys] = useState<ClearDataRoutineKey[]>([]);
+  const [selectedRoutineKeys, setSelectedRoutineKeys] = useState<
+    ClearDataRoutineKey[]
+  >([]);
   const [isClearing, setIsClearing] = useState(false);
 
   const currentStore = useMemo(
     () =>
       currentStoreId != null
-        ? availableStores.find((store) => store.id === currentStoreId) ?? null
+        ? (availableStores.find((store) => store.id === currentStoreId) ?? null)
         : null,
     [availableStores, currentStoreId],
   );
@@ -77,24 +83,24 @@ export function ClearDataScreen() {
     .map((definition) => definition.label);
 
   const userLabel =
-    currentUserContext?.name ?? currentUser?.name ?? 'o usuario atual';
+    currentUserContext?.name ?? currentUser?.name ?? "o usuario atual";
   const storeLabel = currentStore
     ? `${currentStore.id} - ${currentStore.description}`
-    : 'nenhuma loja selecionada';
+    : "nenhuma loja selecionada";
 
   async function executeClearData() {
     if (!currentUser || !currentStoreId) {
       Alert.alert(
-        'Loja atual obrigatoria',
-        'Escolha a loja atual antes de limpar o historico local.',
+        "Loja atual obrigatoria",
+        "Escolha a loja atual antes de limpar o historico local.",
       );
       return;
     }
 
     if (selectedRoutineKeys.length === 0) {
       Alert.alert(
-        'Selecione ao menos uma rotina',
-        'Marque quais historicos devem ser removidos antes de continuar.',
+        "Selecione ao menos uma rotina",
+        "Marque quais historicos devem ser removidos antes de continuar.",
       );
       return;
     }
@@ -111,20 +117,22 @@ export function ClearDataScreen() {
       const message =
         summary.deletedEntries > 0
           ? `Historico local removido com sucesso. Foram apagados ${summary.deletedEntries} lancamento(s) e ${summary.deletedOutboxEvents} evento(s) da fila relacionados as rotinas selecionadas.`
-          : 'Nao havia historico local das rotinas selecionadas para o usuario atual na loja atual.';
+          : "Nao havia historico local das rotinas selecionadas para o usuario atual na loja atual.";
 
-      Alert.alert('Limpar Dados', message, [
+      Alert.alert("Limpar Dados", message, [
         {
-          text: 'OK',
+          text: "OK",
           onPress: () => {
-            router.replace('/home');
+            router.replace("/home");
           },
         },
       ]);
     } catch (error) {
       Alert.alert(
-        'Erro ao limpar dados',
-        error instanceof Error ? error.message : 'Nao foi possivel limpar os dados locais.',
+        "Erro ao limpar dados",
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel limpar os dados locais.",
       );
     } finally {
       setIsClearing(false);
@@ -134,32 +142,32 @@ export function ClearDataScreen() {
   function handleConfirmClearData() {
     if (!currentStoreId) {
       Alert.alert(
-        'Loja atual obrigatoria',
-        'Escolha a loja atual antes de limpar o historico local.',
+        "Loja atual obrigatoria",
+        "Escolha a loja atual antes de limpar o historico local.",
       );
       return;
     }
 
     if (selectedRoutineKeys.length === 0) {
       Alert.alert(
-        'Selecione ao menos uma rotina',
-        'Marque quais historicos devem ser removidos antes de continuar.',
+        "Selecione ao menos uma rotina",
+        "Marque quais historicos devem ser removidos antes de continuar.",
       );
       return;
     }
 
     Alert.alert(
-      'Excluir dados locais',
+      "Excluir dados locais",
       buildConfirmationMessage({
         selectedLabels,
         storeLabel,
         userLabel,
       }),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: "Cancelar", style: "cancel" },
         {
-          text: 'Excluir',
-          style: 'destructive',
+          text: "Excluir",
+          style: "destructive",
           onPress: () => {
             void executeClearData();
           },
@@ -194,11 +202,7 @@ export function ClearDataScreen() {
         title="Limpar Dados"
       >
         <Card style={styles.infoCard}>
-          <Text style={styles.cardTitle}>Escopo da limpeza</Text>
-          <Text style={styles.bodyText}>
-            A limpeza segue a ideia do legado, mas com escopo seguro: remove apenas o historico
-            local do usuario atual na loja atual.
-          </Text>
+          <Text style={styles.cardTitle}>Limpar Dados</Text>
 
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>Usuario</Text>
@@ -240,14 +244,16 @@ export function ClearDataScreen() {
                           ? theme.colors.brand.primaryStrong
                           : theme.colors.text.muted
                       }
-                      name={selected ? 'check-square' : 'square'}
+                      name={selected ? "check-square" : "square"}
                       size={20}
                     />
                   </View>
 
                   <View style={styles.routineCopy}>
                     <Text style={styles.routineLabel}>{routine.label}</Text>
-                    <Text style={styles.routineDescription}>{routine.description}</Text>
+                    <Text style={styles.routineDescription}>
+                      {routine.description}
+                    </Text>
                   </View>
                 </Pressable>
               );
@@ -255,20 +261,18 @@ export function ClearDataScreen() {
           </Card>
         ))}
 
-        <Card variant="muted" style={styles.scopeCard}>
-          <Text style={styles.scopeTitle}>O que nao sera apagado</Text>
-          <Text style={styles.scopeText}>
-            Catalogos sincronizados, sessao/login, loja atual, tema, favoritos e demais
-            configuracoes do usuario permanecem intactos.
-          </Text>
-        </Card>
-
         <View style={styles.footerActions}>
           <Button
             block
             disabled={selectedRoutineKeys.length === 0 || !currentStoreId}
             label="Excluir dados"
-            leftSlot={<AntDesign color={theme.colors.text.onAccent} name="delete" size={18} />}
+            leftSlot={
+              <AntDesign
+                color={theme.colors.text.onAccent}
+                name="delete"
+                size={18}
+              />
+            }
             loading={isClearing}
             variant="warning"
             onPress={handleConfirmClearData}
@@ -277,7 +281,7 @@ export function ClearDataScreen() {
           <Text style={styles.footerHint}>
             {selectedRoutineKeys.length > 0
               ? `${selectedRoutineKeys.length} rotina(s) selecionada(s)`
-              : 'Selecione uma ou mais rotinas para continuar'}
+              : "Selecione uma ou mais rotinas para continuar"}
           </Text>
         </View>
       </FeatureScreenLayout>
@@ -285,9 +289,15 @@ export function ClearDataScreen() {
       <Modal animationType="fade" transparent visible={isClearing}>
         <View style={styles.modalOverlay}>
           <View style={styles.progressCard}>
-            <MaterialIcons color={theme.colors.brand.primaryStrong} name="phonelink-ring" size={50} />
+            <MaterialIcons
+              color={theme.colors.brand.primaryStrong}
+              name="phonelink-ring"
+              size={50}
+            />
             <Text style={styles.progressTitle}>Limpando dados...</Text>
-            <Text style={styles.progressText}>Removendo historico local, aguarde!</Text>
+            <Text style={styles.progressText}>
+              Removendo historico local, aguarde!
+            </Text>
           </View>
         </View>
       </Modal>
@@ -318,7 +328,7 @@ const createStyles = (theme: AppTheme) =>
     metaLabel: {
       ...typography.textStyles.caption,
       color: theme.colors.text.muted,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
     },
     metaValue: {
       ...typography.textStyles.bodyStrong,
@@ -332,9 +342,9 @@ const createStyles = (theme: AppTheme) =>
       color: theme.colors.text.primary,
     },
     routineRow: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: spacing.md,
-      alignItems: 'flex-start',
+      alignItems: "flex-start",
       borderRadius: 14,
       borderWidth: 1,
       borderColor: theme.colors.border.default,
@@ -382,23 +392,23 @@ const createStyles = (theme: AppTheme) =>
     footerHint: {
       ...typography.textStyles.caption,
       color: theme.colors.text.muted,
-      textAlign: 'center',
+      textAlign: "center",
     },
     modalOverlay: {
       flex: 1,
       backgroundColor: theme.colors.overlay.strong,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       paddingHorizontal: 24,
     },
     progressCard: {
-      width: '100%',
+      width: "100%",
       maxWidth: 320,
       backgroundColor: theme.colors.background.surfaceAlt,
       borderRadius: 24,
       paddingHorizontal: 24,
       paddingVertical: 28,
-      alignItems: 'center',
+      alignItems: "center",
       gap: 10,
       borderWidth: 1,
       borderColor: theme.colors.border.default,
@@ -407,12 +417,12 @@ const createStyles = (theme: AppTheme) =>
       color: theme.colors.text.primary,
       fontSize: 20,
       lineHeight: 24,
-      fontWeight: '700',
+      fontWeight: "700",
     },
     progressText: {
       color: theme.colors.text.secondary,
       fontSize: 14,
       lineHeight: 20,
-      textAlign: 'center',
+      textAlign: "center",
     },
   });

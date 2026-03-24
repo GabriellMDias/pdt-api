@@ -1,6 +1,9 @@
 {
   "build": {
     "android-apk": {
+      "env": {
+        "APP_ENV": "production"
+      },
       "android": {
         "buildType": "apk"
       }

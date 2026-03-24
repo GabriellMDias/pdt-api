@@ -10,6 +10,7 @@ import {
   useAppTheme,
 } from '@/src/theme/theme-provider';
 import { AppUpdateCoordinator } from '@/src/features/app-update/components/app-update-coordinator';
+import { DEV_LOCAL_SEED_ENABLED } from '@/src/features/dev-seed/config';
 
 export default function RootLayout() {
   return (
@@ -55,6 +56,12 @@ function RootNavigation() {
         <Stack.Screen name="home-group/[groupId]" />
         <Stack.Screen name="menu-placeholder" />
         <Stack.Screen name="clear-data" />
+        {DEV_LOCAL_SEED_ENABLED ? (
+          <>
+            <Stack.Screen name="debug-performance" />
+            <Stack.Screen name="dev-seed" />
+          </>
+        ) : null}
         <Stack.Screen name="settings" />
         <Stack.Screen name="balanco" />
         <Stack.Screen name="balanco-items" />

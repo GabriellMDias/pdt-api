@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import * as Crypto from 'expo-crypto';
+import { ENV } from '@/src/config/env';
 import {
   claimSyncOutboxBatch,
   finishSyncRun,
@@ -85,13 +86,93 @@ function computeNextAttemptAt(attemptCount: number): string {
   return new Date(Date.now() + (baseSeconds + jitterSeconds) * 1000).toISOString();
 }
 
+function extractApiErrorMessage(data: unknown): string | null {
+  if (typeof data === 'string') {
+    return data.trim() || null;
+  }
+
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  const candidate = data as {
+    message?: unknown;
+    error?: unknown;
+    details?: unknown;
+  };
+
+  if (typeof candidate.message === 'string') {
+    return candidate.message.trim() || null;
+  }
+
+  if (Array.isArray(candidate.message)) {
+    const parts = candidate.message
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .map((value) => value.trim());
+
+    if (parts.length > 0) {
+      return parts.join(' | ');
+    }
+  }
+
+  if (typeof candidate.details === 'string' && candidate.details.trim().length > 0) {
+    return candidate.details.trim();
+  }
+
+  if (typeof candidate.error === 'string' && candidate.error.trim().length > 0) {
+    return candidate.error.trim();
+  }
+
+  return null;
+}
+
+function logDevSyncRejection(payload: {
+  scope: string;
+  storeId?: number | null;
+  eventTypePrefix?: string | null;
+  aggregateKeyPrefix?: string | null;
+  claimedEvents: SyncOutboxEventRow[];
+  error: AxiosError;
+}): void {
+  if (ENV.IS_PRODUCTION) {
+    return;
+  }
+
+  const serializedEvents = payload.claimedEvents.map((event) => {
+    try {
+      return mapOutboxEventToEnvelope(event);
+    } catch {
+      return {
+        eventId: event.event_id,
+        eventType: event.event_type,
+        aggregateKey: event.aggregate_key,
+        payloadJson: event.payload_json,
+      };
+    }
+  });
+
+  console.error(
+    '[mobile-sync] API rejected sync batch',
+    JSON.stringify(
+      {
+        scope: payload.scope,
+        storeId: payload.storeId ?? null,
+        eventTypePrefix: payload.eventTypePrefix ?? null,
+        aggregateKeyPrefix: payload.aggregateKeyPrefix ?? null,
+        httpStatus: payload.error.response?.status ?? null,
+        responseData: payload.error.response?.data ?? null,
+        events: serializedEvents,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 function classifyTransportFailure(error: unknown): TransportFailureClassification {
   if (error instanceof AxiosError) {
     const httpStatus = error.response?.status ?? null;
-    const responseMessage =
-      typeof error.response?.data?.message === 'string'
-        ? error.response.data.message
-        : null;
+    const responseMessage = extractApiErrorMessage(error.response?.data);
 
     if (httpStatus && httpStatus >= 400 && httpStatus < 500 && httpStatus !== 408 && httpStatus !== 429) {
       return {
@@ -250,6 +331,17 @@ export async function flushPendingSyncOutbox(payload: {
           });
         }
       } catch (error) {
+        if (error instanceof AxiosError) {
+          logDevSyncRejection({
+            scope: payload.scope,
+            storeId: payload.storeId ?? null,
+            eventTypePrefix: payload.eventTypePrefix ?? null,
+            aggregateKeyPrefix: payload.aggregateKeyPrefix ?? null,
+            claimedEvents,
+            error,
+          });
+        }
+
         const classifiedFailure = classifyTransportFailure(error);
         const updatedAt = new Date().toISOString();
 

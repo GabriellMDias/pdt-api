@@ -16,6 +16,9 @@ import { useAuthStore } from '@/src/features/auth/store/use-auth-store';
 import { FeatureScreenLayout } from '@/src/features/shared/components/feature-screen-layout';
 import { flushPendingSyncOutbox } from '@/src/features/mobile-sync/services/mobile-sync-service';
 import { OperationalFab } from '@/src/features/shared/operational-entry/components/operational-fab';
+import {
+  exportOperationalRoutineTxt,
+} from '@/src/features/shared/operational-export/services/operational-txt-export.service';
 import { TransmissionHeader } from '@/src/features/shared/operational-entry/components/transmission-header';
 import {
   playOperationalErrorAsync,
@@ -71,6 +74,7 @@ export function ProducaoScreen() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isExportingEntries, setIsExportingEntries] = useState(false);
   const [isSyncingEntries, setIsSyncingEntries] = useState(false);
   const [recipeModalVisible, setRecipeModalVisible] = useState(false);
   const [recipeSelectAutoOpenToken, setRecipeSelectAutoOpenToken] = useState(0);
@@ -277,6 +281,31 @@ export function ProducaoScreen() {
     }
   }
 
+  async function handleExport() {
+    if (!currentUser || !currentStoreId) {
+      Alert.alert('Exportacao indisponivel', 'Selecione a loja atual antes de exportar o TXT.');
+      return;
+    }
+
+    try {
+      setIsExportingEntries(true);
+      const result = await exportOperationalRoutineTxt({
+        routineKey: 'producao',
+        userId: currentUser.id,
+        storeId: currentStoreId,
+      });
+
+      Alert.alert(
+        'TXT exportado',
+        `${result.recordCount} registro(s) exportado(s) em ${result.fileName}.`,
+      );
+    } catch (error) {
+      Alert.alert('Erro', deriveErrorMessage(error));
+    } finally {
+      setIsExportingEntries(false);
+    }
+  }
+
   function resetModalState() {
     if (reopenSearchTimeoutRef.current) {
       clearTimeout(reopenSearchTimeoutRef.current);
@@ -447,7 +476,12 @@ export function ProducaoScreen() {
             ? `Loja atual: ${currentStore.id} - ${currentStore.description}`
             : 'Loja atual: nenhuma loja sincronizada'
         }
+        exportButtonDisabled={isLoading || isExportingEntries || totalCount === 0}
+        exportButtonLoading={isExportingEntries}
         lastSyncedAt={catalogLastSyncedAt}
+        onExport={() => {
+          void handleExport();
+        }}
         transmitButtonLoading={isSyncingEntries}
         onTransmit={() => {
           void handleTransmit('manual');

@@ -8,6 +8,7 @@ import {
   StoreSelectorModal,
   getSelectableSyncStores,
 } from "@/src/features/sync/components/store-selector-modal";
+import { DEV_LOCAL_SEED_ENABLED } from "@/src/features/dev-seed/config";
 import type { AppThemeMode } from "@/src/theme/colors";
 import { spacing, typography } from "@/src/theme/tokens";
 import {
@@ -168,6 +169,24 @@ export function SettingsScreen() {
             />
           </View>
         </Card>
+
+        {DEV_LOCAL_SEED_ENABLED ? (
+          <Card style={styles.card}>
+            <Text style={styles.cardTitle}>Debug de performance</Text>
+            <Text style={styles.cardText}>
+              Gere massa local, acompanhe contagens, transmita por rotina e
+              abra rapidamente as telas operacionais para testar volume.
+            </Text>
+
+            <Button
+              block
+              label="Abrir debug"
+              onPress={() => {
+                router.push("/debug-performance" as never);
+              }}
+            />
+          </Card>
+        ) : null}
 
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>

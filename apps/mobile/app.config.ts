@@ -6,6 +6,9 @@ const rootPackageJson = require("../../package.json");
 const PROD_API_URL = "https://connect.pilardaterra.com.br/api";
 const DEFAULT_DEV_API_URL = "http://192.168.110.30:4495/api";
 const ANDROID_PACKAGE = "com.gabrielmdias.pdtmobile";
+const PRODUCTION_BUILD_PROFILES = new Set(["production", "android-apk"]);
+const REQUEST_INSTALL_PACKAGES_PERMISSION =
+  "android.permission.REQUEST_INSTALL_PACKAGES";
 
 function resolveAppEnv(): "development" | "production" {
   const rawEnv = String(process.env.APP_ENV ?? "").toLowerCase();
@@ -15,7 +18,7 @@ function resolveAppEnv(): "development" | "production" {
   const buildProfile = String(
     process.env.EAS_BUILD_PROFILE ?? "",
   ).toLowerCase();
-  if (buildProfile === "production") return "production";
+  if (PRODUCTION_BUILD_PROFILES.has(buildProfile)) return "production";
 
   return "development";
 }
@@ -50,6 +53,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       ...baseConfig.android,
       package: ANDROID_PACKAGE,
+      permissions: Array.from(
+        new Set([
+          ...(baseConfig.android?.permissions ?? []),
+          REQUEST_INSTALL_PACKAGES_PERMISSION,
+        ]),
+      ),
       versionCode: androidVersionCode,
       softwareKeyboardLayoutMode: "pan",
     },

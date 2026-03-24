@@ -14,6 +14,9 @@ import {
 import { Input } from '@/src/components/ui';
 import { useAuthStore } from '@/src/features/auth/store/use-auth-store';
 import { FeatureScreenLayout } from '@/src/features/shared/components/feature-screen-layout';
+import {
+  exportOperationalRoutineTxt,
+} from '@/src/features/shared/operational-export/services/operational-txt-export.service';
 import { flushPendingSyncOutbox } from '@/src/features/mobile-sync/services/mobile-sync-service';
 import {
   countLocalRuptureEntries,
@@ -52,6 +55,7 @@ export function RuptureScreen() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isExportingEntries, setIsExportingEntries] = useState(false);
   const [isSyncingEntries, setIsSyncingEntries] = useState(false);
   const [shelfModalVisible, setShelfModalVisible] = useState(false);
   const [shelfCode, setShelfCode] = useState('');
@@ -192,6 +196,31 @@ export function RuptureScreen() {
     }
   }
 
+  async function handleExport() {
+    if (!currentUser || !currentStoreId) {
+      Alert.alert('Exportacao indisponivel', 'Selecione a loja atual antes de exportar o TXT.');
+      return;
+    }
+
+    try {
+      setIsExportingEntries(true);
+      const result = await exportOperationalRoutineTxt({
+        routineKey: 'rupture',
+        userId: currentUser.id,
+        storeId: currentStoreId,
+      });
+
+      Alert.alert(
+        'TXT exportado',
+        `${result.recordCount} registro(s) exportado(s) em ${result.fileName}.`,
+      );
+    } catch (error) {
+      Alert.alert('Erro', deriveErrorMessage(error));
+    } finally {
+      setIsExportingEntries(false);
+    }
+  }
+
   function handleOpenShelfModal() {
     if (!currentStoreId) {
       Alert.alert(
@@ -251,7 +280,12 @@ export function RuptureScreen() {
             ? `Loja atual: ${currentStore.id} - ${currentStore.description}`
             : 'Loja atual: nenhuma loja sincronizada'
         }
+        exportButtonDisabled={isLoading || isExportingEntries || totalCount === 0}
+        exportButtonLoading={isExportingEntries}
         lastSyncedAt={catalogLastSyncedAt}
+        onExport={() => {
+          void handleExport();
+        }}
         transmitButtonLoading={isSyncingEntries}
         onTransmit={() => {
           void handleTransmit('manual');

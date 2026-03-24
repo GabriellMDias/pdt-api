@@ -15,6 +15,9 @@ import { Input } from '@/src/components/ui';
 import { useAuthStore } from '@/src/features/auth/store/use-auth-store';
 import { FeatureScreenLayout } from '@/src/features/shared/components/feature-screen-layout';
 import { OperationalFab } from '@/src/features/shared/operational-entry/components/operational-fab';
+import {
+  exportOperationalRoutineTxt,
+} from '@/src/features/shared/operational-export/services/operational-txt-export.service';
 import { TransmissionHeader } from '@/src/features/shared/operational-entry/components/transmission-header';
 import { flushPendingSyncOutbox } from '@/src/features/mobile-sync/services/mobile-sync-service';
 import {
@@ -73,6 +76,7 @@ export function BalancoItemsScreen() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isExportingEntries, setIsExportingEntries] = useState(false);
   const [isSyncingEntries, setIsSyncingEntries] = useState(false);
   const currentOffsetRef = useRef(0);
   const hasMoreRef = useRef(true);
@@ -226,6 +230,32 @@ export function BalancoItemsScreen() {
     }
   }
 
+  async function handleExport() {
+    if (!currentUser || !storeId || !balanceId) {
+      Alert.alert('Exportacao indisponivel', 'Nao foi possivel identificar o balanco atual.');
+      return;
+    }
+
+    try {
+      setIsExportingEntries(true);
+      const result = await exportOperationalRoutineTxt({
+        routineKey: 'balanco',
+        userId: currentUser.id,
+        storeId,
+        balanceId,
+      });
+
+      Alert.alert(
+        'TXT exportado',
+        `${result.recordCount} registro(s) exportado(s) em ${result.fileName}.`,
+      );
+    } catch (error) {
+      Alert.alert('Erro', deriveErrorMessage(error));
+    } finally {
+      setIsExportingEntries(false);
+    }
+  }
+
   function handleRemoveEntry(entry: LocalBalancoEntry) {
     Alert.alert(
       'Excluir lancamento',
@@ -280,7 +310,12 @@ export function BalancoItemsScreen() {
               ? `Loja atual: ${currentStore.id} - ${currentStore.description}`
               : 'Loja atual: nenhuma loja sincronizada'
         }
+        exportButtonDisabled={isLoading || isExportingEntries || totalCount === 0}
+        exportButtonLoading={isExportingEntries}
         lastSyncedAt={catalogLastSyncedAt}
+        onExport={() => {
+          void handleExport();
+        }}
         transmitButtonLoading={isSyncingEntries}
         onTransmit={() => {
           void handleTransmit('manual_balance_items');

@@ -44,6 +44,7 @@ import NotificationsPage from '../pages/configuracoes/notifications/Notification
 import VendaDiaDPage from '../pages/administrativo/venda-dia-d/VendaDiaDPage';
 import AndroidIcon from '@mui/icons-material/Android';
 import MobileReleasesPage from '../pages/configuracoes/mobile-releases/MobileReleasesPage';
+import MobileSyncLogsPage from '../pages/configuracoes/mobile-sync-logs/MobileSyncLogsPage';
 
 
 export interface ProtectedRoute {
@@ -296,6 +297,14 @@ export const protectedRoutes: ProtectedRoute[] = [
         showInSidebar: true,
         icon: <NotificationsIcon />,
         element: <NotificationsPage />,
+      },
+      {
+        path: '/configuracoes/mobile/logs',
+        label: "Logs Transmissao Mobile",
+        showInSidebar: true,
+        icon: <ManageHistoryIcon />,
+        element: <MobileSyncLogsPage />,
+        requiredPermissions: ['mobile-sync-logs:consultar'],
       },
       {
         path: '/configuracoes/mobile/releases',

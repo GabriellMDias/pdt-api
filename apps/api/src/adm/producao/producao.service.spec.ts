@@ -14,12 +14,22 @@ type MockQuery = jest.Mock<
 >;
 
 function createRegisterMobileEntryClient(overrides?: {
+  recipeRow?: Record<string, unknown>;
   producedProductRow?: Record<string, unknown>;
   ingredientRows?: Record<string, unknown>[];
 }): {
   client: QueryExecutor;
   queryMock: MockQuery;
 } {
+  const recipeRow = {
+    id: 792,
+    description: "FLV MIX",
+    product_id: 5691,
+    active_status: true,
+    yield_quantity: 1,
+    ...overrides?.recipeRow,
+  };
+
   const producedProductRow = {
     id: 5691,
     description: "Produto produzido",
@@ -51,15 +61,7 @@ function createRegisterMobileEntryClient(overrides?: {
         queryText.includes("LIMIT 1")
       ) {
         return {
-          rows: [
-            {
-              id: 792,
-              description: "FLV MIX",
-              product_id: 5691,
-              active_status: true,
-              yield_quantity: 1,
-            },
-          ],
+          rows: [recipeRow],
         };
       }
 
@@ -177,6 +179,55 @@ describe("ProducaoService", () => {
       }),
       client,
     );
+  });
+
+  it("accepts a valid recipe/product pair even when the database row uses id_produto naming", async () => {
+    const { client } = createRegisterMobileEntryClient({
+      recipeRow: {
+        product_id: undefined,
+        id_produto: 5691,
+      },
+    });
+
+    await expect(
+      service.registerMobileEntry(
+        {
+          storeId: 1,
+          recipeId: 792,
+          productId: 5691,
+          quantityInput: 2,
+          userId: 7,
+        },
+        client,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        recipeId: 792,
+        productId: 5691,
+        quantityInput: 2,
+      }),
+    );
+  });
+
+  it("still rejects an actually invalid product for the selected recipe", async () => {
+    const { client } = createRegisterMobileEntryClient({
+      recipeRow: {
+        product_id: 9999,
+      },
+    });
+
+    await expect(
+      service.registerMobileEntry(
+        {
+          storeId: 1,
+          recipeId: 792,
+          productId: 5691,
+          quantityInput: 2,
+          userId: 7,
+        },
+        client,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it("fails safely when the produced product is missing the consumer tax configuration", async () => {

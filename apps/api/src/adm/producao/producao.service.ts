@@ -69,7 +69,8 @@ type ProductionRecipeInputCatalogRow = {
 type ProductionRecipeRow = {
   id: number;
   description: string;
-  product_id: number;
+  product_id?: number | null;
+  id_produto?: number | null;
   active_status: boolean;
   yield_quantity: number | null;
 };
@@ -257,7 +258,7 @@ export class ProducaoService {
         SELECT
           r.id,
           r.descricao AS description,
-          rp.id_produto,
+          rp.id_produto AS product_id,
           (r.id_situacaocadastro = 1) AS active_status,
           rp.rendimento AS yield_quantity
         FROM receita r
@@ -280,7 +281,9 @@ export class ProducaoService {
       );
     }
 
-    if (Number(recipe.product_id) !== input.productId) {
+    const recipeProductId = Number(recipe.product_id ?? recipe.id_produto ?? NaN);
+
+    if (!Number.isInteger(recipeProductId) || recipeProductId !== input.productId) {
       throw new BadRequestException(
         "Produto informado nao corresponde a receita enviada pelo mobile.",
       );

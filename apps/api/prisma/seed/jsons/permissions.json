@@ -30,6 +30,7 @@
   {"code": "top-restrictions:editar", "label": "Editar Restrições da TOP"},
   {"code": "ruptura:atualizar-prateleira", "label": "Atualizar Prateleiras", "useStorePermission": true},
   {"code": "venda-dia-d:consultar", "label": "Consultar Relatorio Venda Dia D", "useStorePermission": true},
+  {"code": "mobile-sync-logs:consultar", "label": "Consultar logs de transmissao mobile", "useStorePermission": true},
   {"code": "mobile-releases:consultar", "label": "Consultar versoes Mobile"},
   {"code": "mobile-releases:publicar", "label": "Publicar versoes Mobile"},
   {"code": "mobile-releases:baixar", "label": "Baixar versoes Mobile"}

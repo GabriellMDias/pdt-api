@@ -12,6 +12,7 @@ import {
   mobileReleasesApi,
   type MobileRelease,
 } from "./api";
+import ReleaseDownloadQrCode from "./ReleaseDownloadQrCode";
 
 function formatDateTime(value: string | null) {
   if (!value) return "Nao publicado";
@@ -75,6 +76,7 @@ export default function MobileReleasesPage() {
     () => releases.find((release) => release.isLatest) ?? null,
     [releases],
   );
+  const latestReleaseDownloadUrl = latestRelease?.latestDownloadUrl?.trim() || null;
 
   async function handleUpload() {
     if (!file) {
@@ -292,44 +294,60 @@ export default function MobileReleasesPage() {
               </div>
 
               {latestRelease ? (
-                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                    <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      Versao publicada
-                    </p>
-                    <p className="mt-1 text-xl font-semibold">
-                      {latestRelease.versionName}
-                    </p>
+                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+                      <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                        Versao publicada
+                      </p>
+                      <p className="mt-1 text-xl font-semibold">
+                        {latestRelease.versionName}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+                      <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                        Build
+                      </p>
+                      <p className="mt-1 text-xl font-semibold">
+                        {latestRelease.buildNumber}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+                      <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                        Publicada em
+                      </p>
+                      <p className="mt-1 text-sm font-medium">
+                        {formatDateTime(latestRelease.publishedAt)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+                      <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                        Download publico
+                      </p>
+                      {latestReleaseDownloadUrl ? (
+                        <a
+                          className="mt-1 block truncate text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-300"
+                          href={latestReleaseDownloadUrl}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          Abrir link publico da APK mais recente
+                        </a>
+                      ) : (
+                        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                          Link publico indisponivel para esta release.
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                    <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      Build
-                    </p>
-                    <p className="mt-1 text-xl font-semibold">
-                      {latestRelease.buildNumber}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                    <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      Publicada em
-                    </p>
-                    <p className="mt-1 text-sm font-medium">
-                      {formatDateTime(latestRelease.publishedAt)}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-neutral-200 bg-white/80 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                    <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      Download publico
-                    </p>
-                    <a
-                      className="mt-1 block truncate text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-300"
-                      href={latestRelease.latestDownloadUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Abrir link publico da APK mais recente
-                    </a>
-                  </div>
+
+                  {latestReleaseDownloadUrl ? (
+                    <ReleaseDownloadQrCode
+                      buildNumber={latestRelease.buildNumber}
+                      url={latestReleaseDownloadUrl}
+                      versionName={latestRelease.versionName}
+                    />
+                  ) : null}
                 </div>
               ) : (
                 <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">

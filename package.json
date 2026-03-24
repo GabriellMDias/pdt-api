@@ -1,9 +1,9 @@
 {
   "name": "pdt-monorepo",
   "private": true,
-  "version": "2.2.0",
+  "version": "2.2.1",
   "mobile": {
-    "androidVersionCode": 10203
+    "androidVersionCode": 10204
   },
   "description": "Monorepo com API NestJS, web React e app mobile Expo",
   "scripts": {

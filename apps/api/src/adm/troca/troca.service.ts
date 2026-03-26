@@ -95,11 +95,11 @@ export class TrocaService {
         pa.codigobarras::text AS barcode,
         p.descricaocompleta AS description,
         pa.qtdembalagem AS "packageQuantity",
-        COALESCE(pa.id_tipoembalagem, p.id_tipoembalagem) AS "packagingTypeId",
+        COALESCE(p.id_tipoembalagem, pa.id_tipoembalagem) AS "packagingTypeId",
         te.descricao AS "packagingDescription",
         pc.prateleira AS "shelfCode",
         (pc.id_situacaocadastro = 1) AS "activeStatus",
-        (COALESCE(pa.id_tipoembalagem, p.id_tipoembalagem) IN (4, 6, 9)) AS "decimalAllowed",
+        (COALESCE(p.id_tipoembalagem, pa.id_tipoembalagem) IN (4, 6, 9)) AS "decimalAllowed",
         pc.precovenda AS "salePrice",
         pc.estoque AS "stockQuantity",
         pc.troca AS "exchangeQuantity",
@@ -112,7 +112,7 @@ export class TrocaService {
       LEFT JOIN produtoautomacao pa
         ON pa.id_produto = p.id
       LEFT JOIN tipoembalagem te
-        ON te.id = COALESCE(pa.id_tipoembalagem, p.id_tipoembalagem)
+        ON te.id = COALESCE(p.id_tipoembalagem, pa.id_tipoembalagem)
       ORDER BY p.id, pa.codigobarras NULLS LAST
     `;
 

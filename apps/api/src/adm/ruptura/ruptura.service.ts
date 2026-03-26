@@ -2,35 +2,35 @@ import { PgService } from "src/db/pg/pg.service";
 import { AtualizarPrateleiraQueryDto } from "./dto/atualizar-prateleira.query.dto";
 import { Injectable } from "@nestjs/common";
 import { PoolClient } from "pg";
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException } from "@nestjs/common";
 
 export type MobileRuptureCatalogItem = {
-    id: number;
-    barcode: string | null;
-    description: string;
-    packageQuantity: number | null;
-    packagingTypeId: number | null;
-    packagingDescription: string | null;
-    shelfCode: string | null;
-    activeStatus: boolean;
-}
+  id: number;
+  barcode: string | null;
+  description: string;
+  packageQuantity: number | null;
+  packagingTypeId: number | null;
+  packagingDescription: string | null;
+  shelfCode: string | null;
+  activeStatus: boolean;
+};
 
 export type RegisterRuptureCollectorItemInput = {
-    storeId: number;
-    productId: number;
-    shelfCode: string;
-}
+  storeId: number;
+  productId: number;
+  shelfCode: string;
+};
 
-type QueryExecutor = Pick<PoolClient, 'query'> | PgService;
+type QueryExecutor = Pick<PoolClient, "query"> | PgService;
 
 @Injectable()
 export class RupturaService {
-    constructor (private pg: PgService) {}
+  constructor(private pg: PgService) {}
 
-    async atualizarPrateleiras(dto: AtualizarPrateleiraQueryDto) {
-        const {storeId, initialDate, finalDate} = dto
+  async atualizarPrateleiras(dto: AtualizarPrateleiraQueryDto) {
+    const { storeId, initialDate, finalDate } = dto;
 
-        const sqlQuery = `
+    const sqlQuery = `
             DO
             $$
             DECLARE
@@ -49,20 +49,22 @@ export class RupturaService {
             $$;
             `;
 
+    const resp = await this.pg.query(sqlQuery);
 
-        const resp = await this.pg.query(sqlQuery)
+    return dto;
+  }
 
-        return dto
-    }
-
-    async listProductsForMobile(storeId: number, client: QueryExecutor = this.pg): Promise<MobileRuptureCatalogItem[]> {
-        const sqlQuery = `
+  async listProductsForMobile(
+    storeId: number,
+    client: QueryExecutor = this.pg,
+  ): Promise<MobileRuptureCatalogItem[]> {
+    const sqlQuery = `
             SELECT DISTINCT ON (p.id)
                 p.id,
                 pa.codigobarras::text AS barcode,
                 p.descricaocompleta AS description,
                 pa.qtdembalagem AS "packageQuantity",
-                pa.id_tipoembalagem AS "packagingTypeId",
+                p.id_tipoembalagem AS "packagingTypeId",
                 te.descricao AS "packagingDescription",
                 pc.prateleira AS "shelfCode",
                 (pc.id_situacaocadastro = 1) AS "activeStatus"
@@ -73,29 +75,33 @@ export class RupturaService {
             LEFT JOIN produtoautomacao pa
               ON pa.id_produto = p.id
             LEFT JOIN tipoembalagem te
-              ON te.id = pa.id_tipoembalagem
+              ON te.id = p.id_tipoembalagem
             WHERE pc.id_situacaocadastro = 1
             ORDER BY p.id, pa.codigobarras NULLS LAST
         `;
 
-        const response = await client.query<MobileRuptureCatalogItem>(sqlQuery, [storeId]);
-        return response.rows.map((row) => ({
-            ...row,
-            barcode: row.barcode ?? null,
-            description: row.description,
-            packageQuantity: row.packageQuantity != null ? Number(row.packageQuantity) : null,
-            packagingTypeId: row.packagingTypeId != null ? Number(row.packagingTypeId) : null,
-            packagingDescription: row.packagingDescription ?? null,
-            shelfCode: row.shelfCode ?? null,
-            activeStatus: Boolean(row.activeStatus),
-        }));
-    }
+    const response = await client.query<MobileRuptureCatalogItem>(sqlQuery, [
+      storeId,
+    ]);
+    return response.rows.map((row) => ({
+      ...row,
+      barcode: row.barcode ?? null,
+      description: row.description,
+      packageQuantity:
+        row.packageQuantity != null ? Number(row.packageQuantity) : null,
+      packagingTypeId:
+        row.packagingTypeId != null ? Number(row.packagingTypeId) : null,
+      packagingDescription: row.packagingDescription ?? null,
+      shelfCode: row.shelfCode ?? null,
+      activeStatus: Boolean(row.activeStatus),
+    }));
+  }
 
-    async registerCollectorItem(
-        input: RegisterRuptureCollectorItemInput,
-        client: QueryExecutor = this.pg,
-    ): Promise<{ productId: number; description: string }> {
-        const productQuery = `
+  async registerCollectorItem(
+    input: RegisterRuptureCollectorItemInput,
+    client: QueryExecutor = this.pg,
+  ): Promise<{ productId: number; description: string }> {
+    const productQuery = `
             SELECT
                 p.id,
                 p.descricaocompleta AS description
@@ -108,17 +114,19 @@ export class RupturaService {
             LIMIT 1
         `;
 
-        const productResponse = await client.query<{ id: number; description: string }>(
-            productQuery,
-            [input.productId, input.storeId],
-        );
+    const productResponse = await client.query<{
+      id: number;
+      description: string;
+    }>(productQuery, [input.productId, input.storeId]);
 
-        const product = productResponse.rows[0];
-        if (!product) {
-            throw new NotFoundException(`Produto ${input.productId} nao encontrado para a loja ${input.storeId}.`);
-        }
+    const product = productResponse.rows[0];
+    if (!product) {
+      throw new NotFoundException(
+        `Produto ${input.productId} nao encontrado para a loja ${input.storeId}.`,
+      );
+    }
 
-        const insertQuery = `
+    const insertQuery = `
             INSERT INTO rupturacoletor (
                 prateleira,
                 id_produto,
@@ -128,11 +136,15 @@ export class RupturaService {
             VALUES ($1, $2, CURRENT_DATE, $3)
         `;
 
-        await client.query(insertQuery, [input.shelfCode, input.productId, input.storeId]);
+    await client.query(insertQuery, [
+      input.shelfCode,
+      input.productId,
+      input.storeId,
+    ]);
 
-        return {
-            productId: product.id,
-            description: product.description,
-        };
-    }
+    return {
+      productId: product.id,
+      description: product.description,
+    };
+  }
 }

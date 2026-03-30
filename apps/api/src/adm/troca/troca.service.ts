@@ -39,7 +39,7 @@ export type RegisterMobileExchangeEntryInput = {
   totalQuantity: number;
   quantityInput: number;
   packageCount: number;
-  userId: number;
+  codigoUsuarioVrMaster: number;
 };
 
 type QueryExecutor = Pick<PoolClient, "query"> | PgService;
@@ -223,7 +223,7 @@ export class TrocaService {
       {
         storeId: input.storeId,
         originalProductId: input.productId,
-        userId: input.userId,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
         movementTypeId: 18,
         quantity: absoluteQuantity,
         stockEntryType: movementType === "add" ? 1 : 0,
@@ -274,7 +274,7 @@ export class TrocaService {
         input.storeId,
         input.productId,
         absoluteQuantity,
-        input.userId,
+        input.codigoUsuarioVrMaster,
         currentExchange,
         nextExchange,
         movementType === "add" ? 0 : 1,
@@ -296,7 +296,7 @@ export class TrocaService {
         productId: input.productId,
         formId: 196,
         transactionTypeId: 1,
-        userId: input.userId,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
         ipTerminal: "MOBILE-SYNC",
       },
       client,

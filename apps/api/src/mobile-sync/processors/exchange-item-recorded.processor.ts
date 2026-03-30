@@ -94,7 +94,7 @@ export class ExchangeItemRecordedProcessor implements MobileSyncEventProcessor {
           totalQuantity,
           quantityInput,
           packageCount,
-          userId: context.user.id,
+          codigoUsuarioVrMaster: context.user.codigoUsuarioVrMaster,
         },
         context.client,
       );

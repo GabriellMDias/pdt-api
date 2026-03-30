@@ -36,6 +36,7 @@ export class MobileSyncController {
         id: req.user.id,
         email: req.user.email,
         permissions: Array.isArray(req.user.permissions) ? req.user.permissions : [],
+        codigoUsuarioVrMaster: req.user.codigoUsuarioVrMaster,
       },
       dto,
     );
@@ -64,6 +65,7 @@ export class MobileSyncController {
         id: req.user.id,
         email: req.user.email,
         permissions: Array.isArray(req.user.permissions) ? req.user.permissions : [],
+        codigoUsuarioVrMaster: req.user.codigoUsuarioVrMaster,
       },
       dto,
     );

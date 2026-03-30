@@ -38,7 +38,7 @@ export type RegisterMobileProductionEntryInput = {
   recipeId: number;
   productId: number;
   quantityInput: number;
-  userId: number;
+  codigoUsuarioVrMaster: number;
 };
 
 type QueryExecutor = Pick<PoolClient, "query"> | PgService;
@@ -377,7 +377,7 @@ export class ProducaoService {
         {
           storeId: input.storeId,
           originalProductId: Number(ingredient.product_id),
-          userId: input.userId,
+          codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
           movementTypeId: 23,
           quantity: quantityUsed,
           stockEntryType: 1,
@@ -403,7 +403,7 @@ export class ProducaoService {
       {
         storeId: input.storeId,
         originalProductId: input.productId,
-        userId: input.userId,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
         movementTypeId: 23,
         quantity: input.quantityInput,
         stockEntryType: 0,
@@ -424,7 +424,7 @@ export class ProducaoService {
         productId: input.productId,
         formId: 85,
         transactionTypeId: 0,
-        userId: input.userId,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
         ipTerminal: "MOBILE-SYNC",
       },
       client,

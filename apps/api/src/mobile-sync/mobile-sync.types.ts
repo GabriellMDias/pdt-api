@@ -17,6 +17,7 @@ export type AuthenticatedMobileUser = {
   id: number;
   email: string;
   permissions: string[];
+  codigoUsuarioVrMaster: number;
 };
 
 export type MobileSyncReceiptRow = {

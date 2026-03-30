@@ -28,6 +28,7 @@ describe('MobileSyncService', () => {
     id: 10,
     email: 'user@test.com',
     permissions: [],
+    codigoUsuarioVrMaster: 501,
   };
 
   const event = {

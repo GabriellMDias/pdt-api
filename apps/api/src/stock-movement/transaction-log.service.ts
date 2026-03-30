@@ -47,7 +47,7 @@ export class TransactionLogService {
         input.formId,
         input.transactionTypeId,
         input.observation ?? "",
-        input.userId,
+        input.codigoUsuarioVrMaster,
         ipTerminal,
         referenceId,
         input.alteracao ?? "",

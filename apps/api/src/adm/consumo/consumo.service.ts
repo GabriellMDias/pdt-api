@@ -22,7 +22,7 @@ export type RegisterMobileConsumptionEntryInput = {
   totalQuantity: number;
   quantityInput: number;
   packageCount: number;
-  userId: number;
+  codigoUsuarioVrMaster: number;
 };
 
 type QueryExecutor = Pick<PoolClient, "query"> | PgService;
@@ -194,7 +194,7 @@ export class ConsumoService {
       {
         storeId: input.storeId,
         originalProductId: input.productId,
-        userId: input.userId,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
         movementTypeId: 11,
         quantity: absoluteQuantity,
         stockEntryType: movementType === "add" ? 1 : 0,
@@ -210,7 +210,7 @@ export class ConsumoService {
         productId: input.productId,
         formId: 9,
         transactionTypeId: 1,
-        userId: input.userId,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
         ipTerminal: "MOBILE-SYNC",
       },
       client,

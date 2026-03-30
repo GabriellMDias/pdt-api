@@ -73,7 +73,7 @@ export class StockMovementService {
         {
           storeId: input.storeId,
           productSnapshot: baseCostSnapshot,
-          userId: input.userId,
+          codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
           costWithoutTax: input.costs.costWithoutTax,
           costWithTax: input.costs.costWithTax,
           quantity: input.quantity,
@@ -115,7 +115,7 @@ export class StockMovementService {
             productId: stockProductId,
             quantity: movedQuantity,
             movementTypeId: input.movementTypeId,
-            userId: input.userId,
+            codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
             stockBefore: stockTarget.stockQuantity,
             stockEntryType: input.stockEntryType,
             costWithoutTax: stockTarget.costWithoutTax,
@@ -194,7 +194,7 @@ export class StockMovementService {
         {
           storeId: input.storeId,
           productSnapshot: targetSnapshot,
-          userId: input.userId,
+          codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
           costWithoutTax: this.associationResolver.calculatePropagatedCost(
             rule,
             baseCostUpdate.nextCostWithoutTax,
@@ -231,7 +231,7 @@ export class StockMovementService {
     payload: {
       storeId: number;
       productSnapshot: StockProductSnapshot;
-      userId: number;
+      codigoUsuarioVrMaster: number;
       costWithoutTax: number;
       costWithTax: number;
       quantity: number;
@@ -346,7 +346,7 @@ export class StockMovementService {
         update.nextCostWithoutTax,
         update.previousCostWithTax,
         update.nextCostWithTax,
-        payload.userId,
+        payload.codigoUsuarioVrMaster,
         payload.storeId,
         payload.costObservation,
         update.nextAverageCostWithoutTax,
@@ -455,7 +455,7 @@ export class StockMovementService {
       productId: number;
       quantity: number;
       movementTypeId: number;
-      userId: number;
+      codigoUsuarioVrMaster: number;
       stockBefore: number;
       stockEntryType: number;
       costWithoutTax: number;
@@ -516,7 +516,7 @@ export class StockMovementService {
         payload.productId,
         payload.quantity,
         payload.movementTypeId,
-        payload.userId,
+        payload.codigoUsuarioVrMaster,
         payload.observation,
         payload.stockBefore,
         stockAfter,

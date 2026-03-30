@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PoolClient } from 'pg';
 import { PgService } from 'src/db/pg/pg.service';
+import { TransactionLogService } from 'src/stock-movement/transaction-log.service';
 
 export type MobileBalanceHeaderItem = {
   id: number;
@@ -21,7 +22,7 @@ export type RegisterMobileBalanceEntryInput = {
   totalQuantity: number;
   quantityInput: number;
   packageCount: number;
-  userId: number;
+  codigoUsuarioVrMaster: number;
 };
 
 type QueryExecutor = Pick<PoolClient, 'query'> | PgService;
@@ -45,7 +46,10 @@ type BalanceProductRow = {
 
 @Injectable()
 export class BalancoService {
-  constructor(private readonly pg: PgService) {}
+  constructor(
+    private readonly pg: PgService,
+    private readonly transactionLogService: TransactionLogService,
+  ) {}
 
   async listHeadersForMobile(
     storeId: number,
@@ -168,38 +172,16 @@ export class BalancoService {
     const previousQuantity = Number(previousBalanceResponse.rows[0]?.quantity ?? 0);
     const nextQuantity = previousQuantity + input.signedQuantity;
 
-    await client.query(
-      `
-        INSERT INTO logtransacao (
-          id_loja,
-          referencia,
-          id_formulario,
-          id_tipotransacao,
-          observacao,
-          datahora,
-          id_usuario,
-          datamovimento,
-          ipterminal,
-          versao,
-          id_referencia,
-          alteracao
-        )
-        VALUES (
-          $1,
-          $2,
-          61,
-          2,
-          '',
-          NOW(),
-          $3,
-          CURRENT_DATE,
-          '/MOBILE-SYNC',
-          COALESCE((SELECT versao FROM versao WHERE id_programa = 0 LIMIT 1), 'MOBILE'),
-          $2,
-          ''
-        )
-      `,
-      [input.storeId, input.productId, input.userId],
+    await this.transactionLogService.register(
+      {
+        storeId: input.storeId,
+        productId: input.productId,
+        formId: 61,
+        transactionTypeId: 2,
+        codigoUsuarioVrMaster: input.codigoUsuarioVrMaster,
+        ipTerminal: 'MOBILE-SYNC',
+      },
+      client,
     );
 
     if (previousBalanceResponse.rows.length > 0) {

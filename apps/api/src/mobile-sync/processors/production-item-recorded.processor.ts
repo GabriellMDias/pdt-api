@@ -62,7 +62,7 @@ export class ProductionItemRecordedProcessor implements MobileSyncEventProcessor
           recipeId,
           productId,
           quantityInput,
-          userId: context.user.id,
+          codigoUsuarioVrMaster: context.user.codigoUsuarioVrMaster,
         },
         context.client,
       );

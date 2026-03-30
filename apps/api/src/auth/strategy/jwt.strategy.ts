@@ -32,6 +32,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Usuario inativo');
     }
 
+    if (userWithPermissions.codigoUsuarioVrMaster == null) {
+      throw new UnauthorizedException('Usuario sem codigoUsuarioVrMaster vinculado');
+    }
+
     const isSuperAdmin = userWithPermissions.id === 0;
     const permissions = isSuperAdmin
       ? ['*']
@@ -41,6 +45,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       id: userWithPermissions.id,
       email: userWithPermissions.email,
       permissions,
+      codigoUsuarioVrMaster: userWithPermissions.codigoUsuarioVrMaster,
     };
   }
 }

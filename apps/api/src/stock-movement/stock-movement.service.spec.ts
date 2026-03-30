@@ -78,7 +78,7 @@ describe("StockMovementService", () => {
       {
         storeId: 1,
         originalProductId: 191,
-        userId: 7,
+        codigoUsuarioVrMaster: 7,
         movementTypeId: 11,
         quantity: 3,
         stockEntryType: 1,
@@ -124,7 +124,7 @@ describe("StockMovementService", () => {
       {
         storeId: 1,
         originalProductId: 191,
-        userId: 7,
+        codigoUsuarioVrMaster: 7,
         movementTypeId: 18,
         quantity: 2,
         stockEntryType: 1,
@@ -184,7 +184,7 @@ describe("StockMovementService", () => {
       {
         storeId: 1,
         originalProductId: 3639,
-        userId: 7,
+        codigoUsuarioVrMaster: 7,
         movementTypeId: 11,
         quantity: 10,
         stockEntryType: 1,

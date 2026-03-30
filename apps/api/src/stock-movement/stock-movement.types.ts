@@ -60,7 +60,7 @@ export type AppliedCostUpdate = {
 export type StockMovementInput = {
   storeId: number;
   originalProductId: number;
-  userId: number;
+  codigoUsuarioVrMaster: number;
   movementTypeId: number;
   quantity: number;
   stockEntryType: StockEntryType;
@@ -91,7 +91,7 @@ export type LogTransactionInput = {
   productId: number;
   formId: number;
   transactionTypeId: number;
-  userId: number;
+  codigoUsuarioVrMaster: number;
   ipTerminal?: string | null;
   observation?: string;
   referenceId?: number | null;

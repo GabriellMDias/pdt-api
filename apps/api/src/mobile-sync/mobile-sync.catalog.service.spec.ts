@@ -60,7 +60,7 @@ describe('MobileSyncCatalogService', () => {
     ]);
 
     const response = await service.pullCatalog(
-      { id: 1, email: 'user@test.com', permissions: [] },
+      { id: 1, email: 'user@test.com', permissions: [], codigoUsuarioVrMaster: 501 },
       { domain: 'rupture.products', storeId: 5 },
     );
 
@@ -80,7 +80,7 @@ describe('MobileSyncCatalogService', () => {
     ]);
 
     const response = await service.pullCatalog(
-      { id: 1, email: 'user@test.com', permissions: [] },
+      { id: 1, email: 'user@test.com', permissions: [], codigoUsuarioVrMaster: 501 },
       { domain: 'exchange.reasons', storeId: 5 },
     );
 
@@ -99,7 +99,7 @@ describe('MobileSyncCatalogService', () => {
     ]);
 
     const response = await service.pullCatalog(
-      { id: 1, email: 'user@test.com', permissions: [] },
+      { id: 1, email: 'user@test.com', permissions: [], codigoUsuarioVrMaster: 501 },
       { domain: 'consumption.reasons', storeId: 5 },
     );
 
@@ -111,7 +111,7 @@ describe('MobileSyncCatalogService', () => {
   it('deve rejeitar dominio nao suportado', async () => {
     await expect(
       service.pullCatalog(
-        { id: 1, email: 'user@test.com', permissions: [] },
+        { id: 1, email: 'user@test.com', permissions: [], codigoUsuarioVrMaster: 501 },
         { domain: 'unsupported.domain' as never, storeId: 5 },
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -149,7 +149,7 @@ describe('MobileSyncCatalogService', () => {
     ]);
 
     const response = await service.pullCatalog(
-      { id: 1, email: 'user@test.com', permissions: [] },
+      { id: 1, email: 'user@test.com', permissions: [], codigoUsuarioVrMaster: 501 },
       { domain: 'production.recipes', storeId: 5 },
     );
 
@@ -179,7 +179,7 @@ describe('MobileSyncCatalogService', () => {
     ]);
 
     const response = await service.pullCatalog(
-      { id: 1, email: 'user@test.com', permissions: [] },
+      { id: 1, email: 'user@test.com', permissions: [], codigoUsuarioVrMaster: 501 },
       { domain: 'balance.headers', storeId: 5 },
     );
 

@@ -6,32 +6,92 @@
   { "code": "permissions:consultar", "label": "Consultar permissões" },
   { "code": "permissions:editar", "label": "Editar permissões" },
   { "code": "sped:upload", "label": "Upload arquivo SPED" },
-  { "code": "sped:consultarRelatorioSPED", "label": "Consultar Relatório SPED", "useStorePermission": true },
-  { "code": "expense:consultar", "label": "Consultar Despesas", "useStorePermission": true },
-  { "code": "expense:incluir", "label": "Incluir Despesas", "useStorePermission": true },
-  { "code": "expense:editar", "label": "Editar Despesas", "useStorePermission": true },
-  { "code": "expense:excluir", "label": "Excluir Despesas", "useStorePermission": true },
-  {"code": "stock-analysis:consultar", "label": "Consultar Análise de Estoque", "useStorePermission": true},
-  {"code": "dbScripts:consultar", "label": "Consultar Ações Agendadas"},
-  {"code": "dbScripts:incluir", "label": "Incluir Ações Agendadas"},
-  {"code": "dbScripts:editar", "label": "Editar Ações Agendadas"},
-  {"code": "dbScripts:excluir", "label": "Excluir Ações Agendadas"},
-  {"code": "dbScripts:executar", "label": "Executar Ações Agendadas"},
-  {"code": "parameters:consultar", "label": "Consultar Parâmetros"},
-  {"code": "parameters:editar", "label": "Editar Parâmetros"},
-  {"code": "codeJobs:consultar", "label": "Consultar Jobs"},
-  {"code": "codeJobs:editar", "label": "Editar Jobs"},
-  {"code": "codeJobs:executar", "label": "Executar Jobs"},
-  {"code": "dre:consultar", "label": "Consultar DRE", "useStorePermission": true},
-  {"code": "dre:consolidar", "label": "Consolidar DRE", "useStorePermission": true},
-  {"code": "cost-center-comparative:consultar", "label": "Consultar Gestão a Vista", "useStorePermission": true},
-  {"code": "accounting-reconc:consultar", "label": "Consultar Conciliação Contábil", "useStorePermission": true},
-  {"code": "top-restrictions:consultar", "label": "Consultar Restrições da TOP"},
-  {"code": "top-restrictions:editar", "label": "Editar Restrições da TOP"},
-  {"code": "ruptura:atualizar-prateleira", "label": "Atualizar Prateleiras", "useStorePermission": true},
-  {"code": "venda-dia-d:consultar", "label": "Consultar Relatorio Venda Dia D", "useStorePermission": true},
-  {"code": "mobile-sync-logs:consultar", "label": "Consultar logs de transmissao mobile", "useStorePermission": true},
-  {"code": "mobile-releases:consultar", "label": "Consultar versoes Mobile"},
-  {"code": "mobile-releases:publicar", "label": "Publicar versoes Mobile"},
-  {"code": "mobile-releases:baixar", "label": "Baixar versoes Mobile"}
+  {
+    "code": "sped:consultarRelatorioSPED",
+    "label": "Consultar Relatório SPED",
+    "useStorePermission": true
+  },
+  {
+    "code": "expense:consultar",
+    "label": "Consultar Despesas",
+    "useStorePermission": true
+  },
+  {
+    "code": "expense:incluir",
+    "label": "Incluir Despesas",
+    "useStorePermission": true
+  },
+  {
+    "code": "expense:editar",
+    "label": "Editar Despesas",
+    "useStorePermission": true
+  },
+  {
+    "code": "expense:excluir",
+    "label": "Excluir Despesas",
+    "useStorePermission": true
+  },
+  {
+    "code": "stock-analysis:consultar",
+    "label": "Consultar Análise de Estoque",
+    "useStorePermission": true
+  },
+  { "code": "dbScripts:consultar", "label": "Consultar Ações Agendadas" },
+  { "code": "dbScripts:incluir", "label": "Incluir Ações Agendadas" },
+  { "code": "dbScripts:editar", "label": "Editar Ações Agendadas" },
+  { "code": "dbScripts:excluir", "label": "Excluir Ações Agendadas" },
+  { "code": "dbScripts:executar", "label": "Executar Ações Agendadas" },
+  { "code": "parameters:consultar", "label": "Consultar Parâmetros" },
+  { "code": "parameters:editar", "label": "Editar Parâmetros" },
+  { "code": "codeJobs:consultar", "label": "Consultar Jobs" },
+  { "code": "codeJobs:editar", "label": "Editar Jobs" },
+  { "code": "codeJobs:executar", "label": "Executar Jobs" },
+  {
+    "code": "dre:consultar",
+    "label": "Consultar DRE",
+    "useStorePermission": true
+  },
+  {
+    "code": "dre:consolidar",
+    "label": "Consolidar DRE",
+    "useStorePermission": true
+  },
+  {
+    "code": "cost-center-comparative:consultar",
+    "label": "Consultar Gestão a Vista",
+    "useStorePermission": true
+  },
+  {
+    "code": "accounting-reconc:consultar",
+    "label": "Consultar Conciliação Contábil",
+    "useStorePermission": true
+  },
+  {
+    "code": "top-restrictions:consultar",
+    "label": "Consultar Restrições da TOP"
+  },
+  { "code": "top-restrictions:editar", "label": "Editar Restrições da TOP" },
+  {
+    "code": "ruptura:atualizar-prateleira",
+    "label": "Atualizar Prateleiras",
+    "useStorePermission": true
+  },
+  {
+    "code": "venda-dia-d:consultar",
+    "label": "Consultar Relatorio Venda Dia D",
+    "useStorePermission": true
+  },
+  {
+    "code": "curva-abc:consultar",
+    "label": "Consultar Relatorio Curva ABC",
+    "useStorePermission": true
+  },
+  {
+    "code": "mobile-sync-logs:consultar",
+    "label": "Consultar logs de transmissao mobile",
+    "useStorePermission": true
+  },
+  { "code": "mobile-releases:consultar", "label": "Consultar versoes Mobile" },
+  { "code": "mobile-releases:publicar", "label": "Publicar versoes Mobile" },
+  { "code": "mobile-releases:baixar", "label": "Baixar versoes Mobile" }
 ]

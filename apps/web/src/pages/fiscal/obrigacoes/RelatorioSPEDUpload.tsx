@@ -6,7 +6,9 @@ import PermissionGate from "../../../components/PermissionGate";
 import { toast } from "react-toastify";
 import StoreMultiSelect from "../../../components/inputs/StoreMultiSelect";
 import DateRange from "../../../components/inputs/DateRange";
-import SimpleTable, { type Column } from "../../../components/table/SimpleTable";
+import SimpleTable, {
+  type Column,
+} from "../../../components/table/SimpleTable";
 import PaginationBar from "../../../components/table/PaginationBar";
 
 interface Arquivo {
@@ -76,9 +78,15 @@ export default function RelatorioSPEDUpload() {
       qs.set("page", String(nextPage));
       qs.set("pageSize", String(nextPageSize));
 
-      const resp = await fetch(`${API_BASE}/api/analysis/sped/arquivo?${qs.toString()}`, {
-        headers: { ...authHeaders(token), "Content-Type": "application/json" },
-      });
+      const resp = await fetch(
+        `${API_BASE}/api/analysis/sped/arquivo?${qs.toString()}`,
+        {
+          headers: {
+            ...authHeaders(token),
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
       if (!resp.ok) {
         throw new Error((await resp.text()) || "Erro ao consultar arquivos");
@@ -210,7 +218,9 @@ export default function RelatorioSPEDUpload() {
         <div className="mx-auto h-full max-w-[1400px] overflow-y-auto rounded-2xl border border-neutral-200 bg-white/95 p-4 text-neutral-800 shadow-sm dark:border-neutral-700 dark:bg-pilar-default-bg2-dark dark:text-neutral-100">
           {/* Upload + Ações */}
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Arquivos</h2>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+              Arquivos
+            </h2>
             <div className="flex flex-wrap items-center gap-2">
               <PermissionGate required="sped:upload">
                 <label className="inline-flex cursor-pointer items-center rounded-xl border border-blue-700 bg-blue-600 px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
@@ -254,12 +264,12 @@ export default function RelatorioSPEDUpload() {
                   onChange={(ids) => setSelectedStores(ids.map(String))}
                   placeholder="Selecione as lojas..."
                   autoSelectIfSingle
-                  onlyActive={true}
+                  onlyActive={false}
                   className="w-full"
                   // URL sync pelo próprio componente
                   syncUrl
-                  urlParamKey="storeIds"      // escreve 'storeIds' e lê 'lojas' como legado
-                  legacyUrlKeys={['lojas']}
+                  urlParamKey="storeIds" // escreve 'storeIds' e lê 'lojas' como legado
+                  legacyUrlKeys={["lojas"]}
                   replaceHistory
                 />
               </div>
@@ -276,8 +286,8 @@ export default function RelatorioSPEDUpload() {
                   syncUrl
                   startKey="initialDate"
                   endKey="finalDate"
-                  startLegacyKeys={['dataInicial', 'start']}
-                  endLegacyKeys={['dataFinal', 'end']}
+                  startLegacyKeys={["dataInicial", "start"]}
+                  endLegacyKeys={["dataFinal", "end"]}
                   replaceHistory
                   autoOrder={false} // não reordenar durante digitação
                 />
@@ -346,7 +356,9 @@ export default function RelatorioSPEDUpload() {
               cellBaseClassName="py-2.5 border-b border-neutral-200/80 dark:border-neutral-700"
               rowBaseClassName="cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-700/40"
               getRowKey={(row) => row.id}
-              onRowDoubleClick={(row) => navigate(`/relatorio_sped/analises/${row.id}`)}
+              onRowDoubleClick={(row) =>
+                navigate(`/relatorio_sped/analises/${row.id}`)
+              }
             />
           </div>
         </div>

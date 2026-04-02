@@ -35,8 +35,6 @@ export const TipoItemxNat = {
         const it0200 = itens0200.get(item.COD_ITEM);
         const r0400 = R0400.get(item.COD_NAT);
 
-        console.log("teste: ", it0200);
-
         linhas.push({
           chave,
           numDoc: nota.c100.NUM_DOC,

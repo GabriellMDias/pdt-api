@@ -9,6 +9,7 @@ import {
 import type { SyntheticEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import InfoHint from "../../../components/InfoHint";
 import Layout from "../../../components/Layout";
 import Tag from "../../../components/Tag";
 import DefaultCheckbox from "../../../components/inputs/DefaultCheckbox";
@@ -57,6 +58,18 @@ const TABLE_PROCESSING_LABELS: Record<TableProcessingReason, string> = {
   query: "Consultando relatorio...",
   sorting: "Ordenando tabela...",
   filtering: "Aplicando filtro...",
+};
+
+const CURVA_ABC_INFO_TEXT = {
+  title: "Como a curva ABC é calculada",
+  paragraphs: [
+    "Para cada item, é calculado o percentual de participação acumulada dentro do mercadológico:",
+    "x = soma dos valores dos itens com valor maior ou igual ao item atual / soma total do mercadológico",
+    "A: x até 0,5",
+    "B: x acima de 0,5 até 0,75%",
+    "C: x acima de 0,75",
+    "Esse cálculo é feito separadamente para Volume, Venda e Lucro, dentro do Mercadologico 1 e do Mercadologico 2.",
+  ],
 };
 
 function formatInteger(value: unknown) {
@@ -831,9 +844,19 @@ export default function CurvaAbcPage() {
           <div className="rounded-lg border border-neutral-300 bg-neutral-50/85 text-neutral-900 shadow-sm shadow-neutral-300/50 dark:border-neutral-700 dark:bg-pilar-default-bg2-dark dark:text-neutral-100 dark:shadow-none">
             <div className="border-b border-neutral-300 bg-neutral-100/90 px-4 py-3 dark:border-neutral-700 dark:bg-transparent">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-                  Relatorio Curva ABC
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+                    Relatorio Curva ABC
+                  </h3>
+                  <InfoHint
+                    ariaLabel="Entenda como a curva ABC e calculada"
+                    title={CURVA_ABC_INFO_TEXT.title}
+                    content={CURVA_ABC_INFO_TEXT.paragraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                    placement="bottom-start"
+                  />
+                </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <span className="rounded-full border border-neutral-300 bg-neutral-200/80 px-3 py-1 text-xs font-medium text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200">
                     {visibleRowsLabel}

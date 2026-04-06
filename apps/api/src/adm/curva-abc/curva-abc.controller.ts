@@ -51,16 +51,13 @@ export class CurvaAbcController {
     example: "2026-01-31",
   })
   @ApiQuery({
-    name: "mercadologico1",
+    name: "mercadologicoPair",
     required: false,
-    type: Number,
-    example: 10,
-  })
-  @ApiQuery({
-    name: "mercadologico2",
-    required: false,
-    type: Number,
-    example: 20,
+    type: String,
+    isArray: true,
+    style: "form",
+    explode: true,
+    example: ["1:1", "2:5"],
   })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async getCurvaAbc(@Query() dto: CurvaAbcQueryDto, @Req() req: any) {

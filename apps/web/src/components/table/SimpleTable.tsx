@@ -6,8 +6,8 @@ import {
   type ExportPDFOptions,
   type ExportXLSXOptions,
 } from "../../services/tableExport"; // <-- ajuste o path se precisar
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ExcelIcon from '../../assets/excel.png'
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import ExcelIcon from "../../assets/excel.png";
 
 export type Align = "left" | "center" | "right";
 export type SortDirection = "asc" | "desc";
@@ -16,6 +16,9 @@ export type SortState = { key: string; direction: SortDirection };
 export type Column<T> = {
   key: string;
   header: React.ReactNode;
+  groupHeader?: React.ReactNode;
+  groupHeaderKey?: string;
+  groupHeaderClassName?: string;
   field?: keyof T;
   cell?: (row: T, rowIndex: number) => React.ReactNode;
   align?: Align;
@@ -30,8 +33,8 @@ export type Column<T> = {
 
   /** ---- Redimensionamento ---- */
   resizable?: boolean;
-  minWidth?: number;   // px
-  maxWidth?: number;   // px
+  minWidth?: number; // px
+  maxWidth?: number; // px
 
   /** ---- Estouro de conteúdo ---- */
   /** 'ellipsis' (default) => corta com … em uma linha; 'wrap' => quebra de linha */
@@ -46,24 +49,32 @@ export type Column<T> = {
 /** ===== Export options para o SimpleTable ===== */
 export type TableExportOptions<T> = {
   /** Habilita exportação e escolhe quais botões mostrar */
-  enabled?: boolean;          // default: false
-  excel?: boolean;            // default: true se enabled
-  pdf?: boolean;              // default: true se enabled
+  enabled?: boolean; // default: false
+  excel?: boolean; // default: true se enabled
+  pdf?: boolean; // default: true se enabled
   /** Nome base do arquivo (sem extensão) */
-  filename?: string;          // default: "export"
+  filename?: string; // default: "export"
   /** Nome da planilha (Excel) */
-  sheetName?: string;         // default: "Dados"
+  sheetName?: string; // default: "Dados"
   /** Cabeçalhos de override (para headers JSX complexos) */
   headersOverride?: (string | undefined)[];
   /** Normalizador de célula (para converter JSX/objetos) */
-  mapCell?: (value: unknown, row: T, col: Column<T>, rowIndex: number) => string | number | null | undefined;
+  mapCell?: (
+    value: unknown,
+    row: T,
+    col: Column<T>,
+    rowIndex: number,
+  ) => string | number | null | undefined;
   /** Opções específicas de PDF (orientação, margem, título, etc.) */
   pdfOptions?: ExportPDFOptions<T>["pdf"];
   /**
    * Render customizado do toolbar. Recebe handlers prontos.
    * Use para trocar os botões padrão pelo seu componente.
    */
-  renderControls?: (ctx: { onExcel: () => void; onPDF: () => void }) => React.ReactNode;
+  renderControls?: (ctx: {
+    onExcel: () => void;
+    onPDF: () => void;
+  }) => React.ReactNode;
 };
 
 type Props<T> = {
@@ -151,8 +162,10 @@ export default function SimpleTable<T>({
   }, []);
 
   /** ====== Ordenação (controlada x não controlada) ====== */
-  const [internalSort, setInternalSort] = useState<SortState | null>(defaultSort ?? null);
-  const effectiveSort = sortState ?? internalSort;
+  const [internalSort, setInternalSort] = useState<SortState | null>(
+    defaultSort ?? null,
+  );
+  const effectiveSort = sortState === undefined ? internalSort : sortState;
 
   function toRenderable(v: unknown): React.ReactNode {
     if (v == null) return "";
@@ -173,29 +186,76 @@ export default function SimpleTable<T>({
   function defaultFullFormatter(v: any): string {
     if (v == null) return "";
     if (typeof v === "string") return v;
-    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
+    }
   }
 
   function toggleSort(col: Column<T>) {
     if (!col.sortable) return;
 
-    setInternalSort((prev) => {
-      const prevKey = prev?.key;
-      const prevDir = prev?.direction;
-      let next: SortState | null;
+    const currentSort = sortState === undefined ? internalSort : sortState;
+    const next = getNextSortState(currentSort, col.key);
 
-      if (prevKey !== col.key) {
-        next = { key: col.key, direction: "asc" };
-      } else {
-        if (prevDir === "asc") next = { key: col.key, direction: "desc" };
-        else if (prevDir === "desc") next = null;
-        else next = { key: col.key, direction: "asc" };
+    if (sortState === undefined) {
+      setInternalSort(next);
+    }
+
+    onSortChange?.(next);
+  }
+
+  const hasGroupedHeaders = columns.some((col) => col.groupHeader);
+  const headerSections = useMemo(() => {
+    const sections: Array<
+      | {
+          type: "column";
+          key: string;
+          column: Column<T>;
+        }
+      | {
+          type: "group";
+          key: string;
+          header: React.ReactNode;
+          className?: string;
+          columns: Column<T>[];
+        }
+    > = [];
+
+    for (const column of columns) {
+      if (!column.groupHeader) {
+        sections.push({
+          type: "column",
+          key: `column:${column.key}`,
+          column,
+        });
+        continue;
       }
 
-      onSortChange?.(next);
-      return sortState === undefined ? next : prev;
-    });
-  }
+      const groupKey =
+        column.groupHeaderKey ??
+        (typeof column.groupHeader === "string"
+          ? column.groupHeader
+          : `group:${column.key}`);
+      const lastSection = sections[sections.length - 1];
+
+      if (lastSection?.type === "group" && lastSection.key === groupKey) {
+        lastSection.columns.push(column);
+        continue;
+      }
+
+      sections.push({
+        type: "group",
+        key: groupKey,
+        header: column.groupHeader,
+        className: column.groupHeaderClassName,
+        columns: [column],
+      });
+    }
+
+    return sections;
+  }, [columns]);
 
   const sortedData: T[] = useMemo(() => {
     if (disableLocalSort || !effectiveSort) return data;
@@ -214,21 +274,21 @@ export default function SimpleTable<T>({
     arr.sort((a, b) => {
       const av = accessor(a.v);
       const bv = accessor(b.v);
-      if (col.sortCompare) return col.sortCompare(av, bv, effectiveSort.direction);
-      return defaultCompare(av, bv) * dir || (a.i - b.i);
+      if (col.sortCompare)
+        return col.sortCompare(av, bv, effectiveSort.direction);
+      return defaultCompare(av, bv) * dir || a.i - b.i;
     });
 
     return arr.map((x) => x.v);
   }, [data, columns, effectiveSort, disableLocalSort]);
 
   /** ====== Redimensionamento ====== */
-  const [colWidths, setColWidths] = useState<Record<string, number | undefined>>(() => {
+  const [colWidths, setColWidths] = useState<
+    Record<string, number | undefined>
+  >(() => {
     const init: Record<string, number | undefined> = {};
     columns.forEach((c) => {
-      const w =
-        typeof c.width === "number"
-          ? c.width
-          : pxFromAny(c.width);
+      const w = typeof c.width === "number" ? c.width : pxFromAny(c.width);
       if (w) init[c.key] = w;
     });
     return init;
@@ -242,7 +302,11 @@ export default function SimpleTable<T>({
     maxWidth: number;
   } | null>(null);
 
-  function startResize(e: React.MouseEvent, col: Column<T>, thEl: HTMLTableCellElement | null) {
+  function startResize(
+    e: React.MouseEvent,
+    col: Column<T>,
+    thEl: HTMLTableCellElement | null,
+  ) {
     if (!col.resizable) return;
 
     const rectW =
@@ -324,10 +388,13 @@ export default function SimpleTable<T>({
   return (
     <div className={`overflow-x-auto rounded-lg ${wrapperClassName || ""}`}>
       {/* Toolbar de Export (opcional) */}
-      {expEnabled && (
-        exportOptions?.renderControls ? (
+      {expEnabled &&
+        (exportOptions?.renderControls ? (
           <div className="mb-2">
-            {exportOptions.renderControls({ onExcel: handleExcel, onPDF: handlePDF })}
+            {exportOptions.renderControls({
+              onExcel: handleExcel,
+              onPDF: handlePDF,
+            })}
           </div>
         ) : (
           <div className="flex gap-2 mb-2">
@@ -338,7 +405,7 @@ export default function SimpleTable<T>({
                 className="px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"
                 title="Exportar Excel (.xlsx)"
               >
-                <img src={ExcelIcon} className="w-6"/>
+                <img src={ExcelIcon} className="w-6" />
               </button>
             )}
             {expPDF && (
@@ -348,92 +415,170 @@ export default function SimpleTable<T>({
                 className="px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer"
                 title="Exportar PDF (.pdf)"
               >
-                <PictureAsPdfIcon className="text-black"/>
+                <PictureAsPdfIcon className="text-black" />
               </button>
             )}
           </div>
-        )
-      )}
+        ))}
 
       <table className={tableClassName} style={{ tableLayout: "fixed" }}>
         <colgroup>
           {columns.map((c) => {
-            const w = colWidths[c.key] ?? (typeof c.width === "number" ? c.width : pxFromAny(c.width));
-            return <col key={c.key} style={w ? { width: `${w}px` } : undefined} />;
+            const w =
+              colWidths[c.key] ??
+              (typeof c.width === "number" ? c.width : pxFromAny(c.width));
+            return (
+              <col key={c.key} style={w ? { width: `${w}px` } : undefined} />
+            );
           })}
         </colgroup>
 
         <thead className={headerWrapperClassName}>
-          <tr className={headerRowClassName}>
-            {columns.map((c) => (
-              <HeaderCell<T>
-                key={c.key}
-                col={c}
-                sort={effectiveSort}
-                onToggleSort={() => toggleSort(c)}
-                className={`px-4 py-2 ${headerCellClassName || ""} ${c.thClassName || ""} ${alignToClass(c.align)}`}
-                stickyHeader={stickyHeader}
-                currentWidthPx={colWidths[c.key]}
-                onStartResize={startResize}
-              />
-            ))}
-          </tr>
+          {hasGroupedHeaders ? (
+            <>
+              <tr className={headerRowClassName}>
+                {headerSections.map((section) =>
+                  section.type === "column" ? (
+                    <HeaderCell<T>
+                      key={section.column.key}
+                      col={section.column}
+                      sort={effectiveSort}
+                      onToggleSort={() => toggleSort(section.column)}
+                      className={`px-4 py-2 ${headerCellClassName || ""} ${section.column.thClassName || ""} ${alignToClass(section.column.align)}`}
+                      stickyHeader={stickyHeader}
+                      currentWidthPx={colWidths[section.column.key]}
+                      onStartResize={startResize}
+                      rowSpan={2}
+                    />
+                  ) : (
+                    <th
+                      key={section.key}
+                      colSpan={section.columns.length}
+                      className={`px-4 py-2 text-center align-middle ${headerCellClassName || ""} ${section.className || ""}`}
+                    >
+                      <div className="truncate">{section.header}</div>
+                    </th>
+                  ),
+                )}
+              </tr>
+
+              <tr className={headerRowClassName}>
+                {columns
+                  .filter((column) => column.groupHeader)
+                  .map((column) => (
+                    <HeaderCell<T>
+                      key={column.key}
+                      col={column}
+                      sort={effectiveSort}
+                      onToggleSort={() => toggleSort(column)}
+                      className={`px-4 py-2 ${headerCellClassName || ""} ${column.thClassName || ""} ${alignToClass(column.align)}`}
+                      stickyHeader={stickyHeader}
+                      currentWidthPx={colWidths[column.key]}
+                      onStartResize={startResize}
+                    />
+                  ))}
+              </tr>
+            </>
+          ) : (
+            <tr className={headerRowClassName}>
+              {columns.map((c) => (
+                <HeaderCell<T>
+                  key={c.key}
+                  col={c}
+                  sort={effectiveSort}
+                  onToggleSort={() => toggleSort(c)}
+                  className={`px-4 py-2 ${headerCellClassName || ""} ${c.thClassName || ""} ${alignToClass(c.align)}`}
+                  stickyHeader={stickyHeader}
+                  currentWidthPx={colWidths[c.key]}
+                  onStartResize={startResize}
+                />
+              ))}
+            </tr>
+          )}
         </thead>
 
         <tbody className={bodyClassName}>
           {loading && (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-4 text-center">Carregando...</td>
+              <td colSpan={columns.length} className="px-4 py-4 text-center">
+                Carregando...
+              </td>
             </tr>
           )}
 
           {!loading && !hasData && (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-4 text-center">{emptyMessage}</td>
+              <td colSpan={columns.length} className="px-4 py-4 text-center">
+                {emptyMessage}
+              </td>
             </tr>
           )}
 
-          {!loading && hasData && sortedData.map((row, i) => {
-            const cls = `${rowBaseClassName} ` + (rowClassName ? rowClassName(row, i) : "");
-            return (
-              <tr
-                key={getRowKey(row, i)}
-                className={cls}
-                onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row, i) : undefined}
-              >
-                {columns.map((c) => {
-                  const raw = c.cell ? c.cell(row, i) : (row as any)[c.field as string];
-                  const content = toRenderable(raw);
+          {!loading &&
+            hasData &&
+            sortedData.map((row, i) => {
+              const cls =
+                `${rowBaseClassName} ` +
+                (rowClassName ? rowClassName(row, i) : "");
+              return (
+                <tr
+                  key={getRowKey(row, i)}
+                  className={cls}
+                  onDoubleClick={
+                    onRowDoubleClick
+                      ? () => onRowDoubleClick(row, i)
+                      : undefined
+                  }
+                >
+                  {columns.map((c) => {
+                    const raw = c.cell
+                      ? c.cell(row, i)
+                      : (row as any)[c.field as string];
+                    const content = toRenderable(raw);
 
-                  const overflowMode = c.overflow ?? "ellipsis";
-                  const overflowClass = overflowMode === "wrap" ? "whitespace-normal break-words" : "truncate";
+                    const overflowMode = c.overflow ?? "ellipsis";
+                    const overflowClass =
+                      overflowMode === "wrap"
+                        ? "whitespace-normal break-words"
+                        : "truncate";
 
-                  return (
-                    <td
-                      key={c.key}
-                      className={`px-4 py-2 ${cellBaseClassName || ""} ${c.tdClassName || ""} ${alignToClass(c.align)}`}
-                      onDoubleClick={(e) => {
-                        if (!c.expandOnDblClick) return;
-                        e.stopPropagation(); // não propaga para onRowDoubleClick
-                        const title = typeof c.fullTitle === "function"
-                          ? c.fullTitle(row, i)
-                          : (typeof c.header === "string" ? c.header : String(c.key));
-                        const formatter = c.fullFormatter ?? defaultFullFormatter;
-                        setPreview({ title, content: formatter(raw, row, i) });
-                      }}
-                      title={titleForContent(content)}
-                    >
-                      <div className={`block max-w-full ${overflowClass}`}>{content}</div>
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
+                    return (
+                      <td
+                        key={c.key}
+                        className={`px-4 py-2 ${cellBaseClassName || ""} ${c.tdClassName || ""} ${alignToClass(c.align)}`}
+                        onDoubleClick={(e) => {
+                          if (!c.expandOnDblClick) return;
+                          e.stopPropagation(); // não propaga para onRowDoubleClick
+                          const title =
+                            typeof c.fullTitle === "function"
+                              ? c.fullTitle(row, i)
+                              : typeof c.header === "string"
+                                ? c.header
+                                : String(c.key);
+                          const formatter =
+                            c.fullFormatter ?? defaultFullFormatter;
+                          setPreview({
+                            title,
+                            content: formatter(raw, row, i),
+                          });
+                        }}
+                        title={titleForContent(content)}
+                      >
+                        <div className={`block max-w-full ${overflowClass}`}>
+                          {content}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
         </tbody>
       </table>
 
-      {stickyHeader && <style>{`thead { position: sticky; top: 0; z-index: 10; }`}</style>}
+      {stickyHeader && (
+        <style>{`thead { position: sticky; top: 0; z-index: 10; }`}</style>
+      )}
 
       {/* ===== MODAL DE PREVIEW ===== */}
       {preview && (
@@ -446,7 +591,9 @@ export default function SimpleTable<T>({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-2 dark:border-neutral-700">
-              <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">{preview.title}</h3>
+              <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
+                {preview.title}
+              </h3>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -486,6 +633,7 @@ function HeaderCell<T>({
   stickyHeader,
   currentWidthPx,
   onStartResize,
+  rowSpan,
 }: {
   col: Column<T>;
   sort: SortState | null | undefined;
@@ -493,7 +641,12 @@ function HeaderCell<T>({
   className?: string;
   stickyHeader?: boolean;
   currentWidthPx?: number;
-  onStartResize: (e: React.MouseEvent, col: Column<T>, thEl: HTMLTableCellElement | null) => void;
+  onStartResize: (
+    e: React.MouseEvent,
+    col: Column<T>,
+    thEl: HTMLTableCellElement | null,
+  ) => void;
+  rowSpan?: number;
 }) {
   const thRef = useRef<HTMLTableCellElement | null>(null);
   const active = sort?.key === col.key;
@@ -505,6 +658,7 @@ function HeaderCell<T>({
   return (
     <th
       ref={thRef}
+      rowSpan={rowSpan}
       className={`${className || ""} relative select-none ${clickable ? "cursor-pointer" : ""}`}
       onClick={(e) => {
         const target = e.target as HTMLElement;
@@ -514,8 +668,16 @@ function HeaderCell<T>({
       style={currentWidthPx ? { width: `${currentWidthPx}px` } : undefined}
       title={clickable ? "Clique para ordenar" : undefined}
     >
-      <div className="flex items-center gap-1">
-        <div className="truncate">{col.header}</div>
+      <div className="flex min-w-0 items-center gap-1">
+        <div
+          className={
+            typeof col.header === "string" || typeof col.header === "number"
+              ? "truncate"
+              : "min-w-0"
+          }
+        >
+          {col.header}
+        </div>
         {clickable && (
           <span className="text-xs opacity-70">
             {active ? (dir === "asc" ? "▲" : "▼") : "⇅"}
@@ -536,6 +698,25 @@ function HeaderCell<T>({
       {stickyHeader && <style>{`th { background-clip: padding-box; }`}</style>}
     </th>
   );
+}
+
+function getNextSortState(
+  current: SortState | null | undefined,
+  key: string,
+): SortState | null {
+  if (current?.key !== key) {
+    return { key, direction: "asc" };
+  }
+
+  if (current.direction === "asc") {
+    return { key, direction: "desc" };
+  }
+
+  if (current.direction === "desc") {
+    return null;
+  }
+
+  return { key, direction: "asc" };
 }
 
 /** ========= Utils ========= */

@@ -6,8 +6,30 @@ import {
   IsDateString,
   IsInt,
   IsOptional,
+  Matches,
   Min,
 } from "class-validator";
+
+function parseNumberArray(value: unknown) {
+  if (value === undefined || value === null || value === "") return undefined;
+
+  const rawValues = Array.isArray(value) ? value : [value];
+  return rawValues
+    .flatMap((item) => String(item).split(","))
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => Number(item));
+}
+
+function parseStringArray(value: unknown) {
+  if (value === undefined || value === null || value === "") return undefined;
+
+  const rawValues = Array.isArray(value) ? value : [value];
+  return rawValues
+    .flatMap((item) => String(item).split(","))
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
 export class CurvaAbcQueryDto {
   @ApiProperty({
@@ -17,12 +39,7 @@ export class CurvaAbcQueryDto {
   })
   @IsArray()
   @ArrayNotEmpty()
-  @Transform(({ value }) => {
-    if (Array.isArray(value)) return value.map((v) => Number(v));
-    return String(value)
-      .split(",")
-      .map((v) => Number(v.trim()));
-  })
+  @Transform(({ value }) => parseNumberArray(value) ?? [])
   @IsInt({ each: true })
   @Min(1, { each: true })
   storeId!: number[];
@@ -41,23 +58,14 @@ export class CurvaAbcQueryDto {
   @IsDateString()
   finalDate!: string;
 
-  @ApiPropertyOptional({ example: 10, description: "Mercadologico 1" })
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null || value === "") return undefined;
-    return Number(value);
+  @ApiPropertyOptional({
+    type: [String],
+    example: ["1:1", "2:5"],
+    description: "Pares mercadologico1:mercadologico2",
   })
-  @IsInt()
-  @Min(1)
-  mercadologico1?: number;
-
-  @ApiPropertyOptional({ example: 20, description: "Mercadologico 2" })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null || value === "") return undefined;
-    return Number(value);
-  })
-  @IsInt()
-  @Min(1)
-  mercadologico2?: number;
+  @IsArray()
+  @Transform(({ value }) => parseStringArray(value))
+  @Matches(/^\d+:\d+$/, { each: true })
+  mercadologicoPair?: string[];
 }

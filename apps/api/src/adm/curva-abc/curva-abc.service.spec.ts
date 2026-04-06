@@ -48,15 +48,16 @@ describe("CurvaAbcService", () => {
       storeId: [1, 5, 1],
       initialDate: "2026-01-01",
       finalDate: "2026-01-31",
-      mercadologico1: 10,
-      mercadologico2: 20,
+      mercadologicoPair: ["10:20", "12:21", "10:20"],
     });
 
     expect(rows).toHaveLength(1);
     expect(pg.query).toHaveBeenCalledTimes(1);
     expect(pg.query).toHaveBeenCalledWith(
-      expect.stringContaining("produto.mercadologico1 = $4::int"),
-      ["2026-01-01", "2026-01-31", [1, 5], 10, 20],
+      expect.stringContaining(
+        "CONCAT(produto.mercadologico1, ':', produto.mercadologico2) = ANY($4::text[])",
+      ),
+      ["2026-01-01", "2026-01-31", [1, 5], ["10:20", "12:21"]],
     );
   });
 
@@ -75,7 +76,180 @@ describe("CurvaAbcService", () => {
       "2026-02-28",
       [3],
       null,
-      null,
+    ]);
+  });
+
+  it("mantem o calculo atual das classificacoes ABC por mercadologico 1 e 2", async () => {
+    prisma.userPermission.findMany.mockResolvedValue([{ storeId: null }]);
+    pg.query.mockResolvedValue({
+      rows: [
+        {
+          id_produto: 101,
+          descricao: "Produto 1",
+          quantidade: 50,
+          venda: 100,
+          lucro: 30,
+          mercadologico1: 1,
+          mercadologico1_descricao: "Mer 1",
+          mercadologico2: 10,
+          mercadologico2_descricao: "Mer 10",
+        },
+        {
+          id_produto: 102,
+          descricao: "Produto 2",
+          quantidade: 30,
+          venda: 80,
+          lucro: 10,
+          mercadologico1: 1,
+          mercadologico1_descricao: "Mer 1",
+          mercadologico2: 10,
+          mercadologico2_descricao: "Mer 10",
+        },
+        {
+          id_produto: 103,
+          descricao: "Produto 3",
+          quantidade: 20,
+          venda: 40,
+          lucro: 20,
+          mercadologico1: 1,
+          mercadologico1_descricao: "Mer 1",
+          mercadologico2: 20,
+          mercadologico2_descricao: "Mer 20",
+        },
+        {
+          id_produto: 104,
+          descricao: "Produto 4",
+          quantidade: 5,
+          venda: 10,
+          lucro: 2,
+          mercadologico1: 2,
+          mercadologico1_descricao: "Mer 2",
+          mercadologico2: 30,
+          mercadologico2_descricao: "Mer 30",
+        },
+      ],
+    });
+
+    const rows = await service.run(1, {
+      storeId: [1],
+      initialDate: "2026-01-01",
+      finalDate: "2026-01-31",
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        id_produto: 101,
+        curva_abc_volume_mercadologico1: "A",
+        curva_abc_venda_mercadologico1: "A",
+        curva_abc_lucro_mercadologico1: "A",
+        curva_abc_volume_mercadologico2: "B",
+        curva_abc_venda_mercadologico2: "B",
+        curva_abc_lucro_mercadologico2: "B",
+      }),
+      expect.objectContaining({
+        id_produto: 102,
+        curva_abc_volume_mercadologico1: "C",
+        curva_abc_venda_mercadologico1: "C",
+        curva_abc_lucro_mercadologico1: "C",
+        curva_abc_volume_mercadologico2: "C",
+        curva_abc_venda_mercadologico2: "C",
+        curva_abc_lucro_mercadologico2: "C",
+      }),
+      expect.objectContaining({
+        id_produto: 103,
+        curva_abc_volume_mercadologico1: "C",
+        curva_abc_venda_mercadologico1: "C",
+        curva_abc_lucro_mercadologico1: "C",
+        curva_abc_volume_mercadologico2: "C",
+        curva_abc_venda_mercadologico2: "C",
+        curva_abc_lucro_mercadologico2: "C",
+      }),
+      expect.objectContaining({
+        id_produto: 104,
+        curva_abc_volume_mercadologico1: "C",
+        curva_abc_venda_mercadologico1: "C",
+        curva_abc_lucro_mercadologico1: "C",
+        curva_abc_volume_mercadologico2: "C",
+        curva_abc_venda_mercadologico2: "C",
+        curva_abc_lucro_mercadologico2: "C",
+      }),
+    ]);
+  });
+
+  it("mantem a classificacao dos empates usando o acumulado da faixa inteira", async () => {
+    prisma.userPermission.findMany.mockResolvedValue([{ storeId: null }]);
+    pg.query.mockResolvedValue({
+      rows: [
+        {
+          id_produto: 201,
+          descricao: "Produto 201",
+          quantidade: 30,
+          venda: 30,
+          lucro: 30,
+          mercadologico1: 1,
+          mercadologico1_descricao: "Mer 1",
+          mercadologico2: 10,
+          mercadologico2_descricao: "Mer 10",
+        },
+        {
+          id_produto: 202,
+          descricao: "Produto 202",
+          quantidade: 30,
+          venda: 30,
+          lucro: 30,
+          mercadologico1: 1,
+          mercadologico1_descricao: "Mer 1",
+          mercadologico2: 10,
+          mercadologico2_descricao: "Mer 10",
+        },
+        {
+          id_produto: 203,
+          descricao: "Produto 203",
+          quantidade: 20,
+          venda: 20,
+          lucro: 20,
+          mercadologico1: 1,
+          mercadologico1_descricao: "Mer 1",
+          mercadologico2: 10,
+          mercadologico2_descricao: "Mer 10",
+        },
+      ],
+    });
+
+    const rows = await service.run(1, {
+      storeId: [1],
+      initialDate: "2026-01-01",
+      finalDate: "2026-01-31",
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        id_produto: 201,
+        curva_abc_volume_mercadologico1: "B",
+        curva_abc_venda_mercadologico1: "B",
+        curva_abc_lucro_mercadologico1: "B",
+        curva_abc_volume_mercadologico2: "B",
+        curva_abc_venda_mercadologico2: "B",
+        curva_abc_lucro_mercadologico2: "B",
+      }),
+      expect.objectContaining({
+        id_produto: 202,
+        curva_abc_volume_mercadologico1: "B",
+        curva_abc_venda_mercadologico1: "B",
+        curva_abc_lucro_mercadologico1: "B",
+        curva_abc_volume_mercadologico2: "B",
+        curva_abc_venda_mercadologico2: "B",
+        curva_abc_lucro_mercadologico2: "B",
+      }),
+      expect.objectContaining({
+        id_produto: 203,
+        curva_abc_volume_mercadologico1: "C",
+        curva_abc_venda_mercadologico1: "C",
+        curva_abc_lucro_mercadologico1: "C",
+        curva_abc_volume_mercadologico2: "C",
+        curva_abc_venda_mercadologico2: "C",
+        curva_abc_lucro_mercadologico2: "C",
+      }),
     ]);
   });
 

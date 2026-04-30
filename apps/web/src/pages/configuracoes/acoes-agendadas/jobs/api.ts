@@ -38,11 +38,11 @@ export const jobsApi = {
       body: JSON.stringify(payload),
     }),
 
-  runNow: (id: number, token?: string | null) =>
+  runNow: (id: number, token?: string | null, params?: Record<string, unknown>) =>
     api<{ accepted: true }>(`${BASE}/${id}/run-now`, {
       method: "POST",
       headers: authHeaders(token),
-      body: JSON.stringify({ reason: "manual" }),
+      body: JSON.stringify({ reason: "manual", params }),
     }),
 
   runs: (

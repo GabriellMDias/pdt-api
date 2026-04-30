@@ -18,6 +18,8 @@ import {
   CodeJob,
   getDecoratedJobs,
   DecoratedJobEntry,
+  CodeJobParameterDefinition,
+  CodeJobParameterRules,
 } from "./code-job.decorator";
 import { ParametersService } from "src/config/parameters/parameters.service";
 import { UpdateCodeJobDto } from "./dto/update-code-job.dto";
@@ -43,6 +45,14 @@ type RunFilters = {
   initialDate?: string; // "YYYY-MM-DD"
   finalDate?: string; // "YYYY-MM-DD"
   status?: "SUCCESS" | "ERROR" | "RUNNING" | "ALL" | string | undefined;
+};
+
+type CodeJobExecutionContext = {
+  codeJobRunId: number;
+  jobId: number;
+  source: "SCHEDULE" | "MANUAL" | "RETRY";
+  reason?: string;
+  params?: Record<string, unknown>;
 };
 
 type GoogleDriveBackupRawConfig = {
@@ -738,10 +748,15 @@ export class CodeJobsService implements OnApplicationBootstrap {
 
   // ===== Listar apenas jobs decorados =====
   async list() {
-    return this.prisma.codeJob.findMany({
+    const jobs = await this.prisma.codeJob.findMany({
       where: { handler: { in: Array.from(this.validHandlers) } },
       orderBy: [{ enabled: "desc" }, { name: "asc" }],
     });
+
+    return jobs.map((job) => ({
+      ...job,
+      parameters: this.getDecoratedJob(job.handler)?.parameters ?? [],
+    }));
   }
 
   // ===== Atualizar (schedule/enabled) =====
@@ -894,13 +909,14 @@ export class CodeJobsService implements OnApplicationBootstrap {
     };
   }
 
-  async runNow(id: number, reason?: string) {
+  async runNow(id: number, reason?: string, params?: Record<string, unknown>) {
     const job = await this.prisma.codeJob.findUnique({ where: { id } });
     if (!job) throw new NotFoundException("Job nÃƒÂ£o encontrado.");
     if (!this.validHandlers.has(job.handler)) {
       throw new ForbiddenException("Job nÃƒÂ£o ÃƒÂ© gerenciado por cÃƒÂ³digo.");
     }
-    return this.executeJob(job.id, "MANUAL", reason);
+    const normalizedParams = this.validateManualParams(job.handler, params);
+    return this.executeJob(job.id, "MANUAL", reason, normalizedParams);
   }
 
   // ===== Registro de agendamentos =====
@@ -970,6 +986,153 @@ export class CodeJobsService implements OnApplicationBootstrap {
     }
 
     return where;
+  }
+
+  private getDecoratedJob(handler: string) {
+    return this.decorated.find((d) => d.handler === handler);
+  }
+
+  private validateManualParams(handler: string, rawParams?: Record<string, unknown>) {
+    const def = this.getDecoratedJob(handler);
+    const parameters = def?.parameters ?? [];
+    const parameterRules = def?.parameterRules;
+
+    if (rawParams !== undefined && (rawParams === null || typeof rawParams !== "object" || Array.isArray(rawParams))) {
+      throw new BadRequestException("Os parametros da execucao manual devem ser enviados como objeto.");
+    }
+
+    const input = rawParams ?? {};
+    const meaningfulInput = Object.fromEntries(
+      Object.entries(input).filter(([, value]) => !this.isEmptyParamValue(value)),
+    );
+
+    if (!parameters.length) {
+      if (Object.keys(meaningfulInput).length > 0) {
+        throw new BadRequestException("Este job nao aceita parametros de execucao manual.");
+      }
+      return undefined;
+    }
+
+    const allowed = new Set(parameters.map((param) => param.name));
+    const unknown = Object.keys(meaningfulInput).filter((name) => !allowed.has(name));
+    if (unknown.length > 0) {
+      throw new BadRequestException(`Parametro(s) nao suportado(s): ${unknown.join(", ")}.`);
+    }
+
+    const normalized: Record<string, unknown> = {};
+    for (const parameter of parameters) {
+      const value = meaningfulInput[parameter.name];
+      if (this.isEmptyParamValue(value)) {
+        if (parameter.required) {
+          throw new BadRequestException(`Parametro obrigatorio nao informado: ${this.getParameterLabel(parameter)}.`);
+        }
+        continue;
+      }
+
+      normalized[parameter.name] = this.normalizeManualParam(parameter, value);
+    }
+
+    this.validateParameterRules(parameters, parameterRules, normalized);
+
+    return Object.keys(normalized).length ? normalized : undefined;
+  }
+
+  private validateParameterRules(
+    parameters: CodeJobParameterDefinition[],
+    rules: CodeJobParameterRules | undefined,
+    values: Record<string, unknown>,
+  ) {
+    for (const group of rules?.allOrNone ?? []) {
+      const filled = group.filter((name) => !this.isEmptyParamValue(values[name]));
+      if (filled.length > 0 && filled.length < group.length) {
+        const labels = group.map((name) => this.getParameterLabelByName(parameters, name)).join(" e ");
+        throw new BadRequestException(`Informe ${labels} juntos, ou deixe todos em branco.`);
+      }
+    }
+
+    for (const range of rules?.dateRanges ?? []) {
+      const start = values[range.start];
+      const end = values[range.end];
+      if (this.isEmptyParamValue(start) || this.isEmptyParamValue(end)) continue;
+      if (String(start) > String(end)) {
+        throw new BadRequestException(
+          `${this.getParameterLabelByName(parameters, range.start)} deve ser menor ou igual a ${this.getParameterLabelByName(parameters, range.end)}.`,
+        );
+      }
+    }
+  }
+
+  private normalizeManualParam(parameter: CodeJobParameterDefinition, value: unknown) {
+    switch (parameter.type) {
+      case "date": {
+        if (typeof value !== "string" || !this.isValidYmdDate(value)) {
+          throw new BadRequestException(`${this.getParameterLabel(parameter)} deve ser uma data valida no formato YYYY-MM-DD.`);
+        }
+        return value;
+      }
+      case "number": {
+        const parsed = typeof value === "number" ? value : Number(value);
+        if (!Number.isFinite(parsed)) {
+          throw new BadRequestException(`${this.getParameterLabel(parameter)} deve ser numerico.`);
+        }
+        return parsed;
+      }
+      case "boolean": {
+        if (typeof value === "boolean") return value;
+        if (value === "true" || value === "1") return true;
+        if (value === "false" || value === "0") return false;
+        throw new BadRequestException(`${this.getParameterLabel(parameter)} deve ser booleano.`);
+      }
+      case "multi-select": {
+        const rawItems = Array.isArray(value)
+          ? value
+          : String(value)
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean);
+        const items = Array.from(new Set(rawItems.map((item) => String(item).trim()).filter(Boolean)));
+        const allowedValues = new Set((parameter.options ?? []).map((option) => option.value));
+        const invalidItems = allowedValues.size > 0 ? items.filter((item) => !allowedValues.has(item)) : [];
+        if (invalidItems.length > 0) {
+          throw new BadRequestException(
+            `${this.getParameterLabel(parameter)} possui valor(es) invalido(s): ${invalidItems.join(", ")}.`,
+          );
+        }
+        return items;
+      }
+      case "string":
+      default:
+        return String(value);
+    }
+  }
+
+  private isEmptyParamValue(value: unknown) {
+    return value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0);
+  }
+
+  private isValidYmdDate(value: string) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return false;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    return (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() + 1 === month &&
+      date.getUTCDate() === day
+    );
+  }
+
+  private getParameterLabel(parameter: CodeJobParameterDefinition) {
+    return parameter.label ?? parameter.name;
+  }
+
+  private getParameterLabelByName(parameters: CodeJobParameterDefinition[], name: string) {
+    const parameter = parameters.find((item) => item.name === name);
+    return parameter ? this.getParameterLabel(parameter) : name;
   }
 
   private async unregisterSingle(id: number) {
@@ -1046,9 +1209,11 @@ export class CodeJobsService implements OnApplicationBootstrap {
     jobId: number,
     source: "SCHEDULE" | "MANUAL" | "RETRY",
     reason?: string,
+    params?: Record<string, unknown>,
   ) {
     const job = await this.prisma.codeJob.findUnique({ where: { id: jobId } });
-    if (!job || !job.enabled) return;
+    if (!job) return;
+    if (!job.enabled && source !== "MANUAL") return;
 
     return this.pg.withClient(async (client) => {
       const lock = await client.query(
@@ -1074,7 +1239,13 @@ export class CodeJobsService implements OnApplicationBootstrap {
       let error: string | null = null;
 
       try {
-        log = await this.dispatch(job.handler, reason);
+        log = await this.dispatch(job.handler, {
+          codeJobRunId: run.id,
+          jobId: job.id,
+          source,
+          reason,
+          params,
+        });
       } catch (e: any) {
         status = "FAILED";
         error = e?.message ?? String(e);
@@ -1101,7 +1272,7 @@ export class CodeJobsService implements OnApplicationBootstrap {
   }
 
   // ===== Dispatch dinÃƒÂ¢mico para mÃƒÂ©todo decorado =====
-  private async dispatch(handler: string, reason?: string): Promise<any> {
+  private async dispatch(handler: string, context?: CodeJobExecutionContext): Promise<any> {
     const def = this.decorated.find((d) => d.handler === handler);
     if (!def) throw new Error(`Handler nÃƒÂ£o encontrado: ${handler}`);
 
@@ -1112,7 +1283,7 @@ export class CodeJobsService implements OnApplicationBootstrap {
         `MÃƒÂ©todo ${def.methodName} nÃƒÂ£o encontrado em ${def.provider?.name}`,
       );
     }
-    return await instance[def.methodName]();
+    return await instance[def.methodName](context);
   }
 
   // ===== Criar/alinhar jobs a partir dos decorators =====

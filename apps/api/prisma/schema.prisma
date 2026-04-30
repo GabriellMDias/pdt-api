@@ -396,6 +396,54 @@ model CodeJobRun {
   @@index([jobId, createdAt])
 }
 
+model CostCenterApportionmentPreviewRun {
+  id           Int      @id @default(autoincrement())
+  codeJobRunId Int?
+  source       String   @default("JOB")
+  status       String
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  summary      Json?
+  createdAt    DateTime @default(now())
+
+  items CostCenterApportionmentPreviewItem[]
+
+  @@index([codeJobRunId])
+  @@index([createdAt])
+}
+
+model CostCenterApportionmentPreviewItem {
+  id                          Int      @id @default(autoincrement())
+  previewRunId                Int
+  documentSource              String   @default("NOTA_DESPESA")
+  noteExpenseId               Int?
+  noteEntryId                 Int?
+  otherExpenseId              Int?
+  entryTypeId                 Int?
+  storeId                     Int?
+  supplierId                  Int?
+  supplierName                String?
+  entryDate                   DateTime?
+  competence                  String
+  status                      String
+  effectiveCostCenterTypeVrId Int?
+  effectiveCostCenterTypeId   Int?
+  warnings                    Json?
+  details                     Json
+  createdAt                   DateTime @default(now())
+
+  previewRun CostCenterApportionmentPreviewRun @relation(fields: [previewRunId], references: [id], onDelete: Cascade)
+
+  @@index([previewRunId])
+  @@index([noteExpenseId])
+  @@index([noteEntryId])
+  @@index([otherExpenseId])
+  @@index([documentSource])
+  @@index([entryTypeId])
+  @@index([status])
+}
+
 /**
  * == PARAMETERS MODELS ==
  */

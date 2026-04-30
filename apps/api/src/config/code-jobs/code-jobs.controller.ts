@@ -6,6 +6,7 @@ import {
   ApiParam, ApiQuery,
 } from '@nestjs/swagger';
 import { CodeJobsService } from './code-jobs.service';
+import { CostCenterApportionmentPreviewService } from './cost-center-apportionment-preview.service';
 import { RunNowDto } from './dto/run-now.dto';
 import { CodeJobEntity } from './entities/code-job.entity';
 import { CodeJobRunEntity } from './entities/code-job-run.entity';
@@ -32,7 +33,10 @@ import { GoogleDriveBackupRestoreDto } from './dto/google-drive-backup-restore.d
 @ApiBearerAuth()
 @Controller('code-jobs')
 export class CodeJobsController {
-  constructor(private readonly service: CodeJobsService) {}
+  constructor(
+    private readonly service: CodeJobsService,
+    private readonly costCenterApportionmentPreview: CostCenterApportionmentPreviewService,
+  ) {}
 
   @Get()
   @Permissions('codeJobs:consultar')
@@ -145,6 +149,29 @@ export class CodeJobsController {
     return this.service.restoreGoogleDriveBackup(dto);
   }
 
+  @Get('cost-center-apportionment-preview/runs')
+  @Permissions('codeJobs:consultar')
+  @ApiOperation({ summary: 'Listar previews de rateio de centro de custo por venda' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'pageSize', required: false })
+  async listCostCenterApportionmentPreviewRuns(
+    @Query('page') page = '1',
+    @Query('pageSize') pageSize = '50',
+  ) {
+    return this.costCenterApportionmentPreview.listPreviewRuns(
+      Number.parseInt(page, 10),
+      Number.parseInt(pageSize, 10),
+    );
+  }
+
+  @Get('cost-center-apportionment-preview/runs/:id')
+  @Permissions('codeJobs:consultar')
+  @ApiOperation({ summary: 'Consultar detalhes de um preview de rateio de centro de custo por venda' })
+  @ApiParam({ name: 'id', type: Number })
+  async getCostCenterApportionmentPreviewRun(@Param('id', ParseIntPipe) id: number) {
+    return this.costCenterApportionmentPreview.getPreviewRun(id);
+  }
+
   @Patch(':id')
   @Permissions('codeJobs:editar')
   @ApiOperation({ summary: 'Atualizar job (agendamento/ativar-desativar)' })
@@ -160,7 +187,7 @@ export class CodeJobsController {
   @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ type: CodeJobRunEntity })
   async runNow(@Param('id', ParseIntPipe) id: number, @Body() dto: RunNowDto) {
-    return this.service.runNow(id, dto?.reason ?? 'manual trigger');
+    return this.service.runNow(id, dto?.reason ?? 'manual trigger', dto?.params);
   }
 
   @Get(':id/runs')

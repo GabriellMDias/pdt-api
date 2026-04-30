@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ScriptRunStatus, ScriptScheduleType } from '@prisma/client';
+import type { CodeJobParameterDefinition } from '../code-job.decorator';
 
 export class CodeJobEntity {
   @ApiProperty() id!: number;
@@ -19,6 +20,7 @@ export class CodeJobEntity {
 
   @ApiPropertyOptional({ enum: ScriptRunStatus }) lastStatus?: ScriptRunStatus | null;
   @ApiPropertyOptional() latestRunAt?: Date | null;
+  @ApiPropertyOptional({ type: [Object] }) parameters?: CodeJobParameterDefinition[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

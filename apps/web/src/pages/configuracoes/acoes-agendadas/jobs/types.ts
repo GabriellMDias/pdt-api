@@ -1,5 +1,17 @@
 export type JobScheduleType = 'CRON' | 'INTERVAL' | 'DAILY_AT' | 'WEEKLY_AT';
 
+export type JobParameterType = "string" | "number" | "boolean" | "date" | "multi-select";
+
+export type JobParameterDefinition = {
+  name: string;
+  label?: string;
+  description?: string;
+  type: JobParameterType;
+  required?: boolean;
+  placeholder?: string;
+  options?: Array<{ label: string; value: string }>;
+};
+
 export type Job = {
   id: number;
   name: string;
@@ -15,6 +27,7 @@ export type Job = {
   weeklyTime?: string | null;       // 'HH:mm' when WEEKLY_AT
   lastStatus?: string | null;
   latestRunAt: string | null;
+  parameters?: JobParameterDefinition[];
   createdAt: string;
   updatedAt: string;
 };

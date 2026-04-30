@@ -9,10 +9,12 @@ import { ParametersModule } from 'src/config/parameters/parameters.module';
 import { StoresModule } from 'src/config/stores/stores.module';
 import { CostCentersModule } from 'src/adm/cost-centers/cost-centers.module';
 import { DepartmentsModule } from 'src/adm/departments/departments.module';
+import { DreModule } from 'src/adm/dre/dre.module';
+import { CostCenterApportionmentPreviewService } from './cost-center-apportionment-preview.service';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), SnkApiModule, ParametersModule, StoresModule, CostCentersModule, DepartmentsModule],
-  providers: [CodeJobsService, PrismaService, PgService],
+  imports: [ScheduleModule.forRoot(), SnkApiModule, ParametersModule, StoresModule, CostCentersModule, DepartmentsModule, DreModule],
+  providers: [CodeJobsService, CostCenterApportionmentPreviewService, PrismaService, PgService],
   controllers: [CodeJobsController],
   exports: [CodeJobsService],
 })

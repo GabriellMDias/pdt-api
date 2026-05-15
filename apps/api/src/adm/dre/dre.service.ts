@@ -1,4 +1,5 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { MonthlyResultConsolidationStatus } from '@prisma/client';
 import { PgService } from 'src/db/pg/pg.service';
 import { GetStoresSalesQueryDto } from './dto/get-store-sales.query.dto'
 import { StoreSale } from './entities/store-sales.entity';
@@ -75,6 +76,12 @@ export class DreService {
   private monthKey(d: string | Date): string {
     const dt = this.parseDateOnly(d);
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+  }
+  private monthKeyUtc(d: Date): string {
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  }
+  private storeMonthKey(storeId: number, month: Date): string {
+    return `${storeId}:${this.monthKeyUtc(month)}`;
   }
   private toYmd(d: string | Date): string {
     const dt = this.parseDateOnly(d);
@@ -694,19 +701,56 @@ export class DreService {
     try {
       const ini = this.stripTime(dto.initialDate);
       const fin = this.stripTime(dto.finalDate);
+      const storeIds = [...new Set(dto.storeId)];
+      const firstMonth = this.startOfMonth(ini);
+      const lastMonth = this.startOfMonth(fin);
 
-      // Quais meses (por "date" em MonthlyResults) existem no intervalo?
-      const consolidatedMonths = await this.prisma.monthlyResult.groupBy({
-        by: ['date'],
-        where: {
-          storeId: { in: dto.storeId },
-          AND: [
-            { date: { gte: this.startOfMonth(ini) } }, 
-            { date: { lte: this.endOfMonth(fin) } }
-          ],
-        },
-      });
-      const consolidatedSet = new Set(consolidatedMonths.map(m => this.monthKey(m.date)));
+      const [explicitStatuses, monthlyResultMonths] = await Promise.all([
+        this.prisma.monthlyResultConsolidation.findMany({
+          where: {
+            storeId: { in: storeIds },
+            month: {
+              gte: this.toPrismaDate(this.toYmd(firstMonth)),
+              lte: this.toPrismaDate(this.toYmd(lastMonth)),
+            },
+          },
+          select: { storeId: true, month: true, status: true },
+        }),
+        this.prisma.monthlyResult.groupBy({
+          by: ['storeId', 'date'],
+          where: {
+            storeId: { in: storeIds },
+            AND: [
+              { date: { gte: this.startOfMonth(ini) } }, 
+              { date: { lte: this.endOfMonth(fin) } }
+            ],
+          },
+        }),
+      ]);
+
+      const explicitByStoreMonth = new Map(
+        explicitStatuses.map((status) => [
+          this.storeMonthKey(status.storeId, status.month),
+          status.status,
+        ]),
+      );
+      const monthlyResultByStoreMonth = new Set(
+        monthlyResultMonths.map((row) =>
+          this.storeMonthKey(row.storeId, row.date),
+        ),
+      );
+
+      const isStoreMonthConsolidated = (storeId: number, month: Date) => {
+        const explicit = explicitByStoreMonth.get(
+          this.storeMonthKey(storeId, month),
+        );
+
+        if (explicit) {
+          return explicit === MonthlyResultConsolidationStatus.CONSOLIDATED;
+        }
+
+        return monthlyResultByStoreMonth.has(this.storeMonthKey(storeId, month));
+      };
 
       // acumulador por CC
       const acc = new Map<number, DRE>();
@@ -723,12 +767,18 @@ export class DreService {
         const subStartStr = this.toYmd(subStart);
         const subEndStr   = this.toYmd(subEnd);
 
-        const isConsolidated = consolidatedSet.has(this.monthKey(monthStart));
+        const consolidatedStoreIds = storeIds.filter((storeId) =>
+          isStoreMonthConsolidated(storeId, monthStart),
+        );
+        const notConsolidatedStoreIds = storeIds.filter(
+          (storeId) => !consolidatedStoreIds.includes(storeId),
+        );
 
-        if (isConsolidated) {
+        if (consolidatedStoreIds.length > 0) {
           // Usa consolidação apenas deste mês
           const consRows = await this.getConsolidatedDre({
-            storeId: dto.storeId,
+            storeId: consolidatedStoreIds,
+            costCenterId: dto.costCenterId,
             initialDate: subStartStr,
             finalDate: subEndStr,
           });
@@ -749,10 +799,12 @@ export class DreService {
             };
             acc.set(cc, this.addDre(acc.get(cc) ?? this.emptyDre(), data));
           }
-        } else {
+        }
+
+        if (notConsolidatedStoreIds.length > 0) {
           // Calcula "não consolidado" apenas para a janela do mês atual
           const nonRows = await this.getNotConsolidatedDre({
-            storeId: dto.storeId,
+            storeId: notConsolidatedStoreIds,
             costCenterId: dto.costCenterId,
             initialDate: subStartStr,
             finalDate: subEndStr,

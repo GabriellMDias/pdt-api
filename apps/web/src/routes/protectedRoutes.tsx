@@ -46,6 +46,7 @@ import CurvaAbcPage from "../pages/administrativo/curva-abc/CurvaAbcPage";
 import AndroidIcon from "@mui/icons-material/Android";
 import MobileReleasesPage from "../pages/configuracoes/mobile-releases/MobileReleasesPage";
 import MobileSyncLogsPage from "../pages/configuracoes/mobile-sync-logs/MobileSyncLogsPage";
+import DailyResultLineConfigPage from "../pages/configuracoes/cadastro/resultado-diario/DailyResultLineConfigPage";
 
 export interface ProtectedRoute {
   path?: string;
@@ -243,6 +244,14 @@ export const protectedRoutes: ProtectedRoute[] = [
             label: "Tipos de Centro de Custo",
             icon: <AccountTreeIcon />,
             element: <CostCenterTypesPage />,
+            showInSidebar: true,
+          },
+          {
+            path: "/configuracoes/cadastro/resultado-diario",
+            label: "Parâmetros DRE",
+            icon: <BackupTableIcon />,
+            element: <DailyResultLineConfigPage />,
+            requiredPermissions: ["dre:configurar-dre"],
             showInSidebar: true,
           },
         ],

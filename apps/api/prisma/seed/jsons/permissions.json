@@ -57,6 +57,16 @@
     "useStorePermission": true
   },
   {
+    "code": "dre:editar-valores",
+    "label": "Editar valores do Resultado Diario",
+    "useStorePermission": true
+  },
+  {
+    "code": "dre:configurar-dre",
+    "label": "Configurar DRE",
+    "useStorePermission": true
+  },
+  {
     "code": "cost-center-comparative:consultar",
     "label": "Consultar Gestão a Vista",
     "useStorePermission": true

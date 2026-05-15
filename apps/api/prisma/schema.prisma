@@ -21,6 +21,8 @@ model User {
   ArquivoAnalise ArquivoAnalise[]
   NotificationRecipient NotificationRecipient[]
   mobileAppReleasesCreated MobileAppRelease[] @relation("MobileReleaseCreator")
+  monthlyResultConsolidations MonthlyResultConsolidation[] @relation("MonthlyResultConsolidatedByUser")
+  monthlyResultReversals MonthlyResultConsolidation[] @relation("MonthlyResultReversedByUser")
 }
 
 model Store {
@@ -41,6 +43,7 @@ model Store {
   AnalysisResult      AnalysisResult[]
   Parameters          ParameterValue[]
   costCenterTypeItems CostCenterTypeItem[]
+  MonthlyResultConsolidation MonthlyResultConsolidation[]
 }
 
 model CostCenter {
@@ -109,6 +112,52 @@ model MonthlyResult {
 
   store      Store      @relation(fields: [storeId], references: [id])
   costCenter CostCenter @relation(fields: [costCenterId], references: [id])
+}
+
+model MonthlyResultManualEditLog {
+  id              Int      @id @default(autoincrement())
+  monthlyResultId Int?
+  storeId         Int
+  costCenterId    Int
+  month           DateTime
+  field           String
+  previousValue   Float?
+  newValue        Float
+  userId          Int?
+  createdAt       DateTime @default(now())
+
+  @@index([monthlyResultId])
+  @@index([storeId, month])
+  @@index([costCenterId, month])
+  @@index([field])
+}
+
+enum MonthlyResultConsolidationStatus {
+  NOT_CONSOLIDATED
+  CONSOLIDATED
+  REVERSED
+}
+
+model MonthlyResultConsolidation {
+  id                   Int                              @id @default(autoincrement())
+  storeId              Int
+  month                DateTime
+  status               MonthlyResultConsolidationStatus @default(NOT_CONSOLIDATED)
+  consolidatedAt       DateTime?
+  consolidatedByUserId Int?
+  reversedAt           DateTime?
+  reversedByUserId     Int?
+  notes                String?                          @db.Text
+  createdAt            DateTime                         @default(now())
+  updatedAt            DateTime                         @updatedAt
+
+  store              Store @relation(fields: [storeId], references: [id])
+  consolidatedByUser User? @relation("MonthlyResultConsolidatedByUser", fields: [consolidatedByUserId], references: [id])
+  reversedByUser     User? @relation("MonthlyResultReversedByUser", fields: [reversedByUserId], references: [id])
+
+  @@unique([storeId, month])
+  @@index([month, status])
+  @@index([storeId, status])
 }
 
 model Expense {
@@ -354,6 +403,45 @@ enum ScriptRunStatus {
   FAILED
   SKIPPED
   RUNNING
+}
+
+enum DailyResultLineSourceType {
+  DIRECT_FIELD
+  PARTICIPATION
+  SUM
+  GROUP
+  DRE_VRMASTER
+}
+
+enum DailyResultLineFormat {
+  money
+  percent
+}
+
+model DailyResultLineConfig {
+  id                    Int                       @id @default(autoincrement())
+  lineId                String                    @unique
+  label                 String
+  order                 Int
+  sourceType            DailyResultLineSourceType
+  format                DailyResultLineFormat?
+  visible               Boolean                   @default(true)
+  bold                  Boolean                   @default(false)
+  shade                 Boolean                   @default(false)
+  sourceConfig          Json?
+  calculationConfig     Json?
+  styleConfig           Json?
+  vrDreId               Int?
+  vrDreItemId           Int?
+  vrDreType             String?
+  vrDreTotalizationType String?
+  detailConfig          Json?
+  active                Boolean                   @default(true)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([active, visible, order])
+  @@index([sourceType])
 }
 
 model CodeJob {

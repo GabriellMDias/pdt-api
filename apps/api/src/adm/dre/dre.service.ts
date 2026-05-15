@@ -22,7 +22,7 @@ import { DreCostCenterSalesService } from './dre-cost-center-sales.service';
 
 const METRICS: (keyof DRE)[] = [
   'recBruta','devolucao','imposto','custo','embalagem',
-  'quebra','recCom','despesaPessoal','despesaOperacional'
+  'quebra','recCom','despesaPessoal','despesaPessoalRat','despesaOperacional'
 ];
 
 const EPS = 1e-6;
@@ -608,6 +608,109 @@ export class DreService {
     }
   }
 
+  private monthToDateFraction(finalDate: Date) {
+    const day = finalDate.getDate();
+    const daysInMonth = this.daysInMonth(finalDate);
+    return Math.max(0, Math.min(1, day / daysInMonth));
+  }
+
+  private async getEstimatedExpensesFromLastConsolidatedMonth(
+    storeIds: number[],
+    referenceDate: Date,
+  ) {
+    const currentMonthStart = this.toPrismaDate(this.startOfMonth(referenceDate));
+    const [monthlyResultMonths, explicitStatuses] = await Promise.all([
+      this.prisma.monthlyResult.groupBy({
+        by: ['storeId', 'date'],
+        where: {
+          storeId: { in: storeIds },
+          date: { lt: currentMonthStart },
+        },
+      }),
+      this.prisma.monthlyResultConsolidation.findMany({
+        where: {
+          storeId: { in: storeIds },
+          month: { lt: currentMonthStart },
+        },
+        select: { storeId: true, month: true, status: true },
+      }),
+    ]);
+
+    const statusByStoreMonth = new Map(
+      explicitStatuses.map((status) => [
+        this.storeMonthKey(status.storeId, status.month),
+        status.status,
+      ]),
+    );
+    const selectedMonthByStore = new Map<number, Date>();
+
+    for (const row of monthlyResultMonths.sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    )) {
+      if (selectedMonthByStore.has(row.storeId)) continue;
+
+      const explicitStatus = statusByStoreMonth.get(
+        this.storeMonthKey(row.storeId, row.date),
+      );
+      const isConsolidated =
+        explicitStatus === undefined ||
+        explicitStatus === MonthlyResultConsolidationStatus.CONSOLIDATED;
+
+      if (isConsolidated) {
+        selectedMonthByStore.set(row.storeId, row.date);
+      }
+    }
+
+    if (selectedMonthByStore.size === 0) {
+      return new Map<
+        number,
+        Pick<DRE, 'despesaPessoal' | 'despesaPessoalRat' | 'despesaOperacional'>
+      >();
+    }
+
+    const monthlyResults = await this.prisma.monthlyResult.findMany({
+      where: {
+        OR: [...selectedMonthByStore.entries()].map(([storeId, date]) => ({
+          storeId,
+          date,
+        })),
+      },
+      select: {
+        costCenterId: true,
+        despesaPessoal: true,
+        despesaPessoalRat: true,
+        despesaOperacional: true,
+      },
+    });
+
+    const byCostCenter = new Map<
+      number,
+      Pick<DRE, 'despesaPessoal' | 'despesaPessoalRat' | 'despesaOperacional'>
+    >();
+
+    for (const row of monthlyResults) {
+      const current =
+        byCostCenter.get(row.costCenterId) ?? {
+          despesaPessoal: 0,
+          despesaPessoalRat: 0,
+          despesaOperacional: 0,
+        };
+
+      current.despesaPessoal = this.round2(
+        current.despesaPessoal + (row.despesaPessoal ?? 0),
+      );
+      current.despesaPessoalRat = this.round2(
+        current.despesaPessoalRat + (row.despesaPessoalRat ?? 0),
+      );
+      current.despesaOperacional = this.round2(
+        current.despesaOperacional + (row.despesaOperacional ?? 0),
+      );
+      byCostCenter.set(row.costCenterId, current);
+    }
+
+    return byCostCenter;
+  }
+
   async getNotConsolidatedDre(getNotConsolidatedDreDto: GetNotConsolidatedDreQueryDto) {
     try {
       const costCenters = (await this.prisma.costCenter.findMany())
@@ -630,36 +733,13 @@ export class DreService {
         secos.totalValue -= provisionValue;
       }
 
-      const lastMonth = await this.prisma.monthlyResult.findFirst({
-        where: { storeId: { in: getNotConsolidatedDreDto.storeId } },
-        orderBy: { date: "desc" },
-        select: { date: true }
-      })
-
-      const lastMonthData = await this.prisma.monthlyResult.groupBy({
-        by: ["costCenterId"],
-        _sum: {
-          embalagem: true, // não usamos aqui, mas mantive
-          despesaPessoal: true,
-          despesaPessoalRat: true,
-          despesaOperacional: true,
-        },
-        where: {
-          storeId: { in: getNotConsolidatedDreDto.storeId },
-          date: lastMonth?.date
-        }
-      })
-
       const end = this.stripTime(getNotConsolidatedDreDto.finalDate);
-      const endMonthStart = this.startOfMonth(end);
-      const sameMonth = this.monthKey(end) === this.monthKey(getNotConsolidatedDreDto.initialDate);
-
-      const subStart = sameMonth
-        ? this.stripTime(getNotConsolidatedDreDto.initialDate) // aceita string
-        : endMonthStart;
-      const daysThisPeriodInEndMonth = this.diffDaysInclusive(subStart, end);
-      const dim = this.daysInMonth(end);
-      const fraction = Math.max(0, Math.min(1, daysThisPeriodInEndMonth / dim));
+      const fraction = this.monthToDateFraction(end);
+      const estimatedExpensesByCostCenter =
+        await this.getEstimatedExpensesFromLastConsolidatedMonth(
+          getNotConsolidatedDreDto.storeId,
+          end,
+        );
 
       const dreDataRaw = costCenters.map((costCenter) => {
         
@@ -671,9 +751,9 @@ export class DreService {
           embalagem:       packagingCost.find((it) => it.costCenterId === costCenter.id)?.packagingCost ?? 0,
           quebra:          lossAndConsumption.find((it) => it.costCenterId === costCenter.id)?.totalValue ?? 0,
           recCom:          commercialRevenue.find((it) => it.costCenterId === costCenter.id)?.totalValue ?? 0,
-          despesaPessoal:  (lastMonthData.find((it) => it.costCenterId === costCenter.id)?._sum.despesaPessoal ?? 0) * fraction,
-          despesaPessoalRat: (lastMonthData.find((it) => it.costCenterId === costCenter.id)?._sum.despesaPessoalRat ?? 0) * fraction,
-          despesaOperacional: (lastMonthData.find((it) => it.costCenterId === costCenter.id)?._sum.despesaOperacional ?? 0) * fraction,
+          despesaPessoal:  this.round2((estimatedExpensesByCostCenter.get(costCenter.id)?.despesaPessoal ?? 0) * fraction),
+          despesaPessoalRat: this.round2((estimatedExpensesByCostCenter.get(costCenter.id)?.despesaPessoalRat ?? 0) * fraction),
+          despesaOperacional: this.round2((estimatedExpensesByCostCenter.get(costCenter.id)?.despesaOperacional ?? 0) * fraction),
         }
         return { costCenterId: costCenter.id, data }
       })
